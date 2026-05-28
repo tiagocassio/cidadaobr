@@ -3,10 +3,10 @@
 module Web
   class AppointmentsController < BaseController
     before_action :require_facility_or_municipality!
-    before_action :require_facility_or_municipality_write!, only: %i[new create]
-    before_action :require_reception_operations!, only: %i[check_in complete cancel]
+    before_action :require_facility_or_municipality_write!, only: %i[new create reschedule]
+    before_action :require_reception_operations!, only: %i[check_in complete cancel reschedule]
     before_action :ensure_health_facility_selected!, only: %i[index reception new create]
-    before_action :set_appointment, only: %i[show check_in complete cancel]
+    before_action :set_appointment, only: %i[show check_in complete cancel reschedule]
     before_action :set_form_collections, only: %i[new create]
 
     helper_method :facility_scope_params
@@ -20,6 +20,17 @@ module Web
     end
 
     def show
+      if @appointment.status.in?(%w[scheduled confirmed])
+        @reschedule_slots = RoomCapacitySlot
+          .where(
+            health_facility_id: @appointment.health_facility_id,
+            consultation_room_id: @appointment.consultation_room_id,
+            slot_date: @appointment.scheduled_at.to_date
+          )
+          .where("booked_count < capacity")
+          .includes(:consultation_room)
+          .order(:starts_at)
+      end
     end
 
     def select_facility
@@ -87,6 +98,28 @@ module Web
       redirect_to web_appointment_path(@appointment), alert: "Não foi possível cancelar."
     rescue Scheduling::Errors::SlotUnavailableError => e
       redirect_to web_appointment_path(@appointment), alert: e.message
+    end
+
+    def reschedule
+      slot = RoomCapacitySlot.find_by!(
+        id: params.require(:room_capacity_slot_id),
+        health_facility_id: @appointment.health_facility_id,
+        consultation_room_id: @appointment.consultation_room_id
+      )
+      scheduled_at = Time.zone.parse("#{slot.slot_date} #{slot.starts_at.strftime('%H:%M:%S')}")
+
+      Scheduling::RescheduleAppointment.call(
+        appointment: @appointment,
+        scheduled_at: scheduled_at,
+        room_capacity_slot_id: slot.id
+      )
+      redirect_to web_appointment_path(@appointment), notice: "Consulta reagendada."
+    rescue Scheduling::Errors::InvalidTransitionError
+      redirect_to web_appointment_path(@appointment), alert: "Não foi possível reagendar."
+    rescue Scheduling::Errors::SlotUnavailableError => e
+      redirect_to web_appointment_path(@appointment), alert: e.message
+    rescue ActiveRecord::RecordNotFound, ArgumentError
+      redirect_to web_appointment_path(@appointment), alert: "Dados inválidos para reagendamento."
     end
 
     private

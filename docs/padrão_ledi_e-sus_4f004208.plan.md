@@ -4,34 +4,34 @@ overview: "CidadãoBR Saúde — APS municipal LEDI + 17 indicadores. Marca Cida
 todos:
   - id: fix-ledi-version
     content: Definir versão LEDI alvo e obter Thrift/XSD oficiais
-    status: pending
+    status: completed
   - id: catalog-fields
     content: Gerar catálogo de campos/regras a partir dos 13 dicionários + thrift-xsd
-    status: pending
+    status: completed
   - id: schema-transport-ficha
     content: "Migrations en-US: ledi_batches, transport_records, clinical_records, clinical_record_items"
-    status: pending
+    status: completed
   - id: schema-operational
     content: "Migrations en-US: citizens, households, health_facilities, care_teams, encounters, shared_care"
-    status: pending
+    status: completed
   - id: schema-ai-features
     content: "Tabelas en-US: citizen_feature_snapshots, citizen_profiles, profile_rules"
     status: pending
   - id: thrift-adapters
     content: Adapters Thrift→JSON por tipoDadoSerializado + validação por arquétipo
-    status: pending
+    status: completed
   - id: sync-operational
     content: Mapear FCI/FCD→cadastro, master/child→atendimento, FCC→cuidado_compartilhado_evolucao
-    status: pending
+    status: completed
   - id: kafka-events
     content: "Tópicos Kafka + producers Rails (Karafka) e consumers de extração/IA"
-    status: pending
+    status: completed
   - id: ai-pipeline
     content: "Serviço de scoring de perfis (Python ou Rails job) consumindo feature snapshots"
     status: pending
   - id: api-clients
     content: "APIs v1: /field (LEDI offline) e /citizen (agenda, vacinas, meds, pânico, telehealth)"
-    status: pending
+    status: completed
   - id: flutter-field-app
     content: "Flutter Field: multirão, visita acamados, 13 fichas LEDI, offline-first"
     status: pending
@@ -46,7 +46,7 @@ todos:
     status: completed
   - id: indicadores-portaria
     content: "Seed indicator_catalog: CVAT + V-* + C1–C15 (Portaria 3.493, SAPS 161/2024, Notas MS)"
-    status: pending
+    status: completed
   - id: indicador-engine
     content: "Motor de gaps por cidadão/equipe/INE e snapshots quadrimestrais de desempenho"
     status: pending
@@ -55,16 +55,16 @@ todos:
     status: pending
   - id: code-conventions-en
     content: "Lint/naming en-US: models, tables, columns, events, Kafka topics, services, Stimulus controllers"
-    status: pending
+    status: completed
   - id: event-sourcing-cqrs
     content: "Event store + command handlers + read projections; Kafka como integration bus entre bounded contexts"
-    status: pending
+    status: completed
   - id: schema-municipal-ops
     content: "Domínio municipal en-US: facilities, teams, memberships; municipality_id + health_facility_id em todas tabelas operacionais"
-    status: pending
+    status: completed
   - id: tenant-isolation-rls
     content: "Isolamento MVP: PostgreSQL RLS + chaves hierárquicas + user_municipality_memberships (sem DB/schema por UBS)"
-    status: pending
+    status: completed
   - id: schema-campaigns-stock
     content: "Campanhas vacinação; provisionamento insumo x capacidade sala x UBS"
     status: pending
@@ -76,7 +76,7 @@ todos:
     status: pending
   - id: web-admin-modules
     content: "Módulos web Hotwire: indicadores, relatórios, CRUD gestão, dashboards estoque/salas/campanhas"
-    status: pending
+    status: completed
   - id: schema-appointments
     content: "Agendamentos UBS: appointments, service_types, slots; CQRS calendar projection; vínculo encounters"
     status: completed
@@ -85,10 +85,10 @@ todos:
     status: completed
   - id: phase-0-foundation
     content: "Fase 0: EPIC-00 (TASK-00-01..07)"
-    status: pending
+    status: completed
   - id: phase-1-ledi-core
     content: "Fase 1: EPIC-01 (TASK-01-01..07)"
-    status: pending
+    status: completed
   - id: phase-2-ops-web
     content: "Fase 2: EPIC-02 (TASK-02-01..07)"
     status: completed
@@ -97,7 +97,7 @@ todos:
     status: completed
   - id: phase-4-indicators
     content: "Fase 4: EPIC-05 (TASK-05-01..08)"
-    status: pending
+    status: in_progress
   - id: phase-5-field-campaigns
     content: "Fase 5: EPIC-06 + EPIC-07 + EPIC-08"
     status: pending
@@ -109,7 +109,7 @@ todos:
     status: pending
   - id: epic-backlog-export
     content: "Manter backlog EPIC/STORY/TASK/SUB sincronizado; export CSV para Jira/Linear"
-    status: pending
+    status: completed
 ---
 
 # Padrão unificado das fichas e-SUS APS (LEDI)

@@ -103,4 +103,78 @@ RSpec.describe "Tenant RLS isolation", type: :model do
     expect(facility_visible).to be_nil
     expect(municipal_visible).to eq(installation)
   end
+
+  it "prevents cross-facility reads of team indicator results under facility scope" do
+    load Rails.root.join("db/seeds/indicator_catalog.rb")
+
+    team_a = create(:care_team, municipality: municipality, health_facility: facility_a)
+    team_b = create(:care_team, municipality: municipality, health_facility: facility_b)
+    municipal_membership = create(:user_municipality_membership, municipality: municipality, scope: "municipality")
+
+    result_a = with_tenant(Cidadaobr::TenantScope.from_membership(municipal_membership)) do
+      TeamIndicatorResult.create!(
+        municipality: municipality,
+        care_team: team_a,
+        indicator_code: "C1",
+        quadrimester: "2026-Q1",
+        score: 80
+      )
+    end
+
+    with_tenant(Cidadaobr::TenantScope.from_membership(municipal_membership)) do
+      TeamIndicatorResult.create!(
+        municipality: municipality,
+        care_team: team_b,
+        indicator_code: "C1",
+        quadrimester: "2026-Q1",
+        score: 70
+      )
+    end
+
+    visible_ids = with_tenant(Cidadaobr::TenantScope.from_membership(membership_a)) do
+      TeamIndicatorResult.pluck(:id)
+    end
+
+    expect(visible_ids).to eq([ result_a.id ])
+  end
+
+  it "prevents cross-facility reads of citizen indicator gaps under facility scope" do
+    load Rails.root.join("db/seeds/indicator_catalog.rb")
+
+    team_a = create(:care_team, municipality: municipality, health_facility: facility_a)
+    team_b = create(:care_team, municipality: municipality, health_facility: facility_b)
+    municipal_membership = create(:user_municipality_membership, municipality: municipality, scope: "municipality")
+    citizen_a = with_tenant(Cidadaobr::TenantScope.from_membership(municipal_membership)) do
+      create(:citizen, municipality: municipality, health_facility: facility_a, care_team: team_a)
+    end
+    citizen_b = with_tenant(Cidadaobr::TenantScope.from_membership(municipal_membership)) do
+      create(:citizen, municipality: municipality, health_facility: facility_b, care_team: team_b)
+    end
+
+    gap_a = with_tenant(Cidadaobr::TenantScope.from_membership(municipal_membership)) do
+      CitizenIndicatorGap.create!(
+        municipality: municipality,
+        citizen: citizen_a,
+        care_team: team_a,
+        indicator_code: "C1",
+        status: "open"
+      )
+    end
+
+    with_tenant(Cidadaobr::TenantScope.from_membership(municipal_membership)) do
+      CitizenIndicatorGap.create!(
+        municipality: municipality,
+        citizen: citizen_b,
+        care_team: team_b,
+        indicator_code: "C1",
+        status: "open"
+      )
+    end
+
+    visible_ids = with_tenant(Cidadaobr::TenantScope.from_membership(membership_a)) do
+      CitizenIndicatorGap.pluck(:id)
+    end
+
+    expect(visible_ids).to eq([ gap_a.id ])
+  end
 end

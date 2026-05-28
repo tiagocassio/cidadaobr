@@ -1,11 +1,47 @@
 <section>
   <div class="mb-6 flex flex-wrap items-center justify-between gap-4">
-    <h2 class="text-2xl font-bold">Agenda UBS</h2>
-    <%= link_to "Nova marcação", new_web_appointment_path(facility_scope_params), class: "rounded bg-emerald-700 px-4 py-2 text-sm font-semibold text-white" %>
-    <%= link_to "Fila recepção", reception_web_appointments_path(facility_scope_params), class: "rounded border border-slate-300 px-4 py-2 text-sm" %>
+    <div>
+      <h2 class="text-2xl font-bold">Agenda UBS</h2>
+      <p class="text-sm text-slate-600"><%= l(@schedule[:date], format: :long) %></p>
+    </div>
+    <div class="flex flex-wrap gap-2">
+      <%= link_to "Dia anterior", web_appointments_path(facility_scope_params.merge(date: @schedule[:date] - 1.day)), class: "rounded border border-slate-300 px-3 py-2 text-sm" %>
+      <%= link_to "Hoje", web_appointments_path(facility_scope_params.merge(date: Date.current)), class: "rounded border border-slate-300 px-3 py-2 text-sm" %>
+      <%= link_to "Próximo dia", web_appointments_path(facility_scope_params.merge(date: @schedule[:date] + 1.day)), class: "rounded border border-slate-300 px-3 py-2 text-sm" %>
+      <%= link_to "Nova marcação", new_web_appointment_path(facility_scope_params), class: "rounded bg-emerald-700 px-4 py-2 text-sm font-semibold text-white" %>
+      <%= link_to "Fila recepção", reception_web_appointments_path(facility_scope_params), class: "rounded border border-slate-300 px-4 py-2 text-sm" %>
+    </div>
+  </div>
+
+  <div class="mb-8 overflow-hidden rounded-lg border border-slate-200 bg-white">
+    <h3 class="border-b border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold">Capacidade por sala</h3>
+    <table class="min-w-full text-sm">
+      <thead class="bg-slate-50 text-left">
+        <tr>
+          <th class="px-4 py-3">Horário</th>
+          <th class="px-4 py-3">Sala</th>
+          <th class="px-4 py-3">Ocupação</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @schedule[:capacity_slots].each do |slot| %>
+          <tr class="border-t border-slate-100">
+            <td class="px-4 py-3"><%= slot.starts_at.strftime("%H:%M") %>–<%= slot.ends_at.strftime("%H:%M") %></td>
+            <td class="px-4 py-3"><%= slot.consultation_room.name %></td>
+            <td class="px-4 py-3"><%= slot.booked_count %>/<%= slot.capacity %></td>
+          </tr>
+        <% end %>
+        <% if @schedule[:capacity_slots].empty? %>
+          <tr class="border-t border-slate-100">
+            <td class="px-4 py-3 text-slate-500" colspan="3">Nenhum slot cadastrado para este dia.</td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
   </div>
 
   <div class="overflow-hidden rounded-lg border border-slate-200 bg-white">
+    <h3 class="border-b border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold">Consultas do dia</h3>
     <table class="min-w-full text-sm">
       <thead class="bg-slate-50 text-left">
         <tr>
@@ -26,6 +62,11 @@
             <td class="px-4 py-3 text-right">
               <%= link_to "Ver", web_appointment_path(appointment), class: "text-emerald-700 hover:underline" %>
             </td>
+          </tr>
+        <% end %>
+        <% if @schedule[:appointments].empty? %>
+          <tr class="border-t border-slate-100">
+            <td class="px-4 py-3 text-slate-500" colspan="5">Nenhuma consulta agendada.</td>
           </tr>
         <% end %>
       </tbody>

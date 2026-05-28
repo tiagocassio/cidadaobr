@@ -99,3 +99,4 @@ Installation.find_or_create_by!(municipality: municipality, counter_key: "dev") 
 end
 
 load Rails.root.join("db/seeds/ledi_catalog.rb")
+load Rails.root.join("db/seeds/indicator_catalog.rb")

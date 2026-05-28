@@ -77,6 +77,38 @@ module Api
           render_json_error(e.message, status: :conflict)
         end
 
+        def reschedule
+          appointment = Appointment.includes(:appointment_service_type).find_by!(id: params[:id], citizen_id: current_citizen.id)
+          if current_citizen.health_facility_id.blank?
+            return render_json_error("Citizen must be linked to a health facility before rescheduling", status: :unprocessable_entity)
+          end
+
+          scheduled_at = parse_scheduled_at!(params.require(:scheduled_at))
+          slot_id = params.require(:room_capacity_slot_id)
+          slot = RoomCapacitySlot.find_by(id: slot_id, health_facility_id: current_citizen.health_facility_id)
+          room = ConsultationRoom.find_by(id: params.require(:consultation_room_id), health_facility_id: current_citizen.health_facility_id)
+          if slot.nil? || room.nil? || slot.consultation_room_id != room.id
+            return render_json_error("Invalid room or slot for citizen facility", status: :unprocessable_entity)
+          end
+          if room.id != appointment.consultation_room_id
+            return render_json_error("Invalid room for this appointment", status: :unprocessable_entity)
+          end
+
+          Scheduling::RescheduleAppointment.call(
+            appointment: appointment,
+            scheduled_at: scheduled_at,
+            room_capacity_slot_id: slot.id
+          )
+          @appointment = appointment.reload
+          render :show
+        rescue Scheduling::Errors::InvalidTransitionError
+          render_json_error("Appointment cannot be rescheduled", status: :unprocessable_entity)
+        rescue Scheduling::Errors::SlotUnavailableError => e
+          render_json_error(e.message, status: :conflict)
+        rescue ArgumentError => e
+          render_json_error(e.message, status: :unprocessable_entity)
+        end
+
         private
 
         def parse_scheduled_at!(value)

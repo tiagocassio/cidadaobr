@@ -62,4 +62,37 @@ RSpec.describe Ledi::ProjectionRunner do
       expect(Encounter.where(clinical_record_id: clinical_record.id).count).to eq(1)
     end
   end
+
+  it "projects FV into citizen_immunization_records for an existing citizen" do
+    fci_record = import(:fci)
+
+    with_tenant(membership) do
+      described_class.call(clinical_record: fci_record)
+      citizen = Citizen.find_by!(municipality_id: municipality.id, cpf: "39053344705")
+
+      fv_record = ClinicalRecord.create!(
+        municipality: municipality,
+        health_facility: facility,
+        transport_record: fci_record.transport_record,
+        record_type: "FV",
+        record_uuid: SecureRandom.uuid,
+        payload_schema_version: Rails.application.config.ledi.fetch(:version),
+        validation_status: "valid",
+        validation_errors: [],
+        payload_json: {
+          "identificacao" => { "cpf" => citizen.cpf },
+          "vacina" => { "codigo" => "BCG", "nome" => "BCG" },
+          "dose" => { "rotulo" => "D1" },
+          "data_aplicacao" => "2024-01-15"
+        }
+      )
+
+      described_class.call(clinical_record: fv_record)
+
+      immunization = CitizenImmunizationRecord.find_by!(citizen: citizen, vaccine_code: "BCG", dose_label: "D1")
+      expect(immunization.vaccine_name).to eq("BCG")
+      expect(immunization.applied_on).to eq(Date.new(2024, 1, 15))
+      expect(immunization.source).to eq("fv_projection")
+    end
+  end
 end

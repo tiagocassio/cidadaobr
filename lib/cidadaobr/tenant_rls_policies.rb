@@ -281,10 +281,22 @@ module Cidadaobr
         connection.execute municipality_only_table_policies_for(table_name)
       end
 
-      %i[citizen_accounts citizen_immunization_records].each do |table_name|
-        next unless connection.table_exists?(table_name)
+      if connection.table_exists?(:citizen_accounts)
+        connection.execute citizen_table_policies_for(:citizen_accounts)
+      end
 
-        connection.execute citizen_table_policies_for(table_name)
+      if connection.table_exists?(:citizen_immunization_records)
+        connection.execute municipality_only_table_policies_for(:citizen_immunization_records)
+        connection.execute tenant_table_citizen_access_policy_for(:citizen_immunization_records)
+      end
+
+      if connection.table_exists?(:citizen_indicator_gaps)
+        connection.execute citizen_indicator_gap_table_policies_for(:citizen_indicator_gaps)
+        connection.execute tenant_table_citizen_access_policy_for(:citizen_indicator_gaps)
+      end
+
+      if connection.table_exists?(:team_indicator_results)
+        connection.execute team_indicator_result_table_policies_for(:team_indicator_results)
       end
     end
 
@@ -605,6 +617,160 @@ module Cidadaobr
 
         DROP POLICY IF EXISTS #{table_name}_team_access ON #{table_name};
         DROP POLICY IF EXISTS #{table_name}_facility_access ON #{table_name};
+      SQL
+    end
+
+    def citizen_indicator_gap_table_policies_for(table_name)
+      team_ids_array = "string_to_array(NULLIF(current_setting('app.current_team_ids', true), ''), ',')"
+      facility_id = "NULLIF(current_setting('app.current_health_facility_id', true), '')::uuid"
+      municipality_id = "NULLIF(current_setting('app.current_municipality_id', true), '')::uuid"
+
+      citizen_facility_match = <<~SQL.squish
+        EXISTS (
+          SELECT 1
+          FROM citizens c
+          WHERE c.id = #{table_name}.citizen_id
+            AND c.municipality_id = #{table_name}.municipality_id
+            AND (
+              c.health_facility_id = #{facility_id}
+              OR EXISTS (
+                SELECT 1
+                FROM care_teams ct
+                WHERE ct.id = c.care_team_id
+                  AND ct.health_facility_id = #{facility_id}
+              )
+            )
+        )
+      SQL
+
+      gap_team_facility_match = <<~SQL.squish
+        (
+          #{table_name}.care_team_id IS NOT NULL
+          AND EXISTS (
+            SELECT 1
+            FROM care_teams ct
+            WHERE ct.id = #{table_name}.care_team_id
+              AND ct.health_facility_id = #{facility_id}
+          )
+        )
+      SQL
+
+      team_scope_match = <<~SQL.squish
+        (
+          (#{table_name}.care_team_id IS NOT NULL AND #{table_name}.care_team_id::text = ANY(#{team_ids_array}))
+          OR EXISTS (
+            SELECT 1
+            FROM citizens c
+            WHERE c.id = #{table_name}.citizen_id
+              AND c.care_team_id::text = ANY(#{team_ids_array})
+          )
+        )
+      SQL
+
+      <<~SQL
+        ALTER TABLE #{table_name} ENABLE ROW LEVEL SECURITY;
+        ALTER TABLE #{table_name} FORCE ROW LEVEL SECURITY;
+
+        DROP POLICY IF EXISTS #{table_name}_municipal_access ON #{table_name};
+        CREATE POLICY #{table_name}_municipal_access ON #{table_name}
+          FOR ALL
+          USING (
+            municipality_id = #{municipality_id}
+            AND current_setting('app.current_scope', true) = 'municipality'
+          )
+          WITH CHECK (
+            municipality_id = #{municipality_id}
+            AND current_setting('app.current_scope', true) = 'municipality'
+          );
+
+        DROP POLICY IF EXISTS #{table_name}_team_access ON #{table_name};
+        CREATE POLICY #{table_name}_team_access ON #{table_name}
+          FOR ALL
+          USING (
+            municipality_id = #{municipality_id}
+            AND current_setting('app.current_scope', true) = 'team'
+            AND #{team_scope_match}
+          )
+          WITH CHECK (
+            municipality_id = #{municipality_id}
+            AND current_setting('app.current_scope', true) = 'team'
+            AND #{team_scope_match}
+          );
+
+        DROP POLICY IF EXISTS #{table_name}_facility_access ON #{table_name};
+        CREATE POLICY #{table_name}_facility_access ON #{table_name}
+          FOR ALL
+          USING (
+            municipality_id = #{municipality_id}
+            AND current_setting('app.current_scope', true) = 'facility'
+            AND (#{citizen_facility_match} OR #{gap_team_facility_match})
+          )
+          WITH CHECK (
+            municipality_id = #{municipality_id}
+            AND current_setting('app.current_scope', true) = 'facility'
+            AND (#{citizen_facility_match} OR #{gap_team_facility_match})
+          );
+      SQL
+    end
+
+    def team_indicator_result_table_policies_for(table_name)
+      team_ids_array = "string_to_array(NULLIF(current_setting('app.current_team_ids', true), ''), ',')"
+      facility_id = "NULLIF(current_setting('app.current_health_facility_id', true), '')::uuid"
+      municipality_id = "NULLIF(current_setting('app.current_municipality_id', true), '')::uuid"
+
+      <<~SQL
+        ALTER TABLE #{table_name} ENABLE ROW LEVEL SECURITY;
+        ALTER TABLE #{table_name} FORCE ROW LEVEL SECURITY;
+
+        DROP POLICY IF EXISTS #{table_name}_municipal_access ON #{table_name};
+        CREATE POLICY #{table_name}_municipal_access ON #{table_name}
+          FOR ALL
+          USING (
+            municipality_id = #{municipality_id}
+            AND current_setting('app.current_scope', true) = 'municipality'
+          )
+          WITH CHECK (
+            municipality_id = #{municipality_id}
+            AND current_setting('app.current_scope', true) = 'municipality'
+          );
+
+        DROP POLICY IF EXISTS #{table_name}_team_access ON #{table_name};
+        CREATE POLICY #{table_name}_team_access ON #{table_name}
+          FOR ALL
+          USING (
+            municipality_id = #{municipality_id}
+            AND current_setting('app.current_scope', true) = 'team'
+            AND care_team_id::text = ANY(#{team_ids_array})
+          )
+          WITH CHECK (
+            municipality_id = #{municipality_id}
+            AND current_setting('app.current_scope', true) = 'team'
+            AND care_team_id::text = ANY(#{team_ids_array})
+          );
+
+        DROP POLICY IF EXISTS #{table_name}_facility_access ON #{table_name};
+        CREATE POLICY #{table_name}_facility_access ON #{table_name}
+          FOR ALL
+          USING (
+            municipality_id = #{municipality_id}
+            AND current_setting('app.current_scope', true) = 'facility'
+            AND EXISTS (
+              SELECT 1
+              FROM care_teams ct
+              WHERE ct.id = #{table_name}.care_team_id
+                AND ct.health_facility_id = #{facility_id}
+            )
+          )
+          WITH CHECK (
+            municipality_id = #{municipality_id}
+            AND current_setting('app.current_scope', true) = 'facility'
+            AND EXISTS (
+              SELECT 1
+              FROM care_teams ct
+              WHERE ct.id = #{table_name}.care_team_id
+                AND ct.health_facility_id = #{facility_id}
+            )
+          );
       SQL
     end
 

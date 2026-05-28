@@ -29,6 +29,7 @@ Rails.application.routes.draw do
         post :check_in
         post :complete
         post :cancel
+        post :reschedule
       end
       collection do
         get :reception
@@ -55,6 +56,7 @@ Rails.application.routes.draw do
           end
           member do
             post :cancel
+            post :reschedule
           end
         end
         resources :immunization_records, only: :index

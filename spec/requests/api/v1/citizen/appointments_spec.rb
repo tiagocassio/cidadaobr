@@ -184,4 +184,83 @@ RSpec.describe "Citizen appointments API", type: :request do
     expect(response).to have_http_status(:unprocessable_entity)
     expect(JSON.parse(response.body)).to eq("error" => "Invalid date")
   end
+
+  it "reschedules an appointment to another slot in the same room" do
+    later_slot = with_tenant(tenant_scope) do
+      RoomCapacitySlot.create!(
+        municipality: municipality,
+        health_facility: facility,
+        consultation_room: room,
+        slot_date: Date.current,
+        starts_at: "11:00",
+        ends_at: "11:20",
+        capacity: 1,
+        booked_count: 0
+      )
+    end
+
+    post "/api/v1/citizen/appointments",
+         params: {
+           appointment_service_type_id: service_type.id,
+           consultation_room_id: room.id,
+           scheduled_at: Time.zone.parse("#{Date.current} 10:00").iso8601,
+           room_capacity_slot_id: capacity_slot.id
+         },
+         headers: auth_headers
+
+    appointment_id = JSON.parse(response.body).fetch("id")
+
+    post "/api/v1/citizen/appointments/#{appointment_id}/reschedule",
+         params: {
+           consultation_room_id: room.id,
+           scheduled_at: Time.zone.parse("#{Date.current} 11:00").iso8601,
+           room_capacity_slot_id: later_slot.id
+         },
+         headers: auth_headers
+
+    expect(response).to have_http_status(:ok)
+    body = JSON.parse(response.body)
+    expect(body.fetch("status")).to eq("scheduled")
+    expect(Time.zone.parse(body.fetch("scheduled_at"))).to eq(Time.zone.parse("#{Date.current} 11:00"))
+  end
+
+  it "rejects reschedule to a different consultation room" do
+    other_room = with_tenant(tenant_scope) do
+      ConsultationRoom.create!(municipality: municipality, health_facility: facility, name: "Sala 2", room_kind: "general")
+    end
+    other_slot = with_tenant(tenant_scope) do
+      RoomCapacitySlot.create!(
+        municipality: municipality,
+        health_facility: facility,
+        consultation_room: other_room,
+        slot_date: Date.current,
+        starts_at: "11:00",
+        ends_at: "11:20",
+        capacity: 1,
+        booked_count: 0
+      )
+    end
+
+    post "/api/v1/citizen/appointments",
+         params: {
+           appointment_service_type_id: service_type.id,
+           consultation_room_id: room.id,
+           scheduled_at: Time.zone.parse("#{Date.current} 10:00").iso8601,
+           room_capacity_slot_id: capacity_slot.id
+         },
+         headers: auth_headers
+
+    appointment_id = JSON.parse(response.body).fetch("id")
+
+    post "/api/v1/citizen/appointments/#{appointment_id}/reschedule",
+         params: {
+           consultation_room_id: other_room.id,
+           scheduled_at: Time.zone.parse("#{Date.current} 11:00").iso8601,
+           room_capacity_slot_id: other_slot.id
+         },
+         headers: auth_headers
+
+    expect(response).to have_http_status(:unprocessable_entity)
+    expect(JSON.parse(response.body)).to eq("error" => "Invalid room for this appointment")
+  end
 end

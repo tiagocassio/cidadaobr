@@ -37,7 +37,7 @@ module Ledi
       private
 
       def payload
-        @payload ||= @clinical_record.payload.is_a?(Hash) ? @clinical_record.payload : {}
+        @payload ||= @clinical_record.payload_json.is_a?(Hash) ? @clinical_record.payload_json : {}
       end
 
       def payload_cpf

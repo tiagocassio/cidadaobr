@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_05_27_120700) do
+ActiveRecord::Schema[8.1].define(version: 2026_05_27_150100) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
@@ -106,6 +106,21 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_27_120700) do
     t.string "vaccine_code", null: false
     t.string "vaccine_name", null: false
     t.index ["citizen_id", "vaccine_code", "dose_label"], name: "index_citizen_immunization_on_citizen_vaccine_dose"
+  end
+
+  create_table "citizen_indicator_gaps", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "care_team_id"
+    t.uuid "citizen_id", null: false
+    t.datetime "created_at", null: false
+    t.date "due_on"
+    t.string "good_practice_code"
+    t.string "indicator_code", null: false
+    t.uuid "municipality_id", null: false
+    t.string "status", default: "open", null: false
+    t.datetime "updated_at", null: false
+    t.index "citizen_id, indicator_code, COALESCE(good_practice_code, ''::character varying)", name: "index_citizen_indicator_gaps_open_unique", unique: true, where: "((status)::text = 'open'::text)"
+    t.index ["citizen_id", "indicator_code", "good_practice_code"], name: "index_citizen_indicator_gaps_on_citizen_indicator_bp"
+    t.index ["municipality_id", "indicator_code", "status"], name: "index_citizen_indicator_gaps_on_municipality_indicator_status"
   end
 
   create_table "citizens", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -264,6 +279,31 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_27_120700) do
     t.index ["municipality_id", "clinical_record_id"], name: "index_households_on_municipality_and_clinical_record", unique: true
   end
 
+  create_table "indicator_catalog", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.boolean "active", default: true, null: false
+    t.string "code", null: false
+    t.datetime "created_at", null: false
+    t.integer "display_order", default: 0, null: false
+    t.string "funding_component", null: false
+    t.string "methodology_version", default: "3493/2024", null: false
+    t.string "name", null: false
+    t.string "periodicity", default: "quarterly", null: false
+    t.string "team_kind"
+    t.datetime "updated_at", null: false
+    t.index ["code"], name: "index_indicator_catalog_on_code", unique: true
+  end
+
+  create_table "indicator_rules", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.jsonb "expression", default: {}, null: false
+    t.uuid "indicator_catalog_id", null: false
+    t.string "rule_code", null: false
+    t.string "rule_kind", default: "good_practice", null: false
+    t.datetime "updated_at", null: false
+    t.index ["indicator_catalog_id", "rule_code"], name: "index_indicator_rules_on_catalog_and_code", unique: true
+    t.index ["indicator_catalog_id"], name: "index_indicator_rules_on_indicator_catalog_id"
+  end
+
   create_table "installations", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.string "counter_key", null: false
     t.datetime "created_at", null: false
@@ -408,6 +448,19 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_27_120700) do
     t.index ["consultation_room_id", "slot_date", "starts_at"], name: "index_room_capacity_slots_on_room_date_start", unique: true
   end
 
+  create_table "team_indicator_results", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "care_team_id", null: false
+    t.datetime "created_at", null: false
+    t.string "indicator_code", null: false
+    t.uuid "municipality_id", null: false
+    t.decimal "projected_transfer", precision: 12, scale: 2
+    t.string "quadrimester", null: false
+    t.decimal "score", precision: 5, scale: 2
+    t.string "tier"
+    t.datetime "updated_at", null: false
+    t.index ["care_team_id", "indicator_code", "quadrimester"], name: "index_team_indicator_results_unique", unique: true
+  end
+
   create_table "transport_records", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.bigint "batch_number"
     t.uuid "care_team_id"
@@ -478,13 +531,19 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_27_120700) do
 
   add_foreign_key "care_teams", "health_facilities"
   add_foreign_key "care_teams", "municipalities"
+  add_foreign_key "citizen_indicator_gaps", "care_teams"
+  add_foreign_key "citizen_indicator_gaps", "citizens"
+  add_foreign_key "citizen_indicator_gaps", "municipalities"
   add_foreign_key "encounters", "appointments"
   add_foreign_key "facility_micro_area_coverages", "health_facilities"
   add_foreign_key "facility_micro_area_coverages", "micro_areas"
   add_foreign_key "health_facilities", "municipalities"
   add_foreign_key "household_animals", "households"
+  add_foreign_key "indicator_rules", "indicator_catalog"
   add_foreign_key "micro_areas", "care_teams"
   add_foreign_key "micro_areas", "municipalities"
+  add_foreign_key "team_indicator_results", "care_teams"
+  add_foreign_key "team_indicator_results", "municipalities"
   add_foreign_key "user_municipality_memberships", "health_facilities"
   add_foreign_key "user_municipality_memberships", "municipalities"
   add_foreign_key "user_municipality_memberships", "users"

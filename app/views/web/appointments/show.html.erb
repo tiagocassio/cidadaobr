@@ -9,9 +9,28 @@
     <p><strong>Canal:</strong> <%= @appointment.channel %></p>
   </div>
 
-  <div class="mt-4 flex gap-2">
+  <div class="mt-4 flex flex-wrap gap-2">
     <% unless @appointment.status.in?(%w[completed cancelled no_show]) %>
       <%= button_to "Cancelar", cancel_web_appointment_path(@appointment), class: "rounded border border-red-300 px-4 py-2 text-sm text-red-700" %>
     <% end %>
   </div>
+
+  <% if @reschedule_slots.present? %>
+    <div class="mt-8 rounded-lg border border-slate-200 bg-white p-6">
+      <h3 class="mb-4 text-lg font-semibold">Reagendar</h3>
+      <%= form_with url: reschedule_web_appointment_path(@appointment), method: :post, class: "flex flex-wrap items-end gap-4" do |form| %>
+        <div>
+          <label class="mb-1 block text-sm font-medium" for="room_capacity_slot_id">Novo horário</label>
+          <select id="room_capacity_slot_id" name="room_capacity_slot_id" class="rounded border border-slate-300 px-3 py-2 text-sm" required>
+            <% @reschedule_slots.each do |slot| %>
+              <option value="<%= slot.id %>">
+                <%= slot.starts_at.strftime("%H:%M") %> · <%= slot.consultation_room.name %> (<%= slot.booked_count %>/<%= slot.capacity %>)
+              </option>
+            <% end %>
+          </select>
+        </div>
+        <%= form.submit "Reagendar", class: "rounded bg-emerald-700 px-4 py-2 text-sm font-semibold text-white" %>
+      <% end %>
+    </div>
+  <% end %>
 </section>

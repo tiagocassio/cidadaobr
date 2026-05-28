@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-# Command for EPIC-03 follow-up; not exposed on web/API routes yet.
+# Command for EPIC-03 scheduling flows (web reception and citizen API).
 module Scheduling
   class RescheduleAppointment < ApplicationCommand
     def initialize(appointment:, scheduled_at:, room_capacity_slot_id:)
@@ -23,7 +23,6 @@ module Scheduling
         same_slot = capacity_slot.id == current_slot_id
 
         unless same_slot
-          SlotCapacity.reserve!(capacity_slot.id)
           release_slot!(@appointment)
 
           AppointmentRoomSlot.create!(
@@ -33,6 +32,9 @@ module Scheduling
             appointment: @appointment,
             status: "reserved"
           )
+
+          # Citizen slot UPDATE policy requires a reserved appointment_room_slot before reserve! can run.
+          SlotCapacity.reserve!(capacity_slot.id)
         end
 
         @appointment.update!(scheduled_at: @scheduled_at, status: "scheduled")
@@ -58,6 +60,7 @@ module Scheduling
     private
 
     def validate_reschedule_slot!(appointment, capacity_slot)
+      # Reschedule keeps the same consultation room; only time/capacity slot changes.
       if capacity_slot.municipality_id != appointment.municipality_id ||
          capacity_slot.health_facility_id != appointment.health_facility_id ||
          capacity_slot.consultation_room_id != appointment.consultation_room_id

@@ -139,4 +139,123 @@ RSpec.describe "Web appointments", type: :request do
       expect(response).to redirect_to(web_root_path)
     end
   end
+
+  context "with facility manager reschedule access" do
+    let(:municipality) { create(:municipality) }
+    let(:facility) { create(:health_facility, municipality: municipality) }
+    let(:team) { create(:care_team, municipality: municipality, health_facility: facility) }
+    let(:facility_manager) do
+      create(:user_municipality_membership, municipality: municipality, health_facility: facility, scope: "facility", role_code: "facility_manager")
+    end
+    let!(:service_type) do
+      with_tenant(facility_manager) do
+        AppointmentServiceType.create!(municipality: municipality, code: "medical_consultation", name: "Consulta")
+      end
+    end
+    let!(:room) do
+      with_tenant(facility_manager) do
+        ConsultationRoom.create!(municipality: municipality, health_facility: facility, name: "Sala 1", room_kind: "general")
+      end
+    end
+    let!(:morning_slot) do
+      with_tenant(facility_manager) do
+        RoomCapacitySlot.create!(
+          municipality: municipality,
+          health_facility: facility,
+          consultation_room: room,
+          slot_date: Date.current,
+          starts_at: "09:00",
+          ends_at: "09:20",
+          capacity: 1,
+          booked_count: 0
+        )
+      end
+    end
+    let!(:later_slot) do
+      with_tenant(facility_manager) do
+        RoomCapacitySlot.create!(
+          municipality: municipality,
+          health_facility: facility,
+          consultation_room: room,
+          slot_date: Date.current,
+          starts_at: "10:00",
+          ends_at: "10:20",
+          capacity: 1,
+          booked_count: 0
+        )
+      end
+    end
+    let!(:other_room) do
+      with_tenant(facility_manager) do
+        ConsultationRoom.create!(municipality: municipality, health_facility: facility, name: "Sala 2", room_kind: "general")
+      end
+    end
+    let!(:other_room_slot) do
+      with_tenant(facility_manager) do
+        RoomCapacitySlot.create!(
+          municipality: municipality,
+          health_facility: facility,
+          consultation_room: other_room,
+          slot_date: Date.current,
+          starts_at: "11:00",
+          ends_at: "11:20",
+          capacity: 1,
+          booked_count: 0
+        )
+      end
+    end
+    let!(:citizen) do
+      with_tenant(facility_manager) do
+        create(:citizen, municipality: municipality, health_facility: facility, care_team: team)
+      end
+    end
+    let!(:appointment) do
+      with_tenant(facility_manager) do
+        Scheduling::BookAppointment.call(
+          citizen_id: citizen.id,
+          appointment_service_type_id: service_type.id,
+          consultation_room_id: room.id,
+          scheduled_at: Time.zone.parse("#{Date.current} 09:00"),
+          room_capacity_slot_id: morning_slot.id,
+          channel: "web_reception"
+        )
+      end
+    end
+
+    before { sign_in_web(user: facility_manager.user, membership: facility_manager) }
+
+    it "reschedules an appointment to another slot in the same room" do
+      post reschedule_web_appointment_path(appointment), params: { room_capacity_slot_id: later_slot.id }
+
+      expect(response).to redirect_to(web_appointment_path(appointment))
+      follow_redirect!
+      expect(response.body).to include("Consulta reagendada")
+
+      with_tenant(facility_manager) do
+        expect(appointment.reload.scheduled_at).to eq(Time.zone.parse("#{Date.current} 10:00"))
+        expect(appointment.appointment_room_slot.room_capacity_slot_id).to eq(later_slot.id)
+      end
+    end
+
+    it "does not offer slots from another room on the appointment page" do
+      get web_appointment_path(appointment)
+
+      expect(response).to have_http_status(:ok)
+      expect(response.body).to include(later_slot.starts_at.strftime("%H:%M"))
+      expect(response.body).not_to include("Sala 2")
+    end
+
+    it "rejects reschedule to a slot in another room" do
+      post reschedule_web_appointment_path(appointment), params: { room_capacity_slot_id: other_room_slot.id }
+
+      expect(response).to redirect_to(web_appointment_path(appointment))
+      follow_redirect!
+      expect(response.body).to include("Dados inválidos para reagendamento")
+
+      with_tenant(facility_manager) do
+        expect(appointment.reload.scheduled_at).to eq(Time.zone.parse("#{Date.current} 09:00"))
+        expect(appointment.appointment_room_slot.room_capacity_slot_id).to eq(morning_slot.id)
+      end
+    end
+  end
 end

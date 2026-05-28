@@ -39,3 +39,50 @@ Task,TASK-04-02,STORY-04-02,EPIC-04,[Cidadão] CidadãoBR Saúde — API-CITIZEN
 Story,STORY-04-03,EPIC-04,EPIC-04,[Cidadão] CidadãoBR Saúde — Carteira vacinal,3,api;citizen,TASK-04-03,F3-09
 Task,TASK-04-03,STORY-04-03,EPIC-04,[Core] CidadãoBR Saúde — Projeção citizen_immunization_records,3,backend;ledi,EPIC-01,F3-09
 Task,TASK-04-04,STORY-04-03,EPIC-04,[Cidadão] CidadãoBR Saúde — API-CITIZEN-02 carteira e cobertura,3,api;citizen,TASK-04-03,F3-10
+Epic,EPIC-05,,EPIC-05,CidadãoBR Saúde Gestão — Indicadores 3.493,4,web;indicators,,F4
+Story,STORY-05-01,EPIC-05,EPIC-05,[Gestão] CidadãoBR Saúde Gestão — Motor de indicadores,4,backend;indicators,TASK-05-01,F4-01
+Task,TASK-05-01,STORY-05-01,EPIC-05,[Gestão] CidadãoBR Saúde Gestão — Schema grupo H — indicadores,4,backend;indicators,EPIC-01,F4-01
+Task,TASK-05-02,STORY-05-01,EPIC-05,[Core] CidadãoBR Saúde — Seed 17 indicadores CVAT C1–C15,4,backend;indicators,TASK-05-01,F4-02
+Task,TASK-05-03,STORY-05-01,EPIC-05,[Core] CidadãoBR Saúde — Motor indicadores DSL v1,4,backend;indicators,TASK-05-02,F4-03
+Task,TASK-05-04,STORY-05-01,EPIC-05,[Core] CidadãoBR Saúde — Consumer Kafka recálculo gaps,4,backend;kafka,TASK-05-03,F4-04
+Task,TASK-05-08,STORY-05-01,EPIC-05,[Core] CidadãoBR Saúde — Expandir regras C1–C7 e V-ACOMP,4,backend;indicators,TASK-05-02,F4-08
+Story,STORY-05-02,EPIC-05,EPIC-05,[Gestão] CidadãoBR Saúde Gestão — Painel de desempenho,4,web;indicators,TASK-05-05,F4-05
+Task,TASK-05-05,STORY-05-02,EPIC-05,[Gestão] CidadãoBR Saúde Gestão — WEB-IND-01 Dashboard X/17,4,web;indicators,TASK-05-03,F4-05
+Task,TASK-05-06,STORY-05-02,EPIC-05,[Gestão] CidadãoBR Saúde Gestão — WEB-IND-02 Drill-down equipe e gaps,4,web;indicators,TASK-05-05,F4-06
+Task,TASK-05-07,STORY-05-02,EPIC-05,[Gestão] CidadãoBR Saúde Gestão — WEB-IND-03 Projeção repasse,4,web;indicators,TASK-05-05,F4-07
+Epic,EPIC-06,,EPIC-06,CidadãoBR Saúde Gestão — Estoque e Campanhas,5,web;stock;campaigns,EPIC-02,F5
+Story,STORY-06-01,EPIC-06,EPIC-06,[Gestão] CidadãoBR Saúde Gestão — Estoque e campanhas,5,web;stock,TASK-06-01,F5-01
+Task,TASK-06-01,STORY-06-01,EPIC-06,[Gestão] CidadãoBR Saúde Gestão — Schema grupo I — estoque e campanhas,5,backend;stock,EPIC-02,F5-01
+Task,TASK-06-02,STORY-06-01,EPIC-06,[Core] CidadãoBR Saúde — ProvisioningValidator genérico,5,backend;stock,EPIC-03,F5-02
+Task,TASK-06-03,STORY-06-01,EPIC-06,[Gestão] CidadãoBR Saúde Gestão — WEB-STOCK-01 Imunobiológicos e lotes,5,web;stock,TASK-06-01,F5-03
+Task,TASK-06-04,STORY-06-01,EPIC-06,[Gestão] CidadãoBR Saúde Gestão — WEB-CAMP-01 Wizard campanha vacinação,5,web;campaigns,TASK-06-01,F5-04
+Epic,EPIC-07,,EPIC-07,CidadãoBR Saúde Gestão — Rotas e Provisionamento,5,routing;backend;web;field,"EPIC-05,EPIC-06",F5
+Story,STORY-07-01,EPIC-07,EPIC-07,[Gestão] CidadãoBR Saúde Gestão — Rotas e público-alvo,5,backend;routing,TASK-07-01,F5-05
+Task,TASK-07-01,STORY-07-01,EPIC-07,[Gestão] CidadãoBR Saúde Gestão — Schema grupo L — rotas e provisionamento,5,backend;routing,EPIC-05,F5-05
+Task,TASK-07-02,STORY-07-01,EPIC-07,[Gestão] CidadãoBR Saúde Gestão — Público-alvo e BuildCampaignTargetList,5,backend;routing,TASK-07-01,F5-05a
+Task,TASK-07-04,STORY-07-01,EPIC-07,[Gestão] CidadãoBR Saúde Gestão — GenerateVisitRoutes TSP PostGIS,5,backend;routing,TASK-07-02,F5-05b
+Epic,EPIC-08,,EPIC-08,CidadãoBR Saúde Campo — App Profissional,5,field;mobile,EPIC-00,F5
+Story,STORY-08-01,EPIC-08,EPIC-08,[Campo] CidadãoBR Saúde Campo — API e shell offline,5,field;api,TASK-08-01,F5-06
+Task,TASK-08-01,STORY-08-01,EPIC-08,[Campo] CidadãoBR Saúde Campo — API-FIELD-01 auth e fila campanhas,5,field;api,EPIC-00,F5-06
+Task,TASK-08-02,STORY-08-01,EPIC-08,[Campo] CidadãoBR Saúde Campo — API-FIELD-02 clinical records offline,5,field;api,EPIC-01,F5-07
+Task,TASK-08-03,STORY-08-01,EPIC-08,[Campo] CidadãoBR Saúde Campo — FIELD-01 App shell e sync,5,field,TASK-08-01,F5-08
+Story,STORY-08-02,EPIC-08,EPIC-08,[Campo] CidadãoBR Saúde Campo — Fichas e gaps,5,field;ledi,TASK-08-04,F5-09
+Task,TASK-08-04,STORY-08-02,EPIC-08,[Campo] CidadãoBR Saúde Campo — FIELD-02 Formulários FCI e FCD geo,5,field,TASK-08-02,F5-09
+Task,TASK-08-05,STORY-08-02,EPIC-08,[Campo] CidadãoBR Saúde Campo — FIELD-03 FVD e checklist gaps,5,field,TASK-08-02,F5-10
+Task,TASK-08-06,STORY-08-02,EPIC-08,[Campo] CidadãoBR Saúde Campo — FIELD-04 Fila público-alvo e gaps,5,field,EPIC-05,F5-11
+Epic,EPIC-09,,EPIC-09,CidadãoBR Saúde — LEDI Completo e PEC,6,ledi;integration,EPIC-08,F6
+Story,STORY-09-01,EPIC-09,EPIC-09,[Core] CidadãoBR Saúde — LEDI completo e multirão,6,backend;ledi,TASK-09-01,F6-01
+Task,TASK-09-01,STORY-09-01,EPIC-09,[Core] CidadãoBR Saúde — Adapters LEDI restantes FAO…FCC,6,backend;ledi,EPIC-08,F6-01
+Task,TASK-09-03,STORY-09-01,EPIC-09,[Core] CidadãoBR Saúde — Integração PEC produção,6,backend;ledi,EPIC-01,F6-05
+Task,TASK-09-09,STORY-09-01,EPIC-09,[Core] CidadãoBR Saúde — Regras indicadores C8–C15,6,backend;indicators,EPIC-05,F6-14
+Epic,EPIC-10,,EPIC-10,CidadãoBR Saúde — Cidadão Plus,6,api;citizen,EPIC-04,F6
+Story,STORY-10-01,EPIC-10,EPIC-10,[Cidadão] CidadãoBR Saúde — Medicamentos contínuos,6,api;citizen,TASK-10-03,F6-10
+Task,TASK-10-01,STORY-10-01,EPIC-10,[Cidadão] CidadãoBR Saúde — panic_alerts TriggerPanicAlert,6,api;citizen,EPIC-04,F6-08
+Task,TASK-10-02,STORY-10-01,EPIC-10,[Cidadão] CidadãoBR Saúde — teleconsultation_sessions WebRTC,6,api;citizen,EPIC-03,F6-09
+Task,TASK-10-03,STORY-10-01,EPIC-10,[Cidadão] CidadãoBR Saúde — CITIZEN-03 Medicamentos contínuos,6,api;citizen,TASK-10-01,F6-10
+Epic,EPIC-11,,EPIC-11,CidadãoBR Saúde — Core IA e Produção,7,ai;infra,EPIC-09,F7
+Story,STORY-11-01,EPIC-11,EPIC-11,[Core] CidadãoBR Saúde — Pipeline IA e perfis,7,backend;ai,TASK-11-01,F7-01
+Task,TASK-11-01,STORY-11-01,EPIC-11,[Core] CidadãoBR Saúde — Pipeline citizen_feature_snapshots,7,backend;ai,EPIC-09,F7-01
+Task,TASK-11-02,STORY-11-01,EPIC-11,[Core] CidadãoBR Saúde — Scoring citizen_profiles v1,7,backend;ai,TASK-11-01,F7-02
+Task,TASK-11-04,STORY-11-01,EPIC-11,[Gestão] CidadãoBR Saúde Gestão — Import conciliação SIAPS,7,backend;indicators,EPIC-05,F7-04
+Task,TASK-11-06,STORY-11-01,EPIC-11,[Gestão] CidadãoBR Saúde Gestão — WEB-REP-01 Relatórios consolidados,7,web;reports,EPIC-05,F7-06
