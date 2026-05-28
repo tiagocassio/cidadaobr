@@ -23,7 +23,7 @@
         <% @ledi_batches.each do |batch| %>
           <tr class="border-t border-slate-100">
             <td class="px-4 py-3"><%= batch.batch_number %></td>
-            <td class="px-4 py-3"><%= batch.status %></td>
+            <td class="px-4 py-3"><%= batch.status %><% if batch.rejection_reason.present? %> — <%= truncate(batch.rejection_reason, length: 40) %><% end %></td>
             <td class="px-4 py-3"><%= batch.health_facility&.name || "—" %></td>
             <td class="px-4 py-3"><%= batch.ledi_version %></td>
             <td class="px-4 py-3 text-right">

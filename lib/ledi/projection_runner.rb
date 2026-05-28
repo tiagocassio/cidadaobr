@@ -10,6 +10,8 @@ module Ledi
         Projectors::CitizenProjector.call(clinical_record: clinical_record)
       when "FCD"
         Projectors::HouseholdProjector.call(clinical_record: clinical_record)
+      when "FV"
+        Projectors::CitizenImmunizationProjector.call(clinical_record: clinical_record)
       when *ENCOUNTER_RECORD_TYPES
         Projectors::EncounterProjector.call(clinical_record: clinical_record)
       end

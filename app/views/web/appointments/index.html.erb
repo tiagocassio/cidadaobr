@@ -1,0 +1,34 @@
+<section>
+  <div class="mb-6 flex flex-wrap items-center justify-between gap-4">
+    <h2 class="text-2xl font-bold">Agenda UBS</h2>
+    <%= link_to "Nova marcação", new_web_appointment_path(facility_scope_params), class: "rounded bg-emerald-700 px-4 py-2 text-sm font-semibold text-white" %>
+    <%= link_to "Fila recepção", reception_web_appointments_path(facility_scope_params), class: "rounded border border-slate-300 px-4 py-2 text-sm" %>
+  </div>
+
+  <div class="overflow-hidden rounded-lg border border-slate-200 bg-white">
+    <table class="min-w-full text-sm">
+      <thead class="bg-slate-50 text-left">
+        <tr>
+          <th class="px-4 py-3">Horário</th>
+          <th class="px-4 py-3">Cidadão</th>
+          <th class="px-4 py-3">Serviço</th>
+          <th class="px-4 py-3">Status</th>
+          <th class="px-4 py-3"></th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @schedule[:appointments].each do |appointment| %>
+          <tr class="border-t border-slate-100">
+            <td class="px-4 py-3"><%= appointment.scheduled_at.strftime("%d/%m %H:%M") %></td>
+            <td class="px-4 py-3"><%= appointment.citizen.full_name.presence || appointment.citizen.cpf %></td>
+            <td class="px-4 py-3"><%= appointment.appointment_service_type.name %></td>
+            <td class="px-4 py-3"><%= appointment.status %></td>
+            <td class="px-4 py-3 text-right">
+              <%= link_to "Ver", web_appointment_path(appointment), class: "text-emerald-700 hover:underline" %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+</section>

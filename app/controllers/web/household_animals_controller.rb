@@ -4,7 +4,7 @@
 # Write access is intentional; only read-only roles should use a stricter before_action later.
 module Web
   class HouseholdAnimalsController < BaseController
-    before_action :set_household
+    before_action :set_household, only: :create
 
     def create
       @household_animal = @household.household_animals.build(household_animal_params)

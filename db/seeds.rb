@@ -6,12 +6,32 @@ municipality = Municipality.find_or_create_by!(ibge_code: "3550308") do |record|
   record.state_code = "SP"
 end
 
-facility_a = HealthFacility.find_or_create_by!(municipality: municipality, cnes: "2000001") do |record|
-  record.name = "UBS Centro"
+facility_a = Cidadaobr::TenantContext.with(
+  Cidadaobr::TenantScope.new(
+    municipality_id: municipality.id,
+    scope: "municipality",
+    health_facility_id: nil,
+    team_ids: [],
+    citizen_id: nil
+  )
+) do
+  HealthFacility.find_or_create_by!(municipality: municipality, cnes: "2000001") do |record|
+    record.name = "UBS Centro"
+  end
 end
 
-facility_b = HealthFacility.find_or_create_by!(municipality: municipality, cnes: "2000002") do |record|
-  record.name = "UBS Norte"
+facility_b = Cidadaobr::TenantContext.with(
+  Cidadaobr::TenantScope.new(
+    municipality_id: municipality.id,
+    scope: "municipality",
+    health_facility_id: nil,
+    team_ids: [],
+    citizen_id: nil
+  )
+) do
+  HealthFacility.find_or_create_by!(municipality: municipality, cnes: "2000002") do |record|
+    record.name = "UBS Norte"
+  end
 end
 
 admin_role = Role.find_or_create_by!(code: "municipal_admin") do |record|

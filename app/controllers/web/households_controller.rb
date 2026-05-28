@@ -15,6 +15,7 @@ module Web
     def show
       @household_animals = @household.household_animals.order(:species)
       @household_animal = HouseholdAnimal.new
+      @citizens_for_select = scoped_citizens.order(:full_name).limit(200)
     end
 
     def map

@@ -205,6 +205,10 @@ module Cidadaobr
     end
 
     def ensure_optional_table_policies!(connection)
+      if connection.table_exists?(:health_facilities)
+        connection.execute health_facilities_policies
+      end
+
       if connection.table_exists?(:installations)
         connection.execute municipality_scoped_only_table_policies_for(:installations)
       end
@@ -213,6 +217,10 @@ module Cidadaobr
         next unless connection.table_exists?(table_name)
 
         connection.execute tenant_table_policies_for(table_name)
+      end
+
+      if connection.table_exists?(:citizens)
+        connection.execute citizens_citizen_self_read_policy
       end
 
       if connection.table_exists?(:micro_areas)
@@ -239,6 +247,343 @@ module Cidadaobr
       if connection.table_exists?(:household_members) && connection.table_exists?(:households)
         connection.execute(household_members_policies)
       end
+
+      %i[consultation_rooms room_capacity_slots].each do |table_name|
+        next unless connection.table_exists?(table_name)
+
+        connection.execute health_facility_scoped_table_policies_for(table_name)
+      end
+
+      if connection.table_exists?(:appointments)
+        connection.execute tenant_table_policies_for(:appointments)
+        connection.execute tenant_table_citizen_access_policy_for(:appointments)
+        connection.execute citizen_domain_event_access_policies_sql(include_appointments: true)
+        connection.execute citizen_outbox_message_access_policies_sql(include_appointments: true)
+        connection.execute citizen_scheduling_catalog_policies_sql(connection)
+      end
+
+      if connection.table_exists?(:appointment_room_slots) && connection.table_exists?(:appointments)
+        connection.execute appointment_room_slots_citizen_access_policy
+      end
+
+      %i[appointment_waitlist_entries professional_availability_blocks].each do |table_name|
+        next unless connection.table_exists?(table_name)
+
+        connection.execute health_facility_scoped_table_policies_for(table_name)
+      end
+
+      if connection.table_exists?(:appointment_room_slots)
+        connection.execute health_facility_scoped_table_policies_for(:appointment_room_slots)
+      end
+      %i[appointment_service_types].each do |table_name|
+        next unless connection.table_exists?(table_name)
+
+        connection.execute municipality_only_table_policies_for(table_name)
+      end
+
+      %i[citizen_accounts citizen_immunization_records].each do |table_name|
+        next unless connection.table_exists?(table_name)
+
+        connection.execute citizen_table_policies_for(table_name)
+      end
+    end
+
+    def citizens_citizen_self_read_policy
+      <<~SQL
+        DROP POLICY IF EXISTS citizens_citizen_access ON citizens;
+        CREATE POLICY citizens_citizen_access ON citizens
+          FOR SELECT
+          USING (
+            municipality_id = NULLIF(current_setting('app.current_municipality_id', true), '')::uuid
+            AND current_setting('app.current_scope', true) = 'citizen'
+            AND id = NULLIF(current_setting('app.current_citizen_id', true), '')::uuid
+          );
+      SQL
+    end
+
+    def health_facility_scoped_table_policies_for(table_name)
+      <<~SQL
+        ALTER TABLE #{table_name} ENABLE ROW LEVEL SECURITY;
+        ALTER TABLE #{table_name} FORCE ROW LEVEL SECURITY;
+
+        DROP POLICY IF EXISTS #{table_name}_municipal_access ON #{table_name};
+        CREATE POLICY #{table_name}_municipal_access ON #{table_name}
+          FOR ALL
+          USING (
+            municipality_id = NULLIF(current_setting('app.current_municipality_id', true), '')::uuid
+            AND current_setting('app.current_scope', true) = 'municipality'
+          )
+          WITH CHECK (
+            municipality_id = NULLIF(current_setting('app.current_municipality_id', true), '')::uuid
+            AND current_setting('app.current_scope', true) = 'municipality'
+          );
+
+        DROP POLICY IF EXISTS #{table_name}_team_access ON #{table_name};
+        CREATE POLICY #{table_name}_team_access ON #{table_name}
+          FOR ALL
+          USING (
+            municipality_id = NULLIF(current_setting('app.current_municipality_id', true), '')::uuid
+            AND current_setting('app.current_scope', true) = 'team'
+            AND EXISTS (
+              SELECT 1
+              FROM care_teams ct
+              WHERE ct.health_facility_id = #{table_name}.health_facility_id
+                AND ct.id::text = ANY(
+                  string_to_array(NULLIF(current_setting('app.current_team_ids', true), ''), ',')
+                )
+            )
+          )
+          WITH CHECK (
+            municipality_id = NULLIF(current_setting('app.current_municipality_id', true), '')::uuid
+            AND current_setting('app.current_scope', true) = 'team'
+            AND EXISTS (
+              SELECT 1
+              FROM care_teams ct
+              WHERE ct.health_facility_id = #{table_name}.health_facility_id
+                AND ct.id::text = ANY(
+                  string_to_array(NULLIF(current_setting('app.current_team_ids', true), ''), ',')
+                )
+            )
+          );
+
+        DROP POLICY IF EXISTS #{table_name}_facility_access ON #{table_name};
+        CREATE POLICY #{table_name}_facility_access ON #{table_name}
+          FOR ALL
+          USING (
+            municipality_id = NULLIF(current_setting('app.current_municipality_id', true), '')::uuid
+            AND current_setting('app.current_scope', true) = 'facility'
+            AND health_facility_id = NULLIF(current_setting('app.current_health_facility_id', true), '')::uuid
+          )
+          WITH CHECK (
+            municipality_id = NULLIF(current_setting('app.current_municipality_id', true), '')::uuid
+            AND current_setting('app.current_scope', true) = 'facility'
+            AND health_facility_id = NULLIF(current_setting('app.current_health_facility_id', true), '')::uuid
+          );
+      SQL
+    end
+
+    def tenant_table_citizen_access_policy_for(table_name)
+      <<~SQL
+        DROP POLICY IF EXISTS #{table_name}_citizen_access ON #{table_name};
+        CREATE POLICY #{table_name}_citizen_access ON #{table_name}
+          FOR ALL
+          USING (
+            municipality_id = NULLIF(current_setting('app.current_municipality_id', true), '')::uuid
+            AND current_setting('app.current_scope', true) = 'citizen'
+            AND citizen_id = NULLIF(current_setting('app.current_citizen_id', true), '')::uuid
+          )
+          WITH CHECK (
+            municipality_id = NULLIF(current_setting('app.current_municipality_id', true), '')::uuid
+            AND current_setting('app.current_scope', true) = 'citizen'
+            AND citizen_id = NULLIF(current_setting('app.current_citizen_id', true), '')::uuid
+          );
+      SQL
+    end
+
+    def citizen_domain_event_access_policies_sql(include_appointments: false)
+      aggregate_condition = citizen_domain_event_aggregate_condition(include_appointments)
+
+      <<~SQL
+        DROP POLICY IF EXISTS domain_events_citizen_access ON domain_events;
+        CREATE POLICY domain_events_citizen_access ON domain_events
+          FOR ALL
+          USING (
+            municipality_id = NULLIF(current_setting('app.current_municipality_id', true), '')::uuid
+            AND current_setting('app.current_scope', true) = 'citizen'
+            AND #{aggregate_condition}
+          )
+          WITH CHECK (
+            municipality_id = NULLIF(current_setting('app.current_municipality_id', true), '')::uuid
+            AND current_setting('app.current_scope', true) = 'citizen'
+            AND #{aggregate_condition}
+          );
+      SQL
+    end
+
+    def citizen_outbox_message_access_policies_sql(include_appointments: false)
+      aggregate_condition = citizen_domain_event_aggregate_condition(include_appointments, table_alias: "de")
+
+      <<~SQL
+        DROP POLICY IF EXISTS outbox_messages_citizen_access ON outbox_messages;
+        CREATE POLICY outbox_messages_citizen_access ON outbox_messages
+          FOR ALL
+          USING (
+            municipality_id = NULLIF(current_setting('app.current_municipality_id', true), '')::uuid
+            AND current_setting('app.current_scope', true) = 'citizen'
+            AND EXISTS (
+              SELECT 1
+              FROM domain_events de
+              WHERE de.id = outbox_messages.domain_event_id
+                AND #{aggregate_condition}
+            )
+          )
+          WITH CHECK (
+            municipality_id = NULLIF(current_setting('app.current_municipality_id', true), '')::uuid
+            AND current_setting('app.current_scope', true) = 'citizen'
+            AND EXISTS (
+              SELECT 1
+              FROM domain_events de
+              WHERE de.id = outbox_messages.domain_event_id
+                AND #{aggregate_condition}
+            )
+          );
+      SQL
+    end
+
+    def citizen_domain_event_aggregate_condition(include_appointments, table_alias: "domain_events")
+      citizen_id_expr = "NULLIF(current_setting('app.current_citizen_id', true), '')::uuid"
+      aggregate_ref = "#{table_alias}.aggregate_id"
+
+      if include_appointments
+        <<~SQL.squish
+          (
+            #{aggregate_ref} = #{citizen_id_expr}
+            OR (
+              #{table_alias}.aggregate_type = 'Appointment'
+              AND EXISTS (
+                SELECT 1
+                FROM appointments a
+                WHERE a.id = #{aggregate_ref}
+                  AND a.citizen_id = #{citizen_id_expr}
+              )
+            )
+          )
+        SQL
+      else
+        "#{aggregate_ref} = #{citizen_id_expr}"
+      end
+    end
+
+    def citizen_scheduling_catalog_policies_sql(connection)
+      sql = +""
+      if connection.table_exists?(:consultation_rooms)
+        sql << citizen_facility_scoped_read_policy_for(:consultation_rooms)
+      end
+      if connection.table_exists?(:room_capacity_slots)
+        sql << citizen_facility_scoped_read_policy_for(:room_capacity_slots)
+      end
+      sql << citizen_municipality_read_policy_for(:appointment_service_types) if connection.table_exists?(:appointment_service_types)
+      sql << room_capacity_slots_citizen_booking_policy if connection.table_exists?(:room_capacity_slots)
+      sql
+    end
+
+    def citizen_facility_scoped_read_policy_for(table_name)
+      citizen_id_expr = "NULLIF(current_setting('app.current_citizen_id', true), '')::uuid"
+
+      <<~SQL
+        DROP POLICY IF EXISTS #{table_name}_citizen_read ON #{table_name};
+        CREATE POLICY #{table_name}_citizen_read ON #{table_name}
+          FOR SELECT
+          USING (
+            municipality_id = NULLIF(current_setting('app.current_municipality_id', true), '')::uuid
+            AND current_setting('app.current_scope', true) = 'citizen'
+            AND health_facility_id = (
+              SELECT c.health_facility_id
+              FROM citizens c
+              WHERE c.id = #{citizen_id_expr}
+            )
+          );
+      SQL
+    end
+
+    def citizen_municipality_read_policy_for(table_name)
+      <<~SQL
+        DROP POLICY IF EXISTS #{table_name}_citizen_read ON #{table_name};
+        CREATE POLICY #{table_name}_citizen_read ON #{table_name}
+          FOR SELECT
+          USING (
+            municipality_id = NULLIF(current_setting('app.current_municipality_id', true), '')::uuid
+            AND current_setting('app.current_scope', true) = 'citizen'
+          );
+      SQL
+    end
+
+    def room_capacity_slots_citizen_booking_policy
+      <<~SQL
+        DROP POLICY IF EXISTS room_capacity_slots_citizen_booking ON room_capacity_slots;
+        CREATE POLICY room_capacity_slots_citizen_booking ON room_capacity_slots
+          FOR UPDATE
+          USING (
+            municipality_id = NULLIF(current_setting('app.current_municipality_id', true), '')::uuid
+            AND current_setting('app.current_scope', true) = 'citizen'
+            AND EXISTS (
+              SELECT 1
+              FROM appointment_room_slots ars
+              INNER JOIN appointments a ON a.id = ars.appointment_id
+              WHERE ars.room_capacity_slot_id = room_capacity_slots.id
+                AND ars.status = 'reserved'
+                AND a.citizen_id = NULLIF(current_setting('app.current_citizen_id', true), '')::uuid
+            )
+          )
+          WITH CHECK (
+            municipality_id = NULLIF(current_setting('app.current_municipality_id', true), '')::uuid
+            AND current_setting('app.current_scope', true) = 'citizen'
+          );
+      SQL
+    end
+
+    def appointment_room_slots_citizen_access_policy
+      <<~SQL
+        DROP POLICY IF EXISTS appointment_room_slots_citizen_access ON appointment_room_slots;
+        CREATE POLICY appointment_room_slots_citizen_access ON appointment_room_slots
+          FOR ALL
+          USING (
+            municipality_id = NULLIF(current_setting('app.current_municipality_id', true), '')::uuid
+            AND current_setting('app.current_scope', true) = 'citizen'
+            AND EXISTS (
+              SELECT 1
+              FROM appointments a
+              WHERE a.id = appointment_room_slots.appointment_id
+                AND a.citizen_id = NULLIF(current_setting('app.current_citizen_id', true), '')::uuid
+            )
+          )
+          WITH CHECK (
+            municipality_id = NULLIF(current_setting('app.current_municipality_id', true), '')::uuid
+            AND current_setting('app.current_scope', true) = 'citizen'
+            AND EXISTS (
+              SELECT 1
+              FROM appointments a
+              WHERE a.id = appointment_room_slots.appointment_id
+                AND a.citizen_id = NULLIF(current_setting('app.current_citizen_id', true), '')::uuid
+            )
+          );
+      SQL
+    end
+
+    def citizen_table_policies_for(table_name)
+      <<~SQL
+        ALTER TABLE #{table_name} ENABLE ROW LEVEL SECURITY;
+        ALTER TABLE #{table_name} FORCE ROW LEVEL SECURITY;
+
+        DROP POLICY IF EXISTS #{table_name}_municipal_access ON #{table_name};
+        CREATE POLICY #{table_name}_municipal_access ON #{table_name}
+          FOR ALL
+          USING (
+            municipality_id = NULLIF(current_setting('app.current_municipality_id', true), '')::uuid
+            AND current_setting('app.current_scope', true) = 'municipality'
+          )
+          WITH CHECK (
+            municipality_id = NULLIF(current_setting('app.current_municipality_id', true), '')::uuid
+            AND current_setting('app.current_scope', true) = 'municipality'
+          );
+
+        DROP POLICY IF EXISTS #{table_name}_citizen_access ON #{table_name};
+        CREATE POLICY #{table_name}_citizen_access ON #{table_name}
+          FOR ALL
+          USING (
+            municipality_id = NULLIF(current_setting('app.current_municipality_id', true), '')::uuid
+            AND current_setting('app.current_scope', true) = 'citizen'
+            AND citizen_id = NULLIF(current_setting('app.current_citizen_id', true), '')::uuid
+          )
+          WITH CHECK (
+            municipality_id = NULLIF(current_setting('app.current_municipality_id', true), '')::uuid
+            AND current_setting('app.current_scope', true) = 'citizen'
+            AND citizen_id = NULLIF(current_setting('app.current_citizen_id', true), '')::uuid
+          );
+
+        DROP POLICY IF EXISTS #{table_name}_team_access ON #{table_name};
+        DROP POLICY IF EXISTS #{table_name}_facility_access ON #{table_name};
+      SQL
     end
 
     def municipality_scoped_only_table_policies_for(table_name)
@@ -465,6 +810,68 @@ module Cidadaobr
                       AND ct.health_facility_id = NULLIF(current_setting('app.current_health_facility_id', true), '')::uuid
                   )
                 )
+            )
+          );
+      SQL
+    end
+
+    def health_facilities_policies
+      <<~SQL
+        ALTER TABLE health_facilities ENABLE ROW LEVEL SECURITY;
+        ALTER TABLE health_facilities FORCE ROW LEVEL SECURITY;
+
+        DROP POLICY IF EXISTS health_facilities_municipal_access ON health_facilities;
+        CREATE POLICY health_facilities_municipal_access ON health_facilities
+          FOR ALL
+          USING (
+            municipality_id = NULLIF(current_setting('app.current_municipality_id', true), '')::uuid
+            AND current_setting('app.current_scope', true) = 'municipality'
+          )
+          WITH CHECK (
+            municipality_id = NULLIF(current_setting('app.current_municipality_id', true), '')::uuid
+            AND current_setting('app.current_scope', true) = 'municipality'
+          );
+
+        DROP POLICY IF EXISTS health_facilities_team_access ON health_facilities;
+        CREATE POLICY health_facilities_team_access ON health_facilities
+          FOR SELECT
+          USING (
+            municipality_id = NULLIF(current_setting('app.current_municipality_id', true), '')::uuid
+            AND current_setting('app.current_scope', true) = 'team'
+            AND EXISTS (
+              SELECT 1
+              FROM care_teams ct
+              WHERE ct.health_facility_id = health_facilities.id
+                AND ct.id::text = ANY(
+                  string_to_array(NULLIF(current_setting('app.current_team_ids', true), ''), ',')
+                )
+            )
+          );
+
+        DROP POLICY IF EXISTS health_facilities_facility_access ON health_facilities;
+        CREATE POLICY health_facilities_facility_access ON health_facilities
+          FOR ALL
+          USING (
+            municipality_id = NULLIF(current_setting('app.current_municipality_id', true), '')::uuid
+            AND current_setting('app.current_scope', true) = 'facility'
+            AND id = NULLIF(current_setting('app.current_health_facility_id', true), '')::uuid
+          )
+          WITH CHECK (
+            municipality_id = NULLIF(current_setting('app.current_municipality_id', true), '')::uuid
+            AND current_setting('app.current_scope', true) = 'facility'
+            AND id = NULLIF(current_setting('app.current_health_facility_id', true), '')::uuid
+          );
+
+        DROP POLICY IF EXISTS health_facilities_citizen_access ON health_facilities;
+        CREATE POLICY health_facilities_citizen_access ON health_facilities
+          FOR SELECT
+          USING (
+            municipality_id = NULLIF(current_setting('app.current_municipality_id', true), '')::uuid
+            AND current_setting('app.current_scope', true) = 'citizen'
+            AND id = (
+              SELECT c.health_facility_id
+              FROM citizens c
+              WHERE c.id = NULLIF(current_setting('app.current_citizen_id', true), '')::uuid
             )
           );
       SQL

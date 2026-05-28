@@ -19,6 +19,22 @@ class KarafkaApp < Karafka::App
       consumer LediBatchReadyConsumer
     end
 
+    topic "ledi.batch.statuschanged" do
+      consumer PlatformEventConsumer
+    end
+
+    %w[
+      appointment.booked
+      appointment.checkedin
+      appointment.rescheduled
+      appointment.completed
+      appointment.cancelled
+    ].each do |topic_name|
+      topic topic_name do
+        consumer PlatformEventConsumer
+      end
+    end
+
     topic "citizen.registered" do
       consumer CitizenRegisteredConsumer
     end

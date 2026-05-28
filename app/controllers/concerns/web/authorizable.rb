@@ -5,7 +5,7 @@ module Web
     extend ActiveSupport::Concern
 
     included do
-      helper_method :municipality_scope?, :facility_scope?, :current_municipality if respond_to?(:helper_method)
+      helper_method :municipality_scope?, :facility_scope?, :team_scope?, :current_municipality if respond_to?(:helper_method)
     end
 
     private
@@ -22,6 +22,10 @@ module Web
       current_membership&.scope == "facility"
     end
 
+    def team_scope?
+      current_membership&.scope == "team"
+    end
+
     def require_municipality_scope!
       return if municipality_scope?
 
@@ -36,6 +40,12 @@ module Web
 
     def require_facility_or_municipality_write!
       return if municipality_scope? || facility_scope?
+
+      redirect_to web_root_path, alert: "Acesso não autorizado."
+    end
+
+    def require_reception_operations!
+      return if municipality_scope? || facility_scope? || team_scope?
 
       redirect_to web_root_path, alert: "Acesso não autorizado."
     end
@@ -95,6 +105,28 @@ module Web
       end
 
       scope.where(care_team_id: current_membership.user.team_ids_for(current_municipality.id))
+    end
+
+    def scoped_appointments
+      scope = Appointment.where(municipality_id: current_municipality.id)
+      return scope if municipality_scope?
+
+      if facility_scope?
+        return scope.where(health_facility_id: current_membership.health_facility_id)
+      end
+
+      scope.where(care_team_id: current_membership.user.team_ids_for(current_municipality.id))
+    end
+
+    def scoped_consultation_rooms
+      scope = ConsultationRoom.where(municipality_id: current_municipality.id)
+      return scope if municipality_scope?
+
+      if facility_scope?
+        return scope.where(health_facility_id: current_membership.health_facility_id)
+      end
+
+      scope.where(health_facility_id: scoped_health_facilities.select(:id))
     end
 
     def scope_for_health_facility(scope)

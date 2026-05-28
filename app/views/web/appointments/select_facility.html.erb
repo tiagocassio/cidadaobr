@@ -1,0 +1,11 @@
+<section>
+  <h2 class="mb-6 text-2xl font-bold">Selecione a UBS</h2>
+
+  <ul class="space-y-2">
+    <% @health_facilities.each do |facility| %>
+      <li>
+        <%= link_to facility.name, web_appointments_path(health_facility_id: facility.id), class: "block rounded border border-slate-200 bg-white px-4 py-3 hover:border-emerald-600" %>
+      </li>
+    <% end %>
+  </ul>
+</section>

@@ -37,10 +37,11 @@ bin/setup --skip-server
 
 O `bin/setup` roda `db:prepare` como `postgres` e reaplica grants/policies RLS via `Cidadaobr::DatabaseBootstrap`.
 
-Para migrar manualmente:
+Para migrar manualmente (usa `POSTGRES_SCHEMA_USER` automaticamente nas tasks `db:migrate`, `db:rollback`, etc.):
 
 ```bash
-POSTGRES_APP_USER=postgres POSTGRES_APP_PASSWORD=postgres bin/rails db:prepare
+bin/rails db:migrate
+bin/rails db:prepare
 ```
 
 ## Testes
@@ -79,6 +80,10 @@ bin/rails ledi:catalog:import_xsd              # stub para importação futura v
 ```
 
 Fluxo Fase 1: importar transporte → validar ficha → submeter lote (`ledi.batch.ready` no Kafka). Envio HTTP ao PEC fica para EPIC-09.
+
+Variável opcional `LEDI_PEC_STUB_REJECT=true` faz o consumer `LediBatchReadyConsumer` simular rejeição automática do PEC em desenvolvimento (não usar em produção).
+
+Eventos novos (`ledi.batch.status_changed`, `appointment.*`) entram na outbox via `RecordPlatformEvent`. Publique com `bin/rails outbox:publish` (ou agende o task) até existirem consumidores de negócio dedicados (EPIC-09 / EPIC-03). Karafka já registra rotas placeholder em `PlatformEventConsumer`.
 
 ## Serviços
 

@@ -7,5 +7,6 @@ module Ledi
     class UnknownCareTeamError < StandardError; end
     class AmbiguousTeamScopeError < StandardError; end
     class MissingClinicalRecordError < StandardError; end
+    class InvalidBatchStateError < StandardError; end
   end
 end

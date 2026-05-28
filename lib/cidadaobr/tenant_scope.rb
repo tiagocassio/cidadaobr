@@ -12,6 +12,16 @@ module Cidadaobr
       )
     end
 
+    def self.from_citizen_account(account)
+      new(
+        municipality_id: account.municipality_id,
+        scope: "citizen",
+        health_facility_id: nil,
+        team_ids: [],
+        citizen_id: account.citizen_id
+      )
+    end
+
     def self.from_envelope(envelope)
       municipality_id = envelope.fetch("municipality_id")
       health_facility_id = envelope["health_facility_id"].presence

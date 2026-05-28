@@ -13,6 +13,22 @@ class JwtTokenService
         scope: membership.scope,
         health_facility_id: membership.health_facility_id,
         team_ids: user.team_ids_for(membership.municipality_id),
+        citizen_id: nil,
+        exp: 12.hours.from_now.to_i
+      }
+
+      JWT.encode(payload, SECRET, ALGORITHM)
+    end
+
+    def encode_citizen(account:)
+      payload = {
+        sub: account.citizen_id,
+        account_id: account.id,
+        municipality_id: account.municipality_id,
+        scope: "citizen",
+        health_facility_id: nil,
+        team_ids: [],
+        citizen_id: account.citizen_id,
         exp: 12.hours.from_now.to_i
       }
 

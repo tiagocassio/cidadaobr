@@ -40,10 +40,10 @@ todos:
     status: pending
   - id: schema-citizen-portal
     content: "en-US: citizen_accounts, immunization_wallet, panic_alerts, teleconsultation_sessions, medication_reminders"
-    status: pending
+    status: completed
   - id: api-citizen-v1
     content: "API /api/v1/citizen: slots, BookAppointment, vaccination card, meds, panic, telehealth join"
-    status: pending
+    status: completed
   - id: indicadores-portaria
     content: "Seed indicator_catalog: CVAT + V-* + C1–C15 (Portaria 3.493, SAPS 161/2024, Notas MS)"
     status: pending
@@ -79,10 +79,10 @@ todos:
     status: pending
   - id: schema-appointments
     content: "Agendamentos UBS: appointments, service_types, slots; CQRS calendar projection; vínculo encounters"
-    status: pending
+    status: completed
   - id: web-appointments-module
     content: "Módulo web Scheduling: agenda sala/profissional, fila, check-in, no-show, relatórios ocupação"
-    status: pending
+    status: completed
   - id: phase-0-foundation
     content: "Fase 0: EPIC-00 (TASK-00-01..07)"
     status: pending
@@ -91,10 +91,10 @@ todos:
     status: pending
   - id: phase-2-ops-web
     content: "Fase 2: EPIC-02 (TASK-02-01..07)"
-    status: pending
+    status: completed
   - id: phase-3-scheduling-citizen-mvp
     content: "Fase 3: EPIC-03 + EPIC-04"
-    status: pending
+    status: completed
   - id: phase-4-indicators
     content: "Fase 4: EPIC-05 (TASK-05-01..08)"
     status: pending
@@ -2719,9 +2719,9 @@ Cada história agrupa uma ou mais **Tasks**. Na exportação CSV, `parent_id` da
 
 - [ ] **EPIC-00** CidadãoBR Saúde — Core Plataforma  
 - [x] **EPIC-01** CidadãoBR Saúde — Core LEDI  
-- [ ] **EPIC-02** CidadãoBR Saúde Gestão — Admin Municipal  
-- [ ] **EPIC-03** CidadãoBR Saúde Gestão — Agendamentos UBS  
-- [ ] **EPIC-04** CidadãoBR Saúde — MVP Cidadão  
+- [x] **EPIC-02** CidadãoBR Saúde Gestão — Admin Municipal  
+- [x] **EPIC-03** CidadãoBR Saúde Gestão — Agendamentos UBS  
+- [x] **EPIC-04** CidadãoBR Saúde — MVP Cidadão (API; app Flutter TASK-04-06/07 pendente)  
 - [ ] **EPIC-05** CidadãoBR Saúde Gestão — Indicadores 3.493  
 - [ ] **EPIC-06** CidadãoBR Saúde Gestão — Estoque e Campanhas  
 - [ ] **EPIC-07** CidadãoBR Saúde Gestão — Rotas e Provisionamento  

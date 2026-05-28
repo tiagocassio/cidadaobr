@@ -10,11 +10,65 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_05_27_120023) do
+ActiveRecord::Schema[8.1].define(version: 2026_05_27_120700) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
   enable_extension "postgis"
+
+  create_table "appointment_room_slots", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "appointment_id"
+    t.datetime "created_at", null: false
+    t.uuid "health_facility_id", null: false
+    t.uuid "municipality_id", null: false
+    t.uuid "room_capacity_slot_id", null: false
+    t.string "status", default: "available", null: false
+    t.datetime "updated_at", null: false
+    t.index ["appointment_id"], name: "index_appointment_room_slots_on_appointment_id", unique: true, where: "(appointment_id IS NOT NULL)"
+    t.index ["room_capacity_slot_id"], name: "index_appointment_room_slots_on_room_capacity_slot_id"
+  end
+
+  create_table "appointment_service_types", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.boolean "active", default: true, null: false
+    t.string "code", null: false
+    t.datetime "created_at", null: false
+    t.integer "default_duration_minutes", default: 20, null: false
+    t.uuid "municipality_id", null: false
+    t.string "name", null: false
+    t.datetime "updated_at", null: false
+    t.index ["municipality_id", "code"], name: "index_appointment_service_types_on_municipality_id_and_code", unique: true
+  end
+
+  create_table "appointment_waitlist_entries", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "appointment_service_type_id", null: false
+    t.uuid "citizen_id", null: false
+    t.datetime "created_at", null: false
+    t.uuid "health_facility_id", null: false
+    t.uuid "municipality_id", null: false
+    t.integer "priority", default: 0, null: false
+    t.string "status", default: "waiting", null: false
+    t.datetime "updated_at", null: false
+  end
+
+  create_table "appointments", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "appointment_service_type_id", null: false
+    t.uuid "care_team_id"
+    t.string "channel", default: "web_reception", null: false
+    t.uuid "citizen_id", null: false
+    t.uuid "consultation_room_id", null: false
+    t.datetime "created_at", null: false
+    t.integer "duration_minutes", default: 20, null: false
+    t.uuid "health_facility_id", null: false
+    t.string "kind", default: "scheduled", null: false
+    t.string "modality", default: "in_person", null: false
+    t.uuid "municipality_id", null: false
+    t.uuid "professional_id"
+    t.datetime "scheduled_at", null: false
+    t.string "status", default: "scheduled", null: false
+    t.datetime "updated_at", null: false
+    t.index ["health_facility_id", "status", "scheduled_at"], name: "idx_on_health_facility_id_status_scheduled_at_ef6560721a"
+    t.index ["municipality_id", "scheduled_at"], name: "index_appointments_on_municipality_id_and_scheduled_at"
+  end
 
   create_table "care_teams", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.datetime "created_at", null: false
@@ -26,6 +80,32 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_27_120023) do
     t.index ["health_facility_id"], name: "index_care_teams_on_health_facility_id"
     t.index ["municipality_id", "ine"], name: "index_care_teams_on_municipality_id_and_ine", unique: true
     t.index ["municipality_id"], name: "index_care_teams_on_municipality_id"
+  end
+
+  create_table "citizen_accounts", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.boolean "active", default: true, null: false
+    t.uuid "citizen_id", null: false
+    t.string "cpf", null: false
+    t.datetime "created_at", null: false
+    t.uuid "municipality_id", null: false
+    t.string "password_digest", null: false
+    t.datetime "updated_at", null: false
+    t.index ["citizen_id"], name: "index_citizen_accounts_on_citizen_id", unique: true
+    t.index ["municipality_id", "cpf"], name: "index_citizen_accounts_on_municipality_id_and_cpf", unique: true
+  end
+
+  create_table "citizen_immunization_records", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.date "applied_on"
+    t.uuid "citizen_id", null: false
+    t.datetime "created_at", null: false
+    t.string "dose_label"
+    t.string "lot_number"
+    t.uuid "municipality_id", null: false
+    t.string "source", default: "fv_projection", null: false
+    t.datetime "updated_at", null: false
+    t.string "vaccine_code", null: false
+    t.string "vaccine_name", null: false
+    t.index ["citizen_id", "vaccine_code", "dose_label"], name: "index_citizen_immunization_on_citizen_vaccine_dose"
   end
 
   create_table "citizens", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -78,6 +158,17 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_27_120023) do
     t.index ["transport_record_id"], name: "index_clinical_records_on_transport_record_id"
   end
 
+  create_table "consultation_rooms", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.boolean "active", default: true, null: false
+    t.datetime "created_at", null: false
+    t.uuid "health_facility_id", null: false
+    t.uuid "municipality_id", null: false
+    t.string "name", null: false
+    t.string "room_kind", default: "general", null: false
+    t.datetime "updated_at", null: false
+    t.index ["municipality_id", "health_facility_id", "name"], name: "index_consultation_rooms_on_facility_and_name", unique: true
+  end
+
   create_table "domain_events", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.uuid "aggregate_id", null: false
     t.string "aggregate_type", null: false
@@ -98,6 +189,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_27_120023) do
   end
 
   create_table "encounters", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "appointment_id"
     t.uuid "care_team_id"
     t.uuid "citizen_id"
     t.uuid "clinical_record_id"
@@ -108,6 +200,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_27_120023) do
     t.uuid "municipality_id", null: false
     t.string "record_type", null: false
     t.datetime "updated_at", null: false
+    t.index ["appointment_id"], name: "index_encounters_on_appointment_id"
     t.index ["municipality_id", "clinical_record_id", "clinical_record_item_id"], name: "index_encounters_on_municipality_and_clinical_refs", unique: true
   end
 
@@ -200,6 +293,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_27_120023) do
     t.uuid "health_facility_id"
     t.string "ledi_version", null: false
     t.uuid "municipality_id", null: false
+    t.datetime "rejected_at"
+    t.text "rejection_reason"
     t.string "status", default: "draft", null: false
     t.datetime "submitted_at"
     t.datetime "updated_at", null: false
@@ -262,16 +357,33 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_27_120023) do
     t.uuid "domain_event_id", null: false
     t.string "event_type", null: false
     t.uuid "health_facility_id"
+    t.datetime "kafka_sent_at"
     t.text "last_error"
     t.uuid "municipality_id", null: false
     t.jsonb "payload", default: {}, null: false
+    t.boolean "permanent_failure", default: false, null: false
+    t.integer "publish_attempts", default: 0, null: false
     t.datetime "published_at"
+    t.datetime "publishing_claimed_at"
     t.string "status", default: "pending", null: false
     t.string "topic", null: false
     t.datetime "updated_at", null: false
     t.index ["domain_event_id"], name: "index_outbox_messages_on_domain_event_id", unique: true
     t.index ["municipality_id"], name: "index_outbox_messages_on_municipality_id"
+    t.index ["publishing_claimed_at"], name: "index_outbox_messages_on_publishing_claimed_at", where: "((status)::text = 'publishing'::text)"
+    t.index ["status", "permanent_failure", "updated_at"], name: "index_outbox_messages_on_retryable_failed", where: "(((status)::text = 'failed'::text) AND (permanent_failure = false))"
     t.index ["status"], name: "index_outbox_messages_on_status"
+  end
+
+  create_table "professional_availability_blocks", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.datetime "ends_at", null: false
+    t.uuid "health_facility_id", null: false
+    t.uuid "municipality_id", null: false
+    t.uuid "professional_id", null: false
+    t.string "reason"
+    t.datetime "starts_at", null: false
+    t.datetime "updated_at", null: false
   end
 
   create_table "roles", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -280,6 +392,20 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_27_120023) do
     t.string "name", null: false
     t.datetime "updated_at", null: false
     t.index ["code"], name: "index_roles_on_code", unique: true
+  end
+
+  create_table "room_capacity_slots", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.integer "booked_count", default: 0, null: false
+    t.integer "capacity", default: 1, null: false
+    t.uuid "consultation_room_id", null: false
+    t.datetime "created_at", null: false
+    t.time "ends_at", null: false
+    t.uuid "health_facility_id", null: false
+    t.uuid "municipality_id", null: false
+    t.date "slot_date", null: false
+    t.time "starts_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["consultation_room_id", "slot_date", "starts_at"], name: "index_room_capacity_slots_on_room_date_start", unique: true
   end
 
   create_table "transport_records", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -352,6 +478,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_27_120023) do
 
   add_foreign_key "care_teams", "health_facilities"
   add_foreign_key "care_teams", "municipalities"
+  add_foreign_key "encounters", "appointments"
   add_foreign_key "facility_micro_area_coverages", "health_facilities"
   add_foreign_key "facility_micro_area_coverages", "micro_areas"
   add_foreign_key "health_facilities", "municipalities"

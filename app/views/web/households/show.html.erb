@@ -7,13 +7,23 @@
   <div class="mb-8 grid gap-6 lg:grid-cols-2">
     <div class="rounded-lg border border-slate-200 bg-white p-6 text-sm">
       <h3 class="mb-3 font-semibold">Membros</h3>
-      <ul class="space-y-2">
+      <ul class="mb-4 space-y-2">
         <% @household.household_members.includes(:citizen).each do |member| %>
-          <li>
+          <li class="flex items-center justify-between gap-2">
             <%= link_to member.citizen.full_name.presence || member.citizen.cpf || member.citizen.cns, web_citizen_path(member.citizen), class: "text-emerald-700 hover:underline" %>
+            <% if municipality_scope? || facility_scope? %>
+              <%= button_to "Remover", web_household_member_path(member), method: :delete, class: "text-red-700 hover:underline", form: { data: { turbo_confirm: "Remover vínculo?" } } %>
+            <% end %>
           </li>
         <% end %>
       </ul>
+
+      <% if municipality_scope? || facility_scope? %>
+        <%= form_with url: web_household_household_members_path(@household), class: "space-y-2" do |form| %>
+          <%= form.collection_select "household_member[citizen_id]", @citizens_for_select, :id, ->(c) { c.full_name.presence || c.cpf || c.cns }, { prompt: "Selecionar cidadão" }, class: "w-full rounded border border-slate-300 px-3 py-2", required: true %>
+          <%= form.submit "Adicionar membro", class: "rounded bg-emerald-700 px-3 py-2 text-sm text-white" %>
+        <% end %>
+      <% end %>
     </div>
 
     <div class="rounded-lg border border-slate-200 bg-white p-6 text-sm">

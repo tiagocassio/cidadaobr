@@ -12,7 +12,14 @@ class LediBatch < ApplicationRecord
   validates :batch_number, uniqueness: { scope: :municipality_id }
   validates :status, inclusion: { in: STATUSES }
 
+  scope :rejected, -> { where(status: "rejected") }
+
+  # Convenience wrapper for controllers; background jobs should call Ledi::RejectLediBatch directly.
+  def reject!(reason:)
+    Ledi::RejectLediBatch.call(batch: self, reason: reason)
+  end
+
   def readonly?
-    persisted? && %w[submitted accepted].include?(status)
+    persisted? && %w[submitted accepted].include?(status_in_database)
   end
 end

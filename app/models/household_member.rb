@@ -5,4 +5,5 @@ class HouseholdMember < ApplicationRecord
   belongs_to :citizen
 
   validates :household_id, :citizen_id, presence: true
+  validates :citizen_id, uniqueness: { scope: :household_id }
 end

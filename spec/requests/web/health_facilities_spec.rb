@@ -22,7 +22,9 @@ RSpec.describe "Web health facilities", type: :request do
       post web_health_facilities_path, params: {
         health_facility: { name: "UBS Teste", cnes: "7654321", facility_service_kind: "primary_care" }
       }
-    }.to change(HealthFacility, :count).by(1)
+    }.to change {
+      with_tenant(admin_membership) { HealthFacility.count }
+    }.by(1)
   end
 
   it "blocks facility manager from managing facilities" do

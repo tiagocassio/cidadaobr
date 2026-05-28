@@ -13,3 +13,29 @@ Task,TASK-01-05,STORY-01-02,EPIC-01,[Core] CidadãoBR Saúde — Comando Validat
 Task,TASK-01-06,STORY-01-02,EPIC-01,[Core] CidadãoBR Saúde — Submit LEDI batch e tópico Kafka,1,backend;ledi;kafka,TASK-01-05,F1-07
 Story,STORY-01-03,EPIC-01,EPIC-01,[Core] CidadãoBR Saúde — Projetar cadastro operacional,1,backend;ledi,TASK-01-07,F1-08
 Task,TASK-01-07,STORY-01-03,EPIC-01,[Core] CidadãoBR Saúde — Projectors citizens households encounters,1,backend;ledi,TASK-01-02,F1-08
+Epic,EPIC-02,,EPIC-02,CidadãoBR Saúde Gestão — Admin Municipal,2,web;admin,,F2
+Story,STORY-02-01,EPIC-02,EPIC-02,[Gestão] CidadãoBR Saúde Gestão — Cadastrar UBS e equipes,2,web;admin,TASK-02-01,F2-01
+Task,TASK-02-01,STORY-02-01,EPIC-02,[Gestão] CidadãoBR Saúde Gestão — Schema grupo D — ops municipal,2,backend;web,EPIC-01,F2-01
+Task,TASK-02-03,STORY-02-01,EPIC-02,[Gestão] CidadãoBR Saúde Gestão — WEB-ADMIN-01 UBS e equipes,2,web,TASK-02-01,F2-03
+Task,TASK-02-05,STORY-02-01,EPIC-02,[Gestão] CidadãoBR Saúde Gestão — WEB-ADMIN-03 Usuários e RBAC,2,web,TASK-02-01,F2-05
+Story,STORY-02-02,EPIC-02,EPIC-02,[Gestão] CidadãoBR Saúde Gestão — Cidadãos e domicílios no mapa,2,web;postgis,TASK-02-02,F2-02
+Task,TASK-02-02,STORY-02-02,EPIC-02,[Gestão] CidadãoBR Saúde Gestão — Households PostGIS e famílias,2,backend;postgis,TASK-02-01,F2-02
+Task,TASK-02-04,STORY-02-02,EPIC-02,[Gestão] CidadãoBR Saúde Gestão — WEB-ADMIN-02 Cidadãos e mapa,2,web,TASK-02-02,F2-04
+Task,TASK-02-07,STORY-02-02,EPIC-02,[Gestão] CidadãoBR Saúde Gestão — Schema animais no domicílio,2,web,TASK-02-02,F2-07
+Story,STORY-02-03,EPIC-02,EPIC-02,[Gestão] CidadãoBR Saúde Gestão — Monitorar envios LEDI,2,web;ledi,TASK-02-06,F2-06
+Task,TASK-02-06,STORY-02-03,EPIC-02,[Gestão] CidadãoBR Saúde Gestão — WEB-LEDI-01 Dashboard lotes transporte,2,web;ledi,EPIC-01,F2-06
+Epic,EPIC-03,,EPIC-03,CidadãoBR Saúde Gestão — Agendamentos UBS,3,web;scheduling,,F3
+Story,STORY-03-01,EPIC-03,EPIC-03,[Gestão] CidadãoBR Saúde Gestão — Agenda UBS e recepção,3,web;scheduling,TASK-03-01,F3-01
+Task,TASK-03-01,STORY-03-01,EPIC-03,[Gestão] CidadãoBR Saúde Gestão — Schema grupo J — agendamentos,3,backend;scheduling,EPIC-02,F3-01
+Task,TASK-03-02,STORY-03-01,EPIC-03,[Gestão] CidadãoBR Saúde Gestão — Commands Book Cancel Reschedule Complete,3,backend;scheduling,TASK-03-01,F3-02
+Task,TASK-03-03,STORY-03-01,EPIC-03,[Gestão] CidadãoBR Saúde Gestão — Projeção agenda calendário,3,backend;scheduling,TASK-03-01,F3-03
+Task,TASK-03-04,STORY-03-01,EPIC-03,[Gestão] CidadãoBR Saúde Gestão — WEB-SCHED-01 Agenda staff,3,web;scheduling,TASK-03-02,F3-04
+Task,TASK-03-05,STORY-03-01,EPIC-03,[Gestão] CidadãoBR Saúde Gestão — WEB-SCHED-02 Check-in e fila recepção,3,web;scheduling,TASK-03-02,F3-05
+Epic,EPIC-04,,EPIC-04,CidadãoBR Saúde — MVP Cidadão,3,api;citizen,,F3
+Story,STORY-04-01,EPIC-04,EPIC-04,[Cidadão] CidadãoBR Saúde — Conta e autenticação,3,api;citizen,TASK-04-01,F3-07
+Task,TASK-04-01,STORY-04-01,EPIC-04,[Cidadão] CidadãoBR Saúde — API citizen_accounts e auth,3,api;citizen,EPIC-00,F3-07
+Story,STORY-04-02,EPIC-04,EPIC-04,[Cidadão] CidadãoBR Saúde — Consultas e slots,3,api;citizen,TASK-04-02,F3-06
+Task,TASK-04-02,STORY-04-02,EPIC-04,[Cidadão] CidadãoBR Saúde — API-CITIZEN-01 slots e consultas,3,api;citizen,EPIC-03,F3-06
+Story,STORY-04-03,EPIC-04,EPIC-04,[Cidadão] CidadãoBR Saúde — Carteira vacinal,3,api;citizen,TASK-04-03,F3-09
+Task,TASK-04-03,STORY-04-03,EPIC-04,[Core] CidadãoBR Saúde — Projeção citizen_immunization_records,3,backend;ledi,EPIC-01,F3-09
+Task,TASK-04-04,STORY-04-03,EPIC-04,[Cidadão] CidadãoBR Saúde — API-CITIZEN-02 carteira e cobertura,3,api;citizen,TASK-04-03,F3-10

@@ -1,0 +1,174 @@
+# frozen_string_literal: true
+
+module Web
+  class AppointmentsController < BaseController
+    before_action :require_facility_or_municipality!
+    before_action :require_facility_or_municipality_write!, only: %i[new create]
+    before_action :require_reception_operations!, only: %i[check_in complete cancel]
+    before_action :ensure_health_facility_selected!, only: %i[index reception new create]
+    before_action :set_appointment, only: %i[show check_in complete cancel]
+    before_action :set_form_collections, only: %i[new create]
+
+    helper_method :facility_scope_params
+
+    def index
+      @date = schedule_date
+      @schedule = Scheduling::FacilityDailySchedule.new(
+        health_facility_id: selected_facility_id,
+        date: @date
+      ).call
+    end
+
+    def show
+    end
+
+    def select_facility
+      @health_facilities = scoped_health_facilities.order(:name)
+    end
+
+    def new
+      @appointment = Appointment.new(scheduled_at: Time.zone.now.change(min: 0))
+    end
+
+    def create
+      attrs = appointment_params
+      slot = scoped_capacity_slots.find(attrs.fetch(:room_capacity_slot_id))
+      room = scoped_consultation_rooms.find(attrs.fetch(:consultation_room_id))
+      citizen = scoped_citizens.find(attrs.fetch(:citizen_id))
+      if slot.consultation_room_id != room.id || room.health_facility_id != selected_facility_id
+        raise ArgumentError, "invalid slot or room for facility"
+      end
+
+      scheduled_at = Time.zone.parse("#{slot.slot_date} #{slot.starts_at.strftime('%H:%M:%S')}")
+
+      appointment = Scheduling::BookAppointment.call(
+        citizen_id: citizen.id,
+        appointment_service_type_id: attrs.fetch(:appointment_service_type_id),
+        consultation_room_id: room.id,
+        scheduled_at: scheduled_at,
+        room_capacity_slot_id: slot.id,
+        care_team_id: attrs[:care_team_id],
+        channel: "web_reception"
+      )
+      redirect_to web_appointment_path(appointment), notice: "Consulta agendada."
+    rescue Scheduling::Errors::SlotUnavailableError => e
+      flash.now[:alert] = e.message
+      render_new_with_errors
+    rescue ActiveRecord::RecordNotFound, ArgumentError
+      flash.now[:alert] = "Dados inválidos para agendamento."
+      render_new_with_errors
+    end
+
+    def reception
+      @appointments = scoped_appointments
+        .where(health_facility_id: selected_facility_id, status: %w[checked_in scheduled confirmed])
+        .includes(:citizen, :appointment_service_type)
+        .order(:scheduled_at)
+    end
+
+    def check_in
+      Scheduling::CheckInAppointment.call(appointment: @appointment)
+      redirect_to reception_web_appointments_path(facility_scope_params(@appointment.health_facility_id)), notice: "Check-in realizado."
+    rescue Scheduling::Errors::InvalidTransitionError
+      redirect_to reception_web_appointments_path(facility_scope_params(@appointment.health_facility_id)), alert: "Não foi possível fazer check-in."
+    end
+
+    def complete
+      Scheduling::CompleteAppointment.call(appointment: @appointment)
+      redirect_to reception_web_appointments_path(facility_scope_params(@appointment.health_facility_id)), notice: "Atendimento concluído."
+    rescue Scheduling::Errors::InvalidTransitionError
+      redirect_to reception_web_appointments_path(facility_scope_params(@appointment.health_facility_id)), alert: "Não foi possível concluir atendimento."
+    end
+
+    def cancel
+      Scheduling::CancelAppointment.call(appointment: @appointment)
+      redirect_to web_appointments_path(facility_scope_params(@appointment.health_facility_id)), notice: "Consulta cancelada."
+    rescue Scheduling::Errors::InvalidTransitionError
+      redirect_to web_appointment_path(@appointment), alert: "Não foi possível cancelar."
+    rescue Scheduling::Errors::SlotUnavailableError => e
+      redirect_to web_appointment_path(@appointment), alert: e.message
+    end
+
+    private
+
+    def set_appointment
+      @appointment = scoped_appointments.find(params[:id])
+    end
+
+    def set_form_collections
+      @citizens = scoped_citizens.order(:full_name).limit(200)
+      @service_types = AppointmentServiceType.where(municipality_id: current_municipality.id, active: true).order(:name)
+      @rooms = scoped_consultation_rooms.where(health_facility_id: selected_facility_id, active: true).order(:name)
+      slot_date = params.dig(:appointment, :slot_date).presence&.then { Date.iso8601(_1) } || Date.current
+      @capacity_slots = RoomCapacitySlot
+        .where(health_facility_id: selected_facility_id, slot_date: slot_date)
+        .where("booked_count < capacity")
+        .includes(:consultation_room)
+        .order(:starts_at)
+    rescue Date::Error, ArgumentError
+      @capacity_slots = RoomCapacitySlot.none
+    end
+
+    def schedule_date
+      return Date.current if params[:date].blank?
+
+      Date.iso8601(params[:date])
+    rescue Date::Error, ArgumentError
+      Date.current
+    end
+
+    def ensure_health_facility_selected!
+      return unless municipality_scope? || team_scope?
+      return if params[:health_facility_id].present?
+
+      facilities = scoped_health_facilities.order(:name)
+      if facilities.one?
+        redirect_to url_for(facility_scope_params(facilities.first!.id))
+        return
+      end
+
+      @health_facilities = facilities
+      render :select_facility
+    end
+
+    def selected_facility_id
+      if facility_scope?
+        current_membership.health_facility_id
+      else
+        resolve_scoped_health_facility_id!
+      end
+    end
+
+    def resolve_scoped_health_facility_id!
+      facilities = scoped_health_facilities
+      facility_id = params[:health_facility_id].presence
+      return facilities.find(facility_id).id if facility_id.present?
+
+      if facilities.one?
+        return facilities.first!.id
+      end
+
+      raise ArgumentError, "health_facility_id is required"
+    end
+
+    def facility_scope_params(facility_id = selected_facility_id)
+      return {} if facility_scope?
+
+      { health_facility_id: facility_id }
+    end
+
+    def scoped_capacity_slots
+      RoomCapacitySlot.where(health_facility_id: selected_facility_id)
+    end
+
+    def appointment_params
+      params.require(:appointment).permit(:citizen_id, :appointment_service_type_id, :consultation_room_id, :room_capacity_slot_id, :care_team_id)
+    end
+
+    def render_new_with_errors
+      @appointment = Appointment.new(appointment_params)
+      set_form_collections
+      render :new, status: :unprocessable_entity
+    end
+  end
+end

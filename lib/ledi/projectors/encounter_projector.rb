@@ -3,7 +3,7 @@
 module Ledi
   module Projectors
     class EncounterProjector
-      ENCOUNTER_RECORD_TYPES = %w[FAI FAO FP FV FVD FAD].freeze
+      ENCOUNTER_RECORD_TYPES = %w[FAI FAO FP FVD FAD].freeze
 
       def self.call(clinical_record:)
         return unless ENCOUNTER_RECORD_TYPES.include?(clinical_record.record_type)

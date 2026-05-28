@@ -11,8 +11,15 @@ class Citizen < ApplicationRecord
 
   validates :municipality_id, presence: true
   validate :cpf_or_cns_present
+  validate :cpf_format, if: -> { cpf.present? }
 
   private
+
+  def cpf_format
+    return if Cidadaobr::Cpf.valid?(cpf)
+
+    errors.add(:cpf, :invalid)
+  end
 
   def cpf_or_cns_present
     return if cpf.present? || cns.present?
