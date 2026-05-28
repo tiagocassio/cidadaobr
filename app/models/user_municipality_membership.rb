@@ -2,6 +2,11 @@
 
 class UserMunicipalityMembership < ApplicationRecord
   SCOPES = %w[municipality facility team].freeze
+  SCOPE_PRECEDENCE = {
+    "team" => 0,
+    "facility" => 1,
+    "municipality" => 2
+  }.freeze
   WEB_SCOPES = %w[municipality facility].freeze
   WEB_ROLE_CODES = %w[municipal_admin facility_manager].freeze
   ROLE_CODES = %w[municipal_admin facility_manager community_agent].freeze
@@ -11,6 +16,7 @@ class UserMunicipalityMembership < ApplicationRecord
   belongs_to :health_facility, optional: true
 
   scope :active, -> { where(active: true) }
+  scope :by_scope_precedence, -> { order(scope_precedence_order_sql) }
 
   validates :scope, inclusion: { in: SCOPES }
   validates :role_code, presence: true, inclusion: { in: ROLE_CODES }
@@ -23,6 +29,13 @@ class UserMunicipalityMembership < ApplicationRecord
       .where(municipality_id: municipality_id, scope: "municipality", role_code: "municipal_admin", active: true)
       .where.not(id: id)
       .none?
+  end
+
+  def self.scope_precedence_order_sql
+    cases = SCOPE_PRECEDENCE.map { |scope, rank| "WHEN '#{scope}' THEN #{rank}" }.join(" ")
+    fallback = SCOPE_PRECEDENCE.size
+
+    Arel.sql("CASE scope #{cases} ELSE #{fallback} END, user_municipality_memberships.id ASC")
   end
 
   private

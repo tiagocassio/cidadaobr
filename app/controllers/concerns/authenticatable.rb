@@ -2,6 +2,7 @@
 
 module Authenticatable
   extend ActiveSupport::Concern
+  include JsonErrorRenderable
 
   included do
     helper_method :current_user, :current_membership if respond_to?(:helper_method)
@@ -30,7 +31,7 @@ module Authenticatable
 
   def respond_to_unauthorized
     if request.format.json? || request.path.start_with?("/api/")
-      render json: { error: "Unauthorized" }, status: :unauthorized
+      render_json_error("Unauthorized", status: :unauthorized)
     else
       redirect_to web_login_path, alert: "Faça login para continuar."
     end

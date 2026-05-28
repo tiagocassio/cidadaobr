@@ -3,10 +3,10 @@
 module Api
   module V1
     module Field
-      class HealthController < ActionController::API
-        def show
-          render json: { status: "ok", channel: "field" }
-        end
+      class HealthController < Api::ApplicationController
+        include Api::V1::HealthCheck
+
+        health_channel "field"
       end
     end
   end

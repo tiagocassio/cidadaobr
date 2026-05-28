@@ -9,12 +9,12 @@ module Api
           result = Ledi::ValidateClinicalRecord.call(clinical_record_id: clinical_record.id)
           clinical_record.reload
 
-          render json: {
-            clinical_record_id: clinical_record.id,
-            valid: result.valid,
-            errors: result.errors,
-            validation_errors: clinical_record.validation_errors
-          }, status: result.valid ? :ok : :unprocessable_entity
+          @clinical_record = clinical_record
+          @validation_passed = result.valid
+          @ledi_errors = result.errors
+          @validation_errors = clinical_record.validation_errors
+
+          render status: @validation_passed ? :ok : :unprocessable_entity
         end
       end
     end

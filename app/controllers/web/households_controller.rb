@@ -22,14 +22,15 @@ module Web
 
     def markers
       unless bbox_params_complete?
-        return render json: []
+        @markers = []
+        return render :markers, formats: :json
       end
 
       households = scoped_households.with_location.includes(:health_facility)
       households = filter_markers_by_bbox(households)
       households = households.limit(MARKERS_LIMIT)
 
-      render json: households.filter_map { |household|
+      @markers = households.filter_map { |household|
         coords = household.coordinates
         next unless coords
 
@@ -41,6 +42,8 @@ module Web
           url: web_household_path(household)
         }
       }
+
+      render :markers, formats: :json
     end
 
     private

@@ -14,7 +14,11 @@ class User < ApplicationRecord
   validate :prevent_deactivating_last_municipal_admin, on: :update
 
   def active_membership_for(municipality_id)
-    user_municipality_memberships.active.find_by(municipality_id: municipality_id)
+    user_municipality_memberships
+      .active
+      .where(municipality_id: municipality_id)
+      .by_scope_precedence
+      .first
   end
 
   def team_ids_for(municipality_id)
