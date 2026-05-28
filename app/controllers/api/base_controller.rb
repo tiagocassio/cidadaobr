@@ -6,6 +6,10 @@ module Api
 
     before_action :authenticate_api!
 
+    rescue_from ActiveRecord::RecordNotFound do
+      render json: { error: "Not found" }, status: :not_found
+    end
+
     private
 
     def authenticate_api!

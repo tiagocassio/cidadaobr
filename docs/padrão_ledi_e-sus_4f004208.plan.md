@@ -2718,7 +2718,7 @@ Cada história agrupa uma ou mais **Tasks**. Na exportação CSV, `parent_id` da
 ### Checklist por épico (executivo)
 
 - [ ] **EPIC-00** CidadãoBR Saúde — Core Plataforma  
-- [ ] **EPIC-01** CidadãoBR Saúde — Core LEDI  
+- [x] **EPIC-01** CidadãoBR Saúde — Core LEDI  
 - [ ] **EPIC-02** CidadãoBR Saúde Gestão — Admin Municipal  
 - [ ] **EPIC-03** CidadãoBR Saúde Gestão — Agendamentos UBS  
 - [ ] **EPIC-04** CidadãoBR Saúde — MVP Cidadão  

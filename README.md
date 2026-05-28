@@ -62,6 +62,24 @@ bin/rails db:seed
 - `admin@cidadaobr.local` / `password123` (escopo município)
 - `ubs.centro@cidadaobr.local` / `password123` (escopo UBS)
 
+## LEDI (e-SUS APS 7.4.0)
+
+Integração com o padrão **LEDI APS 7.4.0** (compatível PEC ≥ 5.4.34):
+
+- Artefatos vendor em `vendor/ledi/7.4.0/` (Thrift + XSD de referência)
+- Configuração em `config/ledi.yml` (versão, `tp_cds_origem`, mapa de tipos serializados)
+- Domínio em `lib/ledi/` (deserialização, validação, importação, lotes, projeções)
+
+Comandos úteis:
+
+```bash
+bin/rails db:seed                              # inclui catálogo MVP e instalação dev
+bin/rails ledi:catalog:seed                    # recarrega regras/campos LEDI
+bin/rails ledi:catalog:import_xsd              # stub para importação futura via XSD
+```
+
+Fluxo Fase 1: importar transporte → validar ficha → submeter lote (`ledi.batch.ready` no Kafka). Envio HTTP ao PEC fica para EPIC-09.
+
 ## Serviços
 
 ```bash

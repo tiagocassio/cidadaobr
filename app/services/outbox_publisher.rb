@@ -4,7 +4,11 @@ class OutboxPublisher
   TOPIC_MAPPING = {
     "platform.bootstrapped" => "domain.outbox",
     "citizen.registered" => "citizen.registered",
-    "clinical.record.persisted" => "clinical.record.persisted"
+    "clinical.record.imported" => "clinical.record.imported",
+    "clinical.record.validated" => "clinical.record.validated",
+    "clinical.record.validation_failed" => "clinical.record.validation_failed",
+    "clinical.record.persisted" => "clinical.record.persisted",
+    "ledi.batch.submitted" => "ledi.batch.ready"
   }.freeze
 
   def self.publish_pending!(limit: 100)

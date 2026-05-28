@@ -1,0 +1,82 @@
+default: &default
+  version: "7.4.0"
+  source_repo: "https://github.com/laboratoriobridge/esusaps-integracao"
+  source_sync_tag: "vendor-sync-7.4.0-20260527"
+  # SHA256 fingerprint of vendor/ledi/7.4.0 artifacts (not an upstream git commit).
+  source_content_sha256: "1eb11d5d1306073157891023dc8505a974fcc4d2237fb12d97602a5e82be16a7"
+  tp_cds_origem: 3
+  dev_installation_uuid: "00000000-0000-4000-8000-000000000001"
+  serialized_types:
+    2:
+      record_type: FCI
+      archetype: monolithic
+      thrift_class: Br::Gov::Saude::Esusab::Ras::Cadastroindividual::CadastroIndividualThrift
+    3:
+      record_type: FCD
+      archetype: monolithic
+      thrift_class: Br::Gov::Saude::Esusab::Ras::Cadastrodomiciliar::CadastroDomiciliarThrift
+    4:
+      record_type: FAI
+      archetype: master_child
+      thrift_classes:
+        master: Br::Gov::Saude::Esusab::Ras::Atendindividual::FichaAtendimentoIndividualMasterThrift
+        child: Br::Gov::Saude::Esusab::Ras::Atendindividual::FichaAtendimentoIndividualChildThrift
+    5:
+      record_type: FAO
+      archetype: master_child
+      thrift_classes:
+        master: Br::Gov::Saude::Esusab::Ras::Atendodonto::FichaAtendimentoOdontologicoMasterThrift
+        child: Br::Gov::Saude::Esusab::Ras::Atendodonto::FichaAtendimentoOdontologicoChildThrift
+    6:
+      record_type: FAC
+      archetype: monolithic
+      thrift_class: Br::Gov::Saude::Esusab::Ras::Atividadecoletiva::FichaAtividadeColetivaThrift
+    7:
+      record_type: FP
+      archetype: master_child
+      thrift_classes:
+        master: Br::Gov::Saude::Esusab::Ras::Atendprocedimentos::FichaProcedimentoMasterThrift
+        child: Br::Gov::Saude::Esusab::Ras::Atendprocedimentos::FichaProcedimentoChildThrift
+    8:
+      record_type: FVD
+      archetype: master_child
+      thrift_classes:
+        master: Br::Gov::Saude::Esusab::Ras::Visitadomiciliar::FichaVisitaDomiciliarMasterThrift
+        child: Br::Gov::Saude::Esusab::Ras::Visitadomiciliar::FichaVisitaDomiciliarChildThrift
+    10:
+      record_type: FAD
+      archetype: master_child
+      thrift_classes:
+        master: Br::Gov::Saude::Esusab::Ras::Atenddomiciliar::FichaAtendimentoDomiciliarMasterThrift
+        child: Br::Gov::Saude::Esusab::Ras::Atenddomiciliar::FichaAtendimentoDomiciliarChildThrift
+    11:
+      record_type: FAE
+      archetype: monolithic
+      thrift_class: Br::Gov::Saude::Esusab::Ras::Avaliacaoelegibilidade::FichaAvaliacaoElegibilidadeThrift
+    12:
+      record_type: MCA
+      archetype: monolithic
+      thrift_class: Br::Gov::Saude::Esusab::Ras::Consumoalimentar::FichaConsumoAlimentarThrift
+    13:
+      record_type: FCZM
+      archetype: monolithic
+      thrift_class: Br::Gov::Saude::Esusab::Ras::Complementarzika::FichaComplementarZikaMicrocefaliaThrift
+    14:
+      record_type: FV
+      archetype: master_child
+      thrift_classes:
+        master: Br::Gov::Saude::Esusab::Ras::Vacinacao::FichaVacinacaoMasterThrift
+        child: Br::Gov::Saude::Esusab::Ras::Vacinacao::FichaVacinacaoChildThrift
+    16:
+      record_type: FCC
+      archetype: evolution
+      thrift_class: Br::Gov::Saude::Esusab::Ras::Cuidadocompartilhado::CuidadoCompartilhadoThrift
+
+development:
+  <<: *default
+
+test:
+  <<: *default
+
+production:
+  <<: *default

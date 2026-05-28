@@ -10,8 +10,13 @@ class KarafkaApp < Karafka::App
   end
 
   routes.draw do
+    # Transient MissingClinicalRecordError retries until ClinicalRecordPersistedConsumer::PROJECTION_RETRY_GRACE elapses, then the message is dropped.
     topic "clinical.record.persisted" do
       consumer ClinicalRecordPersistedConsumer
+    end
+
+    topic "ledi.batch.ready" do
+      consumer LediBatchReadyConsumer
     end
 
     topic "citizen.registered" do

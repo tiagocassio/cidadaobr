@@ -1,0 +1,22 @@
+# frozen_string_literal: true
+
+class Citizen < ApplicationRecord
+  belongs_to :municipality
+  belongs_to :health_facility, optional: true
+  belongs_to :care_team, optional: true
+  belongs_to :clinical_record, optional: true
+  has_many :household_members, dependent: :destroy
+  has_many :households, through: :household_members
+  has_many :encounters, dependent: :destroy
+
+  validates :municipality_id, presence: true
+  validate :cpf_or_cns_present
+
+  private
+
+  def cpf_or_cns_present
+    return if cpf.present? || cns.present?
+
+    errors.add(:base, :cpf_or_cns_required)
+  end
+end

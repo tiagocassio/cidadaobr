@@ -11,5 +11,27 @@ module Cidadaobr
         citizen_id: nil
       )
     end
+
+    def self.from_envelope(envelope)
+      municipality_id = envelope.fetch("municipality_id")
+      health_facility_id = envelope["health_facility_id"].presence
+      care_team_id = envelope["care_team_id"].presence
+      scope =
+        if care_team_id.present?
+          "team"
+        elsif health_facility_id.present?
+          "facility"
+        else
+          "municipality"
+        end
+
+      new(
+        municipality_id: municipality_id,
+        scope: scope,
+        health_facility_id: health_facility_id,
+        team_ids: care_team_id.present? ? [ care_team_id ] : [],
+        citizen_id: envelope["citizen_id"].presence
+      )
+    end
   end
 end

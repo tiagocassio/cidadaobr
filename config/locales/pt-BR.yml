@@ -1,5 +1,44 @@
 pt-BR:
   activerecord:
+    models:
+      installation: Instalação LEDI
+      ledi_batch: Lote LEDI
+      transport_record: Registro de transporte
+      clinical_record: Ficha clínica
+      clinical_record_item: Item da ficha clínica
+      ledi_field_catalog: Catálogo de campos LEDI
+      ledi_validation_rule: Regra de validação LEDI
+      citizen: Cidadão
+      household: Domicílio
+      household_member: Membro do domicílio
+      encounter: Atendimento
+    attributes:
+      installation:
+        counter_key: Chave contador
+        installation_uuid: UUID da instalação
+        tax_id: CPF/CNPJ
+      ledi_batch:
+        batch_number: Número do lote
+        ledi_version: Versão LEDI
+        status: Status
+        submitted_at: Enviado em
+      transport_record:
+        serialized_uuid: UUID serializado
+        serialized_type: Tipo serializado
+        cnes: CNES
+        ibge_code: Código IBGE
+        status: Status
+      clinical_record:
+        record_type: Tipo de ficha
+        record_uuid: UUID da ficha
+        validation_status: Status de validação
+        encounter_at: Data do atendimento
+      citizen:
+        cpf: CPF
+        cns: CNS
+        full_name: Nome completo
+        birth_date: Data de nascimento
+        sex: Sexo
     errors:
       messages:
         record_invalid: "A validação falhou: %{errors}"

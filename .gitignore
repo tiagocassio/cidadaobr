@@ -41,4 +41,5 @@
 
 .idea/
 .vscode/
+/spec/examples.txt
 skills-lock.json

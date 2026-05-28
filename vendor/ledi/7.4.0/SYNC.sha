@@ -1,0 +1,5 @@
+# Vendor sync manifest for LEDI 7.4.0 (2026-05-27)
+# Record the upstream git commit in SOURCE_COMMIT when syncing from laboratoriobridge/esusaps-integracao.
+SYNC_TAG=vendor-sync-7.4.0-20260527
+SOURCE_COMMIT=
+SOURCE_CONTENT_SHA256=1eb11d5d1306073157891023dc8505a974fcc4d2237fb12d97602a5e82be16a7

@@ -13,6 +13,7 @@ Rails.application.routes.draw do
       namespace :field do
         get "health", to: "health#show"
         post "auth", to: "auth#create"
+        post "clinical_records/:id/validate", to: "clinical_records#validate"
       end
 
       namespace :citizen do

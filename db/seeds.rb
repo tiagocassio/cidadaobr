@@ -44,3 +44,11 @@ puts "Seed complete:"
 puts "  Municipality ID: #{municipality.id}"
 puts "  Admin login: admin@cidadaobr.local / password123"
 puts "  UBS Centro login: ubs.centro@cidadaobr.local / password123"
+
+Installation.find_or_create_by!(municipality: municipality, counter_key: "dev") do |record|
+  record.installation_uuid = Rails.application.config.ledi.fetch(:dev_installation_uuid)
+  record.tax_id = "39053344705"
+  record.legal_name = "CidadãoBR Dev"
+end
+
+load Rails.root.join("db/seeds/ledi_catalog.rb")

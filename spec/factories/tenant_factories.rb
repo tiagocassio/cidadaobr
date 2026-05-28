@@ -41,4 +41,10 @@ FactoryBot.define do
     sequence(:ine) { |n| format("%010d", 3000000000 + n) }
     sequence(:name) { |n| "Equipe #{n}" }
   end
+
+  factory :user_team_assignment do
+    user
+    care_team
+    active { true }
+  end
 end

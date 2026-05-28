@@ -2,3 +2,14 @@ work_item_type,id,parent_id,epic_id,title,phase,labels,depends_on,legacy_ref
 Epic,EPIC-00,,EPIC-00,CidadãoBR Saúde — Core Plataforma,0,backend;infra,,F0
 Story,STORY-00-01,EPIC-00,EPIC-00,[Core] CidadãoBR Saúde — Bootstrap e convenções,0,backend,,F0-01
 Task,TASK-00-01,STORY-00-01,EPIC-00,[Core] CidadãoBR Saúde — Bootstrap Rails application,0,backend,,F0-01
+Epic,EPIC-01,,EPIC-01,CidadãoBR Saúde — Core LEDI,1,backend;ledi;integration,,F1
+Story,STORY-01-01,EPIC-01,EPIC-01,[Core] CidadãoBR Saúde — Artefatos e schema LEDI,1,backend;ledi,TASK-01-01,F1-01
+Task,TASK-01-01,STORY-01-01,EPIC-01,[Core] CidadãoBR Saúde — Versão LEDI e artefatos vendor,1,backend;ledi,,F1-01
+Task,TASK-01-02,STORY-01-01,EPIC-01,[Core] CidadãoBR Saúde — Schema grupos A–C transporte e clinical records,1,backend;ledi,TASK-01-01,F1-02
+Task,TASK-01-03,STORY-01-01,EPIC-01,[Core] CidadãoBR Saúde — Catálogo de campos LEDI e regras de validação,1,backend;ledi,TASK-01-01,F1-03
+Story,STORY-01-02,EPIC-01,EPIC-01,[Core] CidadãoBR Saúde — Validar e enviar fichas,1,backend;ledi;kafka,TASK-01-04,F1-04
+Task,TASK-01-04,STORY-01-02,EPIC-01,[Core] CidadãoBR Saúde — Adapters Thrift → JSON (13 tipos),1,backend;ledi,TASK-01-02,F1-05
+Task,TASK-01-05,STORY-01-02,EPIC-01,[Core] CidadãoBR Saúde — Comando ValidateClinicalRecord,1,backend;ledi,TASK-01-04,F1-06
+Task,TASK-01-06,STORY-01-02,EPIC-01,[Core] CidadãoBR Saúde — Submit LEDI batch e tópico Kafka,1,backend;ledi;kafka,TASK-01-05,F1-07
+Story,STORY-01-03,EPIC-01,EPIC-01,[Core] CidadãoBR Saúde — Projetar cadastro operacional,1,backend;ledi,TASK-01-07,F1-08
+Task,TASK-01-07,STORY-01-03,EPIC-01,[Core] CidadãoBR Saúde — Projectors citizens households encounters,1,backend;ledi,TASK-01-02,F1-08
