@@ -5,10 +5,11 @@ module Web
     before_action :set_ledi_batch, only: :show
 
     def index
-      @ledi_batches = scoped_ledi_batches.includes(:health_facility, :care_team).order(created_at: :desc).limit(100)
+      ledi_batches = scoped_ledi_batches.includes(:health_facility, :care_team).order(created_at: :desc)
       if params[:status].present? && LediBatch::STATUSES.include?(params[:status])
-        @ledi_batches = @ledi_batches.where(status: params[:status])
+        ledi_batches = ledi_batches.where(status: params[:status])
       end
+      @pagy, @ledi_batches = pagy(ledi_batches)
     end
 
     def show

@@ -7,11 +7,12 @@ module Web
     before_action :set_health_facilities, only: %i[new create edit update]
 
     def index
-      @memberships = UserMunicipalityMembership
+      memberships = UserMunicipalityMembership
         .includes(:user, :health_facility)
         .joins(:user)
         .where(municipality_id: current_municipality.id)
         .order(users: { full_name: :asc })
+      @pagy, @memberships = pagy(memberships)
     end
 
     def new

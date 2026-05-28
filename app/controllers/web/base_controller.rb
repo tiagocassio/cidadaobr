@@ -3,7 +3,6 @@
 module Web
   class BaseController < ApplicationController
     include Authorizable
-    include Paginatable
 
     layout "web"
     before_action :authenticate!

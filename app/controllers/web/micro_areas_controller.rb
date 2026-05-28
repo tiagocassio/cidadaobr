@@ -8,9 +8,10 @@ module Web
     before_action :set_health_facilities, only: %i[new create edit update]
 
     def index
-      @micro_areas = MicroArea.where(municipality_id: current_municipality.id)
+      micro_areas = MicroArea.where(municipality_id: current_municipality.id)
         .includes(:care_team, :health_facilities)
         .order(:code)
+      @pagy, @micro_areas = pagy(micro_areas)
     end
 
     def new

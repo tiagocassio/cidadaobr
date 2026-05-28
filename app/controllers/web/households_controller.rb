@@ -7,7 +7,7 @@ module Web
     before_action :set_household, only: :show
 
     def index
-      @households = paginate(
+      @pagy, @households = pagy(
         scoped_households.includes(:health_facility, :care_team).order(:street)
       )
     end

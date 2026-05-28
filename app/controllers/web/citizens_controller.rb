@@ -5,13 +5,12 @@ module Web
     before_action :set_citizen, only: :show
 
     def index
-      @citizens = paginate(
-        scoped_citizens.includes(:health_facility, :care_team).order(:full_name, :cpf)
-      )
+      citizens = scoped_citizens.includes(:health_facility, :care_team).order(:full_name, :cpf)
       if params[:q].present?
         query = "%#{ActiveRecord::Base.sanitize_sql_like(params[:q].strip)}%"
-        @citizens = @citizens.where("cpf ILIKE :q OR cns ILIKE :q OR full_name ILIKE :q", q: query)
+        citizens = citizens.where("cpf ILIKE :q OR cns ILIKE :q OR full_name ILIKE :q", q: query)
       end
+      @pagy, @citizens = pagy(citizens)
     end
 
     def show

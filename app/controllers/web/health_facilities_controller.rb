@@ -6,7 +6,7 @@ module Web
     before_action :set_health_facility, only: %i[show edit update]
 
     def index
-      @health_facilities = scoped_health_facilities.order(:name)
+      @pagy, @health_facilities = pagy(scoped_health_facilities.order(:name))
     end
 
     def show
