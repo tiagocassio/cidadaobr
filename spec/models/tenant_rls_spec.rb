@@ -39,6 +39,20 @@ RSpec.describe "Tenant RLS isolation", type: :model do
     expect(visible_ids).not_to include(facility_b.id)
   end
 
+  it "allows facility scope to read citizens linked only via care team" do
+    team = create(:care_team, municipality: municipality, health_facility: facility_a)
+    municipal_membership = create(:user_municipality_membership, municipality: municipality, scope: "municipality")
+    citizen = with_tenant(Cidadaobr::TenantScope.from_membership(municipal_membership)) do
+      create(:citizen, municipality: municipality, health_facility: nil, care_team: team)
+    end
+
+    visible = with_tenant(Cidadaobr::TenantScope.from_membership(membership_a)) do
+      Citizen.find_by(id: citizen.id)
+    end
+
+    expect(visible).to eq(citizen)
+  end
+
   it "prevents cross-facility reads of ledi batches under facility scope" do
     load Rails.root.join("db/seeds/ledi_catalog.rb")
 

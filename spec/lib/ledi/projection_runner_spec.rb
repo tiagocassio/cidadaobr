@@ -47,6 +47,9 @@ RSpec.describe Ledi::ProjectionRunner do
       household = Household.find_by(municipality_id: municipality.id, clinical_record_id: clinical_record.id)
       expect(household.street).to eq("Rua das Flores")
       expect(household.household_members.count).to eq(1)
+      expect(household.location).to be_present
+      expect(household.coordinates[:lat]).to be_within(0.0001).of(-23.5505)
+      expect(household.coordinates[:lng]).to be_within(0.0001).of(-46.6333)
     end
   end
 

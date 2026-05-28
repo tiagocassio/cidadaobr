@@ -68,6 +68,8 @@ module LediFixtures
     domicilio = Br::Gov::Saude::Esusab::Ras::Cadastrodomiciliar::CadastroDomiciliarThrift.new(
       uuid: SecureRandom.uuid,
       tpCdsOrigem: 3,
+      latitude: -23.5505,
+      longitude: -46.6333,
       enderecoLocalPermanencia: endereco,
       familias: [ familia ]
     )

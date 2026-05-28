@@ -42,9 +42,46 @@ FactoryBot.define do
     sequence(:name) { |n| "Equipe #{n}" }
   end
 
+  factory :citizen do
+    municipality
+    health_facility
+    care_team
+    sequence(:cpf) { |n| format("%011d", 39053344700 + n) }
+    sequence(:full_name) { |n| "Citizen #{n}" }
+  end
+
   factory :user_team_assignment do
     user
     care_team
     active { true }
+  end
+
+  factory :micro_area do
+    municipality
+    care_team
+    sequence(:code) { |n| format("%02d", n) }
+    sequence(:name) { |n| "Microárea #{n}" }
+    coverage do
+      factory = Cidadaobr::GeoPoint.factory
+      ring = factory.linear_ring([
+        factory.point(-46.65, -23.58),
+        factory.point(-46.61, -23.58),
+        factory.point(-46.61, -23.52),
+        factory.point(-46.65, -23.52),
+        factory.point(-46.65, -23.58)
+      ])
+      factory.polygon(ring)
+    end
+  end
+
+  factory :facility_micro_area_coverage do
+    health_facility
+    micro_area
+  end
+
+  factory :household_animal do
+    household
+    species { "cão" }
+    quantity { 1 }
   end
 end

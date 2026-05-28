@@ -13,6 +13,8 @@ module Ledi
           municipality_id: clinical_record.municipality_id,
           clinical_record_id: clinical_record.id
         )
+        location = Cidadaobr::GeoPoint.from_clinical_record_payload(payload)
+
         household.assign_attributes(
           health_facility_id: clinical_record.health_facility_id,
           care_team_id: clinical_record.care_team_id,
@@ -22,7 +24,8 @@ module Ledi
           street_number: address["numero"],
           complement: address["complemento"],
           neighborhood: address["bairro"],
-          postal_code: address["cep"]
+          postal_code: address["cep"],
+          location: location
         )
         household.save!
 

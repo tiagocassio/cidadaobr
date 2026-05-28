@@ -1,0 +1,31 @@
+<section>
+  <div class="mb-6 flex items-center justify-between">
+    <h2 class="text-2xl font-bold">Unidades de Saúde</h2>
+    <%= link_to "Nova UBS", new_web_health_facility_path, class: "rounded bg-emerald-700 px-4 py-2 text-sm font-semibold text-white" %>
+  </div>
+
+  <div class="overflow-hidden rounded-lg border border-slate-200 bg-white">
+    <table class="min-w-full text-sm">
+      <thead class="bg-slate-50 text-left">
+        <tr>
+          <th class="px-4 py-3">Nome</th>
+          <th class="px-4 py-3">CNES</th>
+          <th class="px-4 py-3">Tipo</th>
+          <th class="px-4 py-3"></th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @health_facilities.each do |facility| %>
+          <tr class="border-t border-slate-100">
+            <td class="px-4 py-3"><%= facility.name %></td>
+            <td class="px-4 py-3"><%= facility.cnes %></td>
+            <td class="px-4 py-3"><%= facility.facility_service_kind %></td>
+            <td class="px-4 py-3 text-right">
+              <%= link_to "Ver", web_health_facility_path(facility), class: "text-emerald-700 hover:underline" %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+</section>

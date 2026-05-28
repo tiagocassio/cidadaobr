@@ -50,12 +50,28 @@ module Cidadaobr
           USING (
             municipality_id = NULLIF(current_setting('app.current_municipality_id', true), '')::uuid
             AND current_setting('app.current_scope', true) = 'facility'
-            AND health_facility_id = NULLIF(current_setting('app.current_health_facility_id', true), '')::uuid
+            AND (
+              health_facility_id = NULLIF(current_setting('app.current_health_facility_id', true), '')::uuid
+              OR EXISTS (
+                SELECT 1
+                FROM care_teams ct
+                WHERE ct.id = domain_events.care_team_id
+                  AND ct.health_facility_id = NULLIF(current_setting('app.current_health_facility_id', true), '')::uuid
+              )
+            )
           )
           WITH CHECK (
             municipality_id = NULLIF(current_setting('app.current_municipality_id', true), '')::uuid
             AND current_setting('app.current_scope', true) = 'facility'
-            AND health_facility_id = NULLIF(current_setting('app.current_health_facility_id', true), '')::uuid
+            AND (
+              health_facility_id = NULLIF(current_setting('app.current_health_facility_id', true), '')::uuid
+              OR EXISTS (
+                SELECT 1
+                FROM care_teams ct
+                WHERE ct.id = domain_events.care_team_id
+                  AND ct.health_facility_id = NULLIF(current_setting('app.current_health_facility_id', true), '')::uuid
+              )
+            )
           );
 
         DROP POLICY IF EXISTS domain_events_citizen_access ON domain_events;
@@ -121,12 +137,44 @@ module Cidadaobr
           USING (
             municipality_id = NULLIF(current_setting('app.current_municipality_id', true), '')::uuid
             AND current_setting('app.current_scope', true) = 'facility'
-            AND health_facility_id = NULLIF(current_setting('app.current_health_facility_id', true), '')::uuid
+            AND (
+              health_facility_id = NULLIF(current_setting('app.current_health_facility_id', true), '')::uuid
+              OR EXISTS (
+                SELECT 1
+                FROM domain_events de
+                WHERE de.id = outbox_messages.domain_event_id
+                  AND (
+                    de.health_facility_id = NULLIF(current_setting('app.current_health_facility_id', true), '')::uuid
+                    OR EXISTS (
+                      SELECT 1
+                      FROM care_teams ct
+                      WHERE ct.id = de.care_team_id
+                        AND ct.health_facility_id = NULLIF(current_setting('app.current_health_facility_id', true), '')::uuid
+                    )
+                  )
+              )
+            )
           )
           WITH CHECK (
             municipality_id = NULLIF(current_setting('app.current_municipality_id', true), '')::uuid
             AND current_setting('app.current_scope', true) = 'facility'
-            AND health_facility_id = NULLIF(current_setting('app.current_health_facility_id', true), '')::uuid
+            AND (
+              health_facility_id = NULLIF(current_setting('app.current_health_facility_id', true), '')::uuid
+              OR EXISTS (
+                SELECT 1
+                FROM domain_events de
+                WHERE de.id = outbox_messages.domain_event_id
+                  AND (
+                    de.health_facility_id = NULLIF(current_setting('app.current_health_facility_id', true), '')::uuid
+                    OR EXISTS (
+                      SELECT 1
+                      FROM care_teams ct
+                      WHERE ct.id = de.care_team_id
+                        AND ct.health_facility_id = NULLIF(current_setting('app.current_health_facility_id', true), '')::uuid
+                    )
+                  )
+              )
+            )
           );
 
         DROP POLICY IF EXISTS outbox_messages_citizen_access ON outbox_messages;
@@ -165,6 +213,18 @@ module Cidadaobr
         next unless connection.table_exists?(table_name)
 
         connection.execute tenant_table_policies_for(table_name)
+      end
+
+      if connection.table_exists?(:micro_areas)
+        connection.execute micro_areas_policies
+      end
+
+      if connection.table_exists?(:facility_micro_area_coverages)
+        connection.execute facility_micro_area_coverage_policies
+      end
+
+      if connection.table_exists?(:household_animals)
+        connection.execute household_animals_policies
       end
 
       if connection.table_exists?(:ledi_batches)
@@ -287,12 +347,28 @@ module Cidadaobr
           USING (
             municipality_id = NULLIF(current_setting('app.current_municipality_id', true), '')::uuid
             AND current_setting('app.current_scope', true) = 'facility'
-            AND health_facility_id = NULLIF(current_setting('app.current_health_facility_id', true), '')::uuid
+            AND (
+              health_facility_id = NULLIF(current_setting('app.current_health_facility_id', true), '')::uuid
+              OR EXISTS (
+                SELECT 1
+                FROM care_teams ct
+                WHERE ct.id = #{table_name}.care_team_id
+                  AND ct.health_facility_id = NULLIF(current_setting('app.current_health_facility_id', true), '')::uuid
+              )
+            )
           )
           WITH CHECK (
             municipality_id = NULLIF(current_setting('app.current_municipality_id', true), '')::uuid
             AND current_setting('app.current_scope', true) = 'facility'
-            AND health_facility_id = NULLIF(current_setting('app.current_health_facility_id', true), '')::uuid
+            AND (
+              health_facility_id = NULLIF(current_setting('app.current_health_facility_id', true), '')::uuid
+              OR EXISTS (
+                SELECT 1
+                FROM care_teams ct
+                WHERE ct.id = #{table_name}.care_team_id
+                  AND ct.health_facility_id = NULLIF(current_setting('app.current_health_facility_id', true), '')::uuid
+              )
+            )
           );
       SQL
     end
@@ -362,7 +438,15 @@ module Cidadaobr
               WHERE cr.id = clinical_record_items.clinical_record_id
                 AND cr.municipality_id = NULLIF(current_setting('app.current_municipality_id', true), '')::uuid
                 AND current_setting('app.current_scope', true) = 'facility'
-                AND cr.health_facility_id = NULLIF(current_setting('app.current_health_facility_id', true), '')::uuid
+                AND (
+                  cr.health_facility_id = NULLIF(current_setting('app.current_health_facility_id', true), '')::uuid
+                  OR EXISTS (
+                    SELECT 1
+                    FROM care_teams ct
+                    WHERE ct.id = cr.care_team_id
+                      AND ct.health_facility_id = NULLIF(current_setting('app.current_health_facility_id', true), '')::uuid
+                  )
+                )
             )
           )
           WITH CHECK (
@@ -372,7 +456,209 @@ module Cidadaobr
               WHERE cr.id = clinical_record_items.clinical_record_id
                 AND cr.municipality_id = NULLIF(current_setting('app.current_municipality_id', true), '')::uuid
                 AND current_setting('app.current_scope', true) = 'facility'
-                AND cr.health_facility_id = NULLIF(current_setting('app.current_health_facility_id', true), '')::uuid
+                AND (
+                  cr.health_facility_id = NULLIF(current_setting('app.current_health_facility_id', true), '')::uuid
+                  OR EXISTS (
+                    SELECT 1
+                    FROM care_teams ct
+                    WHERE ct.id = cr.care_team_id
+                      AND ct.health_facility_id = NULLIF(current_setting('app.current_health_facility_id', true), '')::uuid
+                  )
+                )
+            )
+          );
+      SQL
+    end
+
+    def micro_areas_policies
+      <<~SQL
+        ALTER TABLE micro_areas ENABLE ROW LEVEL SECURITY;
+        ALTER TABLE micro_areas FORCE ROW LEVEL SECURITY;
+
+        DROP POLICY IF EXISTS micro_areas_municipal_access ON micro_areas;
+        CREATE POLICY micro_areas_municipal_access ON micro_areas
+          FOR ALL
+          USING (
+            municipality_id = NULLIF(current_setting('app.current_municipality_id', true), '')::uuid
+            AND current_setting('app.current_scope', true) = 'municipality'
+          )
+          WITH CHECK (
+            municipality_id = NULLIF(current_setting('app.current_municipality_id', true), '')::uuid
+            AND current_setting('app.current_scope', true) = 'municipality'
+          );
+
+        DROP POLICY IF EXISTS micro_areas_team_access ON micro_areas;
+        CREATE POLICY micro_areas_team_access ON micro_areas
+          FOR SELECT
+          USING (
+            municipality_id = NULLIF(current_setting('app.current_municipality_id', true), '')::uuid
+            AND current_setting('app.current_scope', true) = 'team'
+            AND care_team_id::text = ANY(
+              string_to_array(NULLIF(current_setting('app.current_team_ids', true), ''), ',')
+            )
+          );
+
+        DROP POLICY IF EXISTS micro_areas_facility_access ON micro_areas;
+        CREATE POLICY micro_areas_facility_access ON micro_areas
+          FOR SELECT
+          USING (
+            municipality_id = NULLIF(current_setting('app.current_municipality_id', true), '')::uuid
+            AND current_setting('app.current_scope', true) = 'facility'
+            AND EXISTS (
+              SELECT 1
+              FROM care_teams ct
+              WHERE ct.id = micro_areas.care_team_id
+                AND ct.health_facility_id = NULLIF(current_setting('app.current_health_facility_id', true), '')::uuid
+            )
+          );
+      SQL
+    end
+
+    def facility_micro_area_coverage_policies
+      <<~SQL
+        ALTER TABLE facility_micro_area_coverages ENABLE ROW LEVEL SECURITY;
+        ALTER TABLE facility_micro_area_coverages FORCE ROW LEVEL SECURITY;
+
+        DROP POLICY IF EXISTS facility_micro_area_coverages_municipal_access ON facility_micro_area_coverages;
+        CREATE POLICY facility_micro_area_coverages_municipal_access ON facility_micro_area_coverages
+          FOR ALL
+          USING (
+            EXISTS (
+              SELECT 1
+              FROM health_facilities hf
+              WHERE hf.id = facility_micro_area_coverages.health_facility_id
+                AND hf.municipality_id = NULLIF(current_setting('app.current_municipality_id', true), '')::uuid
+                AND current_setting('app.current_scope', true) = 'municipality'
+            )
+          )
+          WITH CHECK (
+            EXISTS (
+              SELECT 1
+              FROM health_facilities hf
+              WHERE hf.id = facility_micro_area_coverages.health_facility_id
+                AND hf.municipality_id = NULLIF(current_setting('app.current_municipality_id', true), '')::uuid
+                AND current_setting('app.current_scope', true) = 'municipality'
+            )
+          );
+
+        DROP POLICY IF EXISTS facility_micro_area_coverages_facility_access ON facility_micro_area_coverages;
+        CREATE POLICY facility_micro_area_coverages_facility_access ON facility_micro_area_coverages
+          FOR ALL
+          USING (
+            EXISTS (
+              SELECT 1
+              FROM health_facilities hf
+              WHERE hf.id = facility_micro_area_coverages.health_facility_id
+                AND hf.municipality_id = NULLIF(current_setting('app.current_municipality_id', true), '')::uuid
+                AND current_setting('app.current_scope', true) = 'facility'
+                AND hf.id = NULLIF(current_setting('app.current_health_facility_id', true), '')::uuid
+            )
+          )
+          WITH CHECK (
+            EXISTS (
+              SELECT 1
+              FROM health_facilities hf
+              WHERE hf.id = facility_micro_area_coverages.health_facility_id
+                AND hf.municipality_id = NULLIF(current_setting('app.current_municipality_id', true), '')::uuid
+                AND current_setting('app.current_scope', true) = 'facility'
+                AND hf.id = NULLIF(current_setting('app.current_health_facility_id', true), '')::uuid
+            )
+          );
+      SQL
+    end
+
+    def household_animals_policies
+      <<~SQL
+        ALTER TABLE household_animals ENABLE ROW LEVEL SECURITY;
+        ALTER TABLE household_animals FORCE ROW LEVEL SECURITY;
+
+        DROP POLICY IF EXISTS household_animals_municipal_access ON household_animals;
+        CREATE POLICY household_animals_municipal_access ON household_animals
+          FOR ALL
+          USING (
+            EXISTS (
+              SELECT 1
+              FROM households h
+              WHERE h.id = household_animals.household_id
+                AND h.municipality_id = NULLIF(current_setting('app.current_municipality_id', true), '')::uuid
+                AND current_setting('app.current_scope', true) = 'municipality'
+            )
+          )
+          WITH CHECK (
+            EXISTS (
+              SELECT 1
+              FROM households h
+              WHERE h.id = household_animals.household_id
+                AND h.municipality_id = NULLIF(current_setting('app.current_municipality_id', true), '')::uuid
+                AND current_setting('app.current_scope', true) = 'municipality'
+            )
+          );
+
+        DROP POLICY IF EXISTS household_animals_team_access ON household_animals;
+        CREATE POLICY household_animals_team_access ON household_animals
+          FOR ALL
+          USING (
+            EXISTS (
+              SELECT 1
+              FROM households h
+              WHERE h.id = household_animals.household_id
+                AND h.municipality_id = NULLIF(current_setting('app.current_municipality_id', true), '')::uuid
+                AND current_setting('app.current_scope', true) = 'team'
+                AND h.care_team_id::text = ANY(
+                  string_to_array(NULLIF(current_setting('app.current_team_ids', true), ''), ',')
+                )
+            )
+          )
+          WITH CHECK (
+            EXISTS (
+              SELECT 1
+              FROM households h
+              WHERE h.id = household_animals.household_id
+                AND h.municipality_id = NULLIF(current_setting('app.current_municipality_id', true), '')::uuid
+                AND current_setting('app.current_scope', true) = 'team'
+                AND h.care_team_id::text = ANY(
+                  string_to_array(NULLIF(current_setting('app.current_team_ids', true), ''), ',')
+                )
+            )
+          );
+
+        DROP POLICY IF EXISTS household_animals_facility_access ON household_animals;
+        CREATE POLICY household_animals_facility_access ON household_animals
+          FOR ALL
+          USING (
+            EXISTS (
+              SELECT 1
+              FROM households h
+              WHERE h.id = household_animals.household_id
+                AND h.municipality_id = NULLIF(current_setting('app.current_municipality_id', true), '')::uuid
+                AND current_setting('app.current_scope', true) = 'facility'
+                AND (
+                  h.health_facility_id = NULLIF(current_setting('app.current_health_facility_id', true), '')::uuid
+                  OR EXISTS (
+                    SELECT 1
+                    FROM care_teams ct
+                    WHERE ct.id = h.care_team_id
+                      AND ct.health_facility_id = NULLIF(current_setting('app.current_health_facility_id', true), '')::uuid
+                  )
+                )
+            )
+          )
+          WITH CHECK (
+            EXISTS (
+              SELECT 1
+              FROM households h
+              WHERE h.id = household_animals.household_id
+                AND h.municipality_id = NULLIF(current_setting('app.current_municipality_id', true), '')::uuid
+                AND current_setting('app.current_scope', true) = 'facility'
+                AND (
+                  h.health_facility_id = NULLIF(current_setting('app.current_health_facility_id', true), '')::uuid
+                  OR EXISTS (
+                    SELECT 1
+                    FROM care_teams ct
+                    WHERE ct.id = h.care_team_id
+                      AND ct.health_facility_id = NULLIF(current_setting('app.current_health_facility_id', true), '')::uuid
+                  )
+                )
             )
           );
       SQL
@@ -443,7 +729,15 @@ module Cidadaobr
               WHERE h.id = household_members.household_id
                 AND h.municipality_id = NULLIF(current_setting('app.current_municipality_id', true), '')::uuid
                 AND current_setting('app.current_scope', true) = 'facility'
-                AND h.health_facility_id = NULLIF(current_setting('app.current_health_facility_id', true), '')::uuid
+                AND (
+                  h.health_facility_id = NULLIF(current_setting('app.current_health_facility_id', true), '')::uuid
+                  OR EXISTS (
+                    SELECT 1
+                    FROM care_teams ct
+                    WHERE ct.id = h.care_team_id
+                      AND ct.health_facility_id = NULLIF(current_setting('app.current_health_facility_id', true), '')::uuid
+                  )
+                )
             )
           )
           WITH CHECK (
@@ -453,7 +747,15 @@ module Cidadaobr
               WHERE h.id = household_members.household_id
                 AND h.municipality_id = NULLIF(current_setting('app.current_municipality_id', true), '')::uuid
                 AND current_setting('app.current_scope', true) = 'facility'
-                AND h.health_facility_id = NULLIF(current_setting('app.current_health_facility_id', true), '')::uuid
+                AND (
+                  h.health_facility_id = NULLIF(current_setting('app.current_health_facility_id', true), '')::uuid
+                  OR EXISTS (
+                    SELECT 1
+                    FROM care_teams ct
+                    WHERE ct.id = h.care_team_id
+                      AND ct.health_facility_id = NULLIF(current_setting('app.current_health_facility_id', true), '')::uuid
+                  )
+                )
             )
           );
       SQL

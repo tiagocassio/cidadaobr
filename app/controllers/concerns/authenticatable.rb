@@ -37,6 +37,7 @@ module Authenticatable
   end
 
   def sign_in_user!(user, membership)
+    reset_session
     session[:user_id] = user.id
     session[:tenant] = {
       "municipality_id" => membership.municipality_id,

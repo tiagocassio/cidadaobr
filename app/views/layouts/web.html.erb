@@ -23,6 +23,9 @@
     <main class="mx-auto max-w-6xl px-6 py-8">
       <% if flash[:notice] %><p class="mb-4 rounded bg-emerald-100 px-4 py-2 text-emerald-900"><%= flash[:notice] %></p><% end %>
       <% if flash[:alert] %><p class="mb-4 rounded bg-red-100 px-4 py-2 text-red-900"><%= flash[:alert] %></p><% end %>
+      <% if current_user && current_membership %>
+        <%= render "web/shared/nav" %>
+      <% end %>
       <%= yield %>
     </main>
   </body>

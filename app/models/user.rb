@@ -11,6 +11,7 @@ class User < ApplicationRecord
 
   validates :email, :full_name, presence: true
   validates :email, uniqueness: true
+  validate :prevent_deactivating_last_municipal_admin, on: :update
 
   def active_membership_for(municipality_id)
     user_municipality_memberships.active.find_by(municipality_id: municipality_id)
@@ -20,5 +21,20 @@ class User < ApplicationRecord
     user_team_assignments.active.joins(:care_team)
       .where(care_teams: { municipality_id: municipality_id })
       .pluck(:care_team_id)
+  end
+
+  private
+
+  def prevent_deactivating_last_municipal_admin
+    return unless active_changed? && !active
+
+    user_municipality_memberships
+      .where(scope: "municipality", role_code: "municipal_admin", active: true)
+      .find_each do |membership|
+        next unless membership.last_active_municipal_admin?
+
+        errors.add(:base, "Não é possível desativar o último administrador municipal.")
+        break
+      end
   end
 end

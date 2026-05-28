@@ -4,6 +4,7 @@ require "spec_helper"
 ENV["RAILS_ENV"] ||= "test"
 require_relative "../config/environment"
 require "rspec/rails"
+require "activerecord-postgis/test_helper"
 
 ActiveRecord::Migration.maintain_test_schema!
 
@@ -26,4 +27,5 @@ RSpec.configure do |config|
   config.filter_rails_from_backtrace!
 
   config.include FactoryBot::Syntax::Methods
+  config.include ActiveRecordPostgis::TestHelper
 end

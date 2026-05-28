@@ -1,0 +1,37 @@
+<section>
+  <h2 class="mb-6 text-2xl font-bold">Lotes LEDI</h2>
+
+  <div class="mb-4 flex flex-wrap gap-2 text-sm">
+    <%= link_to "Todos", web_ledi_batches_path, class: "rounded px-3 py-1 #{params[:status].blank? ? 'bg-slate-900 text-white' : 'bg-slate-100'}" %>
+    <% LediBatch::STATUSES.each do |status| %>
+      <%= link_to status, web_ledi_batches_path(status: status), class: "rounded px-3 py-1 #{params[:status] == status ? 'bg-slate-900 text-white' : 'bg-slate-100'}" %>
+    <% end %>
+  </div>
+
+  <div class="overflow-hidden rounded-lg border border-slate-200 bg-white">
+    <table class="min-w-full text-sm">
+      <thead class="bg-slate-50 text-left">
+        <tr>
+          <th class="px-4 py-3">Lote</th>
+          <th class="px-4 py-3">Status</th>
+          <th class="px-4 py-3">UBS</th>
+          <th class="px-4 py-3">Versão</th>
+          <th class="px-4 py-3"></th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @ledi_batches.each do |batch| %>
+          <tr class="border-t border-slate-100">
+            <td class="px-4 py-3"><%= batch.batch_number %></td>
+            <td class="px-4 py-3"><%= batch.status %></td>
+            <td class="px-4 py-3"><%= batch.health_facility&.name || "—" %></td>
+            <td class="px-4 py-3"><%= batch.ledi_version %></td>
+            <td class="px-4 py-3 text-right">
+              <%= link_to "Ver", web_ledi_batch_path(batch), class: "text-emerald-700 hover:underline" %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+</section>

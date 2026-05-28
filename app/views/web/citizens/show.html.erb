@@ -1,0 +1,9 @@
+<section>
+  <h2 class="mb-2 text-2xl font-bold"><%= @citizen.full_name.presence || "Cidadão" %></h2>
+  <p class="mb-6 text-slate-600">CPF: <%= @citizen.cpf.presence || "—" %> · CNS: <%= @citizen.cns.presence || "—" %></p>
+
+  <div class="rounded-lg border border-slate-200 bg-white p-6 text-sm">
+    <p><strong>UBS:</strong> <%= @citizen.health_facility&.name || "—" %></p>
+    <p><strong>Equipe:</strong> <%= @citizen.care_team&.name || "—" %></p>
+  </div>
+</section>

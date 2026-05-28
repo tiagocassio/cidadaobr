@@ -1,0 +1,60 @@
+<section>
+  <h2 class="mb-6 text-2xl font-bold"><%= @micro_area.persisted? ? @micro_area.name : "Nova microárea" %></h2>
+
+  <%= form_with model: [:web, @micro_area], class: "max-w-xl space-y-4 rounded-lg border border-slate-200 bg-white p-6" do |form| %>
+    <% if @micro_area.errors.any? %>
+      <div class="rounded bg-red-50 px-4 py-2 text-sm text-red-800"><%= @micro_area.errors.full_messages.to_sentence %></div>
+    <% end %>
+
+    <div>
+      <%= form.label :code, "Código", class: "mb-1 block text-sm font-medium" %>
+      <%= form.text_field :code, required: true, class: "w-full rounded border border-slate-300 px-3 py-2" %>
+    </div>
+    <div>
+      <%= form.label :name, "Nome", class: "mb-1 block text-sm font-medium" %>
+      <%= form.text_field :name, required: true, class: "w-full rounded border border-slate-300 px-3 py-2" %>
+    </div>
+    <div>
+      <%= form.label :care_team_id, "Equipe", class: "mb-1 block text-sm font-medium" %>
+      <%= form.collection_select :care_team_id, @care_teams, :id, :name, {}, class: "w-full rounded border border-slate-300 px-3 py-2" %>
+    </div>
+
+    <fieldset class="space-y-2 border-t border-slate-200 pt-4">
+      <legend class="text-sm font-medium">Cobertura (bbox)</legend>
+      <% bbox = @micro_area.coverage_bbox %>
+      <div class="grid grid-cols-2 gap-3">
+        <%= form.label :coverage_sw_lat, "SW lat", class: "text-xs" %>
+        <%= form.text_field :coverage_sw_lat, value: params.dig(:micro_area, :coverage_sw_lat).presence || bbox&.dig(:sw_lat), class: "rounded border border-slate-300 px-3 py-2" %>
+        <%= form.label :coverage_sw_lng, "SW lng", class: "text-xs" %>
+        <%= form.text_field :coverage_sw_lng, value: params.dig(:micro_area, :coverage_sw_lng).presence || bbox&.dig(:sw_lng), class: "rounded border border-slate-300 px-3 py-2" %>
+        <%= form.label :coverage_ne_lat, "NE lat", class: "text-xs" %>
+        <%= form.text_field :coverage_ne_lat, value: params.dig(:micro_area, :coverage_ne_lat).presence || bbox&.dig(:ne_lat), class: "rounded border border-slate-300 px-3 py-2" %>
+        <%= form.label :coverage_ne_lng, "NE lng", class: "text-xs" %>
+        <%= form.text_field :coverage_ne_lng, value: params.dig(:micro_area, :coverage_ne_lng).presence || bbox&.dig(:ne_lng), class: "rounded border border-slate-300 px-3 py-2" %>
+      </div>
+      <% if @micro_area.persisted? %>
+        <label class="flex items-center gap-2 text-sm">
+          <%= hidden_field_tag "micro_area[remove_coverage]", "0" %>
+          <%= check_box_tag "micro_area[remove_coverage]", "1", params.dig(:micro_area, :remove_coverage) == "1" %>
+          Remover cobertura geográfica
+        </label>
+      <% end %>
+    </fieldset>
+
+    <fieldset class="space-y-2 border-t border-slate-200 pt-4">
+      <legend class="text-sm font-medium">UBS vinculadas</legend>
+      <div class="space-y-2">
+        <% selected_ids = Array(params.dig(:micro_area, :health_facility_ids)).presence || @micro_area.health_facility_ids %>
+        <% @health_facilities.each do |facility| %>
+          <label class="flex items-center gap-2 text-sm">
+            <%= check_box_tag "micro_area[health_facility_ids][]", facility.id, selected_ids.include?(facility.id) %>
+            <%= facility.name %>
+          </label>
+        <% end %>
+        <%= hidden_field_tag "micro_area[health_facility_ids][]", "" %>
+      </div>
+    </fieldset>
+
+    <%= form.submit "Salvar", class: "rounded bg-emerald-700 px-4 py-2 font-semibold text-white" %>
+  <% end %>
+</section>

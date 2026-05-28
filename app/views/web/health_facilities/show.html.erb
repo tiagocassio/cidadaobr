@@ -1,0 +1,11 @@
+<section>
+  <div class="mb-6 flex items-center justify-between">
+    <div>
+      <h2 class="text-2xl font-bold"><%= @health_facility.name %></h2>
+      <p class="text-slate-600">CNES <%= @health_facility.cnes %></p>
+    </div>
+    <%= link_to "Editar", edit_web_health_facility_path(@health_facility), class: "rounded border border-slate-300 px-4 py-2 text-sm" %>
+  </div>
+
+  <p class="text-sm text-slate-600">Tipo: <%= @health_facility.facility_service_kind %></p>
+</section>

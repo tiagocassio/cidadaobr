@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_05_27_120018) do
+ActiveRecord::Schema[8.1].define(version: 2026_05_27_120023) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
@@ -111,6 +111,16 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_27_120018) do
     t.index ["municipality_id", "clinical_record_id", "clinical_record_item_id"], name: "index_encounters_on_municipality_and_clinical_refs", unique: true
   end
 
+  create_table "facility_micro_area_coverages", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.uuid "health_facility_id", null: false
+    t.uuid "micro_area_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["health_facility_id", "micro_area_id"], name: "index_facility_micro_area_coverages_on_facility_and_area", unique: true
+    t.index ["health_facility_id"], name: "index_facility_micro_area_coverages_on_health_facility_id"
+    t.index ["micro_area_id"], name: "index_facility_micro_area_coverages_on_micro_area_id"
+  end
+
   create_table "health_facilities", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.string "cnes", null: false
     t.datetime "created_at", null: false
@@ -120,6 +130,17 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_27_120018) do
     t.datetime "updated_at", null: false
     t.index ["municipality_id", "cnes"], name: "index_health_facilities_on_municipality_id_and_cnes", unique: true
     t.index ["municipality_id"], name: "index_health_facilities_on_municipality_id"
+  end
+
+  create_table "household_animals", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.uuid "household_id", null: false
+    t.string "notes"
+    t.integer "quantity", default: 1, null: false
+    t.string "species", null: false
+    t.datetime "updated_at", null: false
+    t.index ["household_id", "species"], name: "index_household_animals_on_household_id_and_species"
+    t.index ["household_id"], name: "index_household_animals_on_household_id"
   end
 
   create_table "household_members", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -138,7 +159,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_27_120018) do
     t.datetime "created_at", null: false
     t.uuid "health_facility_id"
     t.string "ibge_code", null: false
-    t.geography "location"
+    t.st_point "location", geographic: true
     t.string "micro_area_code"
     t.uuid "municipality_id", null: false
     t.string "neighborhood"
@@ -146,6 +167,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_27_120018) do
     t.string "street"
     t.string "street_number"
     t.datetime "updated_at", null: false
+    t.index ["location"], name: "index_households_on_location", using: :gist
     t.index ["municipality_id", "clinical_record_id"], name: "index_households_on_municipality_and_clinical_record", unique: true
   end
 
@@ -211,6 +233,19 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_27_120018) do
     t.string "severity", default: "error", null: false
     t.datetime "updated_at", null: false
     t.index ["record_type", "rule_code", "ledi_version"], name: "index_ledi_validation_rules_on_type_code_version", unique: true
+  end
+
+  create_table "micro_areas", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "care_team_id", null: false
+    t.string "code", null: false
+    t.st_polygon "coverage", geographic: true
+    t.datetime "created_at", null: false
+    t.uuid "municipality_id", null: false
+    t.string "name", null: false
+    t.datetime "updated_at", null: false
+    t.index ["care_team_id"], name: "index_micro_areas_on_care_team_id"
+    t.index ["municipality_id", "code"], name: "index_micro_areas_on_municipality_id_and_code", unique: true
+    t.index ["municipality_id"], name: "index_micro_areas_on_municipality_id"
   end
 
   create_table "municipalities", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -317,7 +352,12 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_27_120018) do
 
   add_foreign_key "care_teams", "health_facilities"
   add_foreign_key "care_teams", "municipalities"
+  add_foreign_key "facility_micro_area_coverages", "health_facilities"
+  add_foreign_key "facility_micro_area_coverages", "micro_areas"
   add_foreign_key "health_facilities", "municipalities"
+  add_foreign_key "household_animals", "households"
+  add_foreign_key "micro_areas", "care_teams"
+  add_foreign_key "micro_areas", "municipalities"
   add_foreign_key "user_municipality_memberships", "health_facilities"
   add_foreign_key "user_municipality_memberships", "municipalities"
   add_foreign_key "user_municipality_memberships", "users"

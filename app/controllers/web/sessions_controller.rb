@@ -2,6 +2,8 @@
 
 module Web
   class SessionsController < BaseController
+    skip_before_action :authenticate!, only: %i[new create]
+
     def new
     end
 

@@ -1,0 +1,11 @@
+<% if current_page > 1 || collection.size == Web::Paginatable::PAGE_SIZE %>
+  <nav class="mt-4 flex items-center gap-3 text-sm">
+    <% if current_page > 1 %>
+      <%= link_to "Anterior", url_for(request.query_parameters.merge(page: current_page - 1)), class: "rounded border border-slate-300 px-3 py-1" %>
+    <% end %>
+    <span>Página <%= current_page %></span>
+    <% if collection.size == Web::Paginatable::PAGE_SIZE %>
+      <%= link_to "Próxima", url_for(request.query_parameters.merge(page: current_page + 1)), class: "rounded border border-slate-300 px-3 py-1" %>
+    <% end %>
+  </nav>
+<% end %>
