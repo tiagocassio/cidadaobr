@@ -1,0 +1,15 @@
+pt-BR:
+  activerecord:
+    attributes:
+      care_team:
+        ine: "INE"
+        name: "Nome"
+    errors:
+      models:
+        care_team:
+          attributes:
+            ine:
+              blank: "é obrigatório"
+              taken: "já está cadastrado neste município"
+            name:
+              blank: "é obrigatório"

@@ -1,0 +1,24 @@
+pt-BR:
+  activerecord:
+    attributes:
+      outbox_message:
+        domain_event_id: "Evento de domínio"
+        municipality_id: "Município"
+        topic: "Tópico"
+        event_type: "Tipo de evento"
+        status: "Status"
+    errors:
+      models:
+        outbox_message:
+          attributes:
+            domain_event_id:
+              blank: "é obrigatório"
+            municipality_id:
+              blank: "é obrigatório"
+            topic:
+              blank: "é obrigatório"
+            event_type:
+              blank: "é obrigatório"
+            status:
+              blank: "é obrigatório"
+              inclusion: "é inválido"

@@ -1,0 +1,21 @@
+pt-BR:
+  activerecord:
+    attributes:
+      kafka_processed_event:
+        event_id: "Identificador do evento"
+        topic: "Tópico"
+        consumer_group: "Consumer group"
+        processed_at: "Data de processamento"
+    errors:
+      models:
+        kafka_processed_event:
+          attributes:
+            event_id:
+              blank: "é obrigatório"
+              taken: "já foi processado para este tópico e consumer group"
+            topic:
+              blank: "é obrigatório"
+            consumer_group:
+              blank: "é obrigatório"
+            processed_at:
+              blank: "é obrigatória"

@@ -1,0 +1,12 @@
+example_id                                       | status | run_time        |
+------------------------------------------------ | ------ | --------------- |
+./spec/models/domain_event_spec.rb[1:1]          | passed | 0.00826 seconds |
+./spec/models/kafka_processed_event_spec.rb[1:1] | passed | 0.00775 seconds |
+./spec/models/tenant_rls_spec.rb[1:1]            | passed | 0.09107 seconds |
+./spec/requests/api_health_spec.rb[1:1:1]        | passed | 0.00219 seconds |
+./spec/requests/api_health_spec.rb[1:2:1]        | passed | 0.01455 seconds |
+./spec/requests/health_check_spec.rb[1:1]        | passed | 0.00436 seconds |
+./spec/services/command_bus_spec.rb[1:1]         | passed | 0.0115 seconds  |
+./spec/services/jwt_token_service_spec.rb[1:1]   | passed | 0.00866 seconds |
+./spec/services/outbox_publisher_spec.rb[1:1]    | passed | 0.00309 seconds |
+./spec/services/query_bus_spec.rb[1:1]           | passed | 0.01136 seconds |

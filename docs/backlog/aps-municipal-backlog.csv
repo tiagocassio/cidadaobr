@@ -1,0 +1,4 @@
+work_item_type,id,parent_id,epic_id,title,phase,labels,depends_on,legacy_ref
+Epic,EPIC-00,,EPIC-00,CidadãoBR Saúde — Core Plataforma,0,backend;infra,,F0
+Story,STORY-00-01,EPIC-00,EPIC-00,[Core] CidadãoBR Saúde — Bootstrap e convenções,0,backend,,F0-01
+Task,TASK-00-01,STORY-00-01,EPIC-00,[Core] CidadãoBR Saúde — Bootstrap Rails application,0,backend,,F0-01

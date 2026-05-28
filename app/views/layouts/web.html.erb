@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="corporate">
+  <head>
+    <title><%= content_for(:title) || t("cidadaobr.brand.management") %></title>
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <%= csrf_meta_tags %>
+    <%= csp_meta_tag %>
+    <%= stylesheet_link_tag "tailwind", "data-turbo-track": "reload" %>
+    <%= javascript_include_tag "application", "data-turbo-track": "reload", type: "module" %>
+  </head>
+  <body class="bg-slate-50 text-slate-900">
+    <header class="border-b border-slate-200 bg-white px-6 py-4">
+      <div class="mx-auto flex max-w-6xl items-center justify-between">
+        <div>
+          <p class="text-sm font-semibold text-emerald-700"><%= t("cidadaobr.brand.platform") %></p>
+          <h1 class="text-xl font-bold"><%= t("cidadaobr.brand.management") %></h1>
+        </div>
+        <% if current_user %>
+          <%= button_to "Sair", web_logout_path, method: :delete, class: "rounded bg-slate-900 px-3 py-2 text-sm text-white" %>
+        <% end %>
+      </div>
+    </header>
+    <main class="mx-auto max-w-6xl px-6 py-8">
+      <% if flash[:notice] %><p class="mb-4 rounded bg-emerald-100 px-4 py-2 text-emerald-900"><%= flash[:notice] %></p><% end %>
+      <% if flash[:alert] %><p class="mb-4 rounded bg-red-100 px-4 py-2 text-red-900"><%= flash[:alert] %></p><% end %>
+      <%= yield %>
+    </main>
+  </body>
+</html>

@@ -1,0 +1,15 @@
+pt-BR:
+  activerecord:
+    attributes:
+      role:
+        name: "Nome"
+        code: "Código"
+    errors:
+      models:
+        role:
+          attributes:
+            name:
+              blank: "é obrigatório"
+            code:
+              blank: "é obrigatório"
+              taken: "já está em uso"

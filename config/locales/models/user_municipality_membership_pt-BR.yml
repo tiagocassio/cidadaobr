@@ -1,0 +1,17 @@
+pt-BR:
+  activerecord:
+    attributes:
+      user_municipality_membership:
+        scope: "Escopo"
+        role_code: "Código de papel"
+        health_facility_id: "Unidade de saúde"
+    errors:
+      models:
+        user_municipality_membership:
+          attributes:
+            scope:
+              inclusion: "é inválido"
+            role_code:
+              blank: "é obrigatório"
+            health_facility_id:
+              required_for_facility_scope: "é obrigatória para escopo de UBS"

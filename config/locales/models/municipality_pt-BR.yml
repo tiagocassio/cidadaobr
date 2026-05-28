@@ -1,0 +1,18 @@
+pt-BR:
+  activerecord:
+    attributes:
+      municipality:
+        name: "Nome"
+        ibge_code: "Código IBGE"
+        state_code: "UF"
+    errors:
+      models:
+        municipality:
+          attributes:
+            name:
+              blank: "é obrigatório"
+            ibge_code:
+              blank: "é obrigatório"
+              taken: "já está cadastrado"
+            state_code:
+              blank: "é obrigatória"

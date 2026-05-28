@@ -1,0 +1,26 @@
+pt-BR:
+  activerecord:
+    attributes:
+      domain_event:
+        municipality_id: "Município"
+        aggregate_type: "Tipo de agregado"
+        aggregate_id: "Identificador do agregado"
+        event_type: "Tipo de evento"
+        occurred_at: "Data de ocorrência"
+        version: "Versão"
+    errors:
+      models:
+        domain_event:
+          attributes:
+            municipality_id:
+              blank: "é obrigatório"
+            aggregate_type:
+              blank: "é obrigatório"
+            aggregate_id:
+              blank: "é obrigatório"
+            event_type:
+              blank: "é obrigatório"
+            occurred_at:
+              blank: "é obrigatória"
+            version:
+              blank: "é obrigatória"

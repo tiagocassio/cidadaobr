@@ -1,0 +1,20 @@
+<div class="mx-auto max-w-md rounded-lg border border-slate-200 bg-white p-8 shadow-sm">
+  <h2 class="mb-2 text-2xl font-bold"><%= t("cidadaobr.brand.management") %></h2>
+  <p class="mb-6 text-sm text-slate-600"><%= t("cidadaobr.dashboard.subtitle") %></p>
+
+  <%= form_with url: web_login_path, class: "space-y-4" do |form| %>
+    <div>
+      <%= form.label :email, "E-mail", class: "mb-1 block text-sm font-medium" %>
+      <%= form.email_field :email, required: true, class: "w-full rounded border border-slate-300 px-3 py-2" %>
+    </div>
+    <div>
+      <%= form.label :password, "Senha", class: "mb-1 block text-sm font-medium" %>
+      <%= form.password_field :password, required: true, class: "w-full rounded border border-slate-300 px-3 py-2" %>
+    </div>
+    <div>
+      <%= form.label :municipality_id, "Município", class: "mb-1 block text-sm font-medium" %>
+      <%= form.text_field :municipality_id, required: true, class: "w-full rounded border border-slate-300 px-3 py-2", placeholder: "UUID do município" %>
+    </div>
+    <%= form.submit "Entrar", class: "w-full rounded bg-emerald-700 px-4 py-2 font-semibold text-white" %>
+  <% end %>
+</div>
