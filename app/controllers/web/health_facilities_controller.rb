@@ -21,7 +21,7 @@ module Web
       @health_facility.municipality = current_municipality
 
       if @health_facility.save
-        redirect_to web_health_facility_path(@health_facility), notice: "UBS cadastrada com sucesso."
+        redirect_to web_health_facility_path(@health_facility), notice: t("cidadaobr.health_facilities.flash.created")
       else
         render :new, status: :unprocessable_entity
       end
@@ -32,7 +32,7 @@ module Web
 
     def update
       if @health_facility.update(health_facility_params)
-        redirect_to web_health_facility_path(@health_facility), notice: "UBS atualizada com sucesso."
+        redirect_to web_health_facility_path(@health_facility), notice: t("cidadaobr.health_facilities.flash.updated")
       else
         render :edit, status: :unprocessable_entity
       end

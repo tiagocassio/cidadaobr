@@ -1,13 +1,13 @@
 <section>
-  <h2 class="mb-6 text-2xl font-bold">Cidadãos</h2>
+  <h2 class="mb-6 text-2xl font-bold"><%= t("cidadaobr.citizens.index_title") %></h2>
 
   <div class="mb-4 flex flex-wrap items-center justify-between gap-2">
     <%= form_with url: web_citizens_path, method: :get, class: "flex flex-1 gap-2" do |form| %>
-      <%= form.text_field :q, value: params[:q], placeholder: "Buscar por CPF, CNS ou nome", class: "flex-1 rounded border border-slate-300 px-3 py-2" %>
-      <%= form.submit "Buscar", class: "rounded bg-slate-900 px-4 py-2 text-sm text-white" %>
+      <%= form.text_field :q, value: params[:q], placeholder: t("cidadaobr.citizens.search_placeholder"), class: "flex-1 rounded border border-slate-300 px-3 py-2" %>
+      <%= form.submit t("cidadaobr.common.search"), class: "rounded bg-slate-900 px-4 py-2 text-sm text-white" %>
     <% end %>
     <% if municipality_scope? || facility_scope? %>
-      <%= link_to "Novo cidadão", new_web_citizen_path, class: "rounded bg-emerald-700 px-4 py-2 text-sm font-semibold text-white" %>
+      <%= link_to t("cidadaobr.citizens.new"), new_web_citizen_path, class: "rounded bg-emerald-700 px-4 py-2 text-sm font-semibold text-white" %>
     <% end %>
   </div>
 
@@ -15,20 +15,20 @@
     <table class="min-w-full text-sm">
       <thead class="bg-slate-50 text-left">
         <tr>
-          <th class="px-4 py-3">Nome</th>
-          <th class="px-4 py-3">CPF</th>
-          <th class="px-4 py-3">CNS</th>
+          <th class="px-4 py-3"><%= Citizen.human_attribute_name(:full_name) %></th>
+          <th class="px-4 py-3"><%= Citizen.human_attribute_name(:cpf) %></th>
+          <th class="px-4 py-3"><%= Citizen.human_attribute_name(:cns) %></th>
           <th class="px-4 py-3"></th>
         </tr>
       </thead>
       <tbody>
         <% @citizens.each do |citizen| %>
           <tr class="border-t border-slate-100">
-            <td class="px-4 py-3"><%= citizen.full_name.presence || "—" %></td>
+            <td class="px-4 py-3"><%= citizen.full_name.presence || t("cidadaobr.common.empty") %></td>
             <td class="px-4 py-3"><%= citizen.cpf %></td>
             <td class="px-4 py-3"><%= citizen.cns %></td>
             <td class="px-4 py-3 text-right">
-              <%= link_to "Ver", web_citizen_path(citizen), class: "text-emerald-700 hover:underline" %>
+              <%= link_to t("cidadaobr.common.view"), web_citizen_path(citizen), class: "text-emerald-700 hover:underline" %>
             </td>
           </tr>
         <% end %>

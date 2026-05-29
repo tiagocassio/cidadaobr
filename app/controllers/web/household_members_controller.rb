@@ -14,7 +14,7 @@ module Web
       )
 
       if @household_member.save
-        redirect_to redirect_path(citizen), notice: "Membro vinculado ao domicílio."
+        redirect_to redirect_path(citizen), notice: t("cidadaobr.household_members.flash.linked")
       else
         redirect_to redirect_path(citizen), alert: @household_member.errors.full_messages.to_sentence
       end
@@ -26,7 +26,7 @@ module Web
       citizen = member.citizen
       member.destroy!
       redirect_to params[:citizen_id].present? ? web_citizen_path(citizen) : web_household_path(household),
-                  notice: "Membro removido do domicílio."
+                  notice: t("cidadaobr.household_members.flash.removed")
     end
 
     private

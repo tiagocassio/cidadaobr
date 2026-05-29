@@ -1,18 +1,18 @@
 <section>
-  <h2 class="mb-2 text-2xl font-bold">Domicílio</h2>
+  <h2 class="mb-2 text-2xl font-bold"><%= t("cidadaobr.households.show_title") %></h2>
   <p class="mb-6 text-slate-600">
     <%= [@household.street, @household.street_number, @household.neighborhood].compact.join(" · ") %>
   </p>
 
   <div class="mb-8 grid gap-6 lg:grid-cols-2">
     <div class="rounded-lg border border-slate-200 bg-white p-6 text-sm">
-      <h3 class="mb-3 font-semibold">Membros</h3>
+      <h3 class="mb-3 font-semibold"><%= t("cidadaobr.households.members") %></h3>
       <ul class="mb-4 space-y-2">
         <% @household.household_members.includes(:citizen).each do |member| %>
           <li class="flex items-center justify-between gap-2">
             <%= link_to member.citizen.full_name.presence || member.citizen.cpf || member.citizen.cns, web_citizen_path(member.citizen), class: "text-emerald-700 hover:underline" %>
             <% if municipality_scope? || facility_scope? %>
-              <%= button_to "Remover", web_household_member_path(member), method: :delete, class: "text-red-700 hover:underline", form: { data: { turbo_confirm: "Remover vínculo?" } } %>
+              <%= button_to t("cidadaobr.common.remove"), web_household_member_path(member), method: :delete, class: "text-red-700 hover:underline", form: { data: { turbo_confirm: t("cidadaobr.common.confirm_remove_link") } } %>
             <% end %>
           </li>
         <% end %>
@@ -20,27 +20,27 @@
 
       <% if municipality_scope? || facility_scope? %>
         <%= form_with url: web_household_household_members_path(@household), class: "space-y-2" do |form| %>
-          <%= form.collection_select "household_member[citizen_id]", @citizens_for_select, :id, ->(c) { c.full_name.presence || c.cpf || c.cns }, { prompt: "Selecionar cidadão" }, class: "w-full rounded border border-slate-300 px-3 py-2", required: true %>
-          <%= form.submit "Adicionar membro", class: "rounded bg-emerald-700 px-3 py-2 text-sm text-white" %>
+          <%= form.collection_select "household_member[citizen_id]", @citizens_for_select, :id, ->(c) { c.full_name.presence || c.cpf || c.cns }, { prompt: t("cidadaobr.households.select_citizen") }, class: "w-full rounded border border-slate-300 px-3 py-2", required: true %>
+          <%= form.submit t("cidadaobr.households.add_member"), class: "rounded bg-emerald-700 px-3 py-2 text-sm text-white" %>
         <% end %>
       <% end %>
     </div>
 
     <div class="rounded-lg border border-slate-200 bg-white p-6 text-sm">
-      <h3 class="mb-3 font-semibold">Animais no domicílio</h3>
+      <h3 class="mb-3 font-semibold"><%= t("cidadaobr.households.animals") %></h3>
       <ul class="mb-4 space-y-2">
         <% @household_animals.each do |animal| %>
           <li class="flex items-center justify-between">
             <span><%= animal.species %> (<%= animal.quantity %>)</span>
-            <%= button_to "Remover", web_household_animal_path(animal), method: :delete, class: "text-red-700 hover:underline", form: { data: { turbo_confirm: "Remover?" } } %>
+            <%= button_to t("cidadaobr.common.remove"), web_household_animal_path(animal), method: :delete, class: "text-red-700 hover:underline", form: { data: { turbo_confirm: t("cidadaobr.common.confirm_remove") } } %>
           </li>
         <% end %>
       </ul>
 
       <%= form_with model: [@household, @household_animal], url: web_household_household_animals_path(@household), class: "space-y-2" do |form| %>
-        <%= form.text_field :species, placeholder: "Espécie", required: true, class: "w-full rounded border border-slate-300 px-3 py-2" %>
+        <%= form.text_field :species, placeholder: t("cidadaobr.households.species_placeholder"), required: true, class: "w-full rounded border border-slate-300 px-3 py-2" %>
         <%= form.number_field :quantity, min: 1, value: 1, class: "w-full rounded border border-slate-300 px-3 py-2" %>
-        <%= form.submit "Adicionar animal", class: "rounded bg-emerald-700 px-3 py-2 text-sm text-white" %>
+        <%= form.submit t("cidadaobr.households.add_animal"), class: "rounded bg-emerald-700 px-3 py-2 text-sm text-white" %>
       <% end %>
     </div>
   </div>

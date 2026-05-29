@@ -1,0 +1,6 @@
+pt-BR:
+  activerecord:
+    attributes:
+      household_animal:
+        species: "Espécie"
+        quantity: "Quantidade"

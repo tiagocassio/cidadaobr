@@ -25,7 +25,7 @@ module Web
 
       if @micro_area.errors.none? && @micro_area.save
         sync_facility_coverages!
-        redirect_to web_micro_areas_path, notice: "Microárea cadastrada com sucesso."
+        redirect_to web_micro_areas_path, notice: t("cidadaobr.micro_areas.flash.created")
       else
         render :new, status: :unprocessable_entity
       end
@@ -40,7 +40,7 @@ module Web
 
       if @micro_area.errors.none? && @micro_area.update(attributes)
         sync_facility_coverages!
-        redirect_to web_micro_areas_path, notice: "Microárea atualizada com sucesso."
+        redirect_to web_micro_areas_path, notice: t("cidadaobr.micro_areas.flash.updated")
       else
         render :edit, status: :unprocessable_entity
       end
@@ -91,7 +91,7 @@ module Web
       if coverage
         @micro_area.coverage = coverage
       else
-        @micro_area.errors.add(:base, "Cobertura geográfica inválida")
+        @micro_area.errors.add(:base, :invalid_coverage)
       end
     end
 

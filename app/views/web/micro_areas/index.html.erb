@@ -1,18 +1,18 @@
 <section>
   <div class="mb-6 flex items-center justify-between">
-    <h2 class="text-2xl font-bold">Microáreas</h2>
-    <%= link_to "Nova microárea", new_web_micro_area_path, class: "rounded bg-emerald-700 px-4 py-2 text-sm font-semibold text-white" %>
+    <h2 class="text-2xl font-bold"><%= t("cidadaobr.micro_areas.index_title") %></h2>
+    <%= link_to t("cidadaobr.micro_areas.new"), new_web_micro_area_path, class: "rounded bg-emerald-700 px-4 py-2 text-sm font-semibold text-white" %>
   </div>
 
   <div class="overflow-hidden rounded-lg border border-slate-200 bg-white">
     <table class="min-w-full text-sm">
       <thead class="bg-slate-50 text-left">
         <tr>
-          <th class="px-4 py-3">Código</th>
-          <th class="px-4 py-3">Nome</th>
-          <th class="px-4 py-3">Equipe</th>
-          <th class="px-4 py-3">Domicílios</th>
-          <th class="px-4 py-3">UBS</th>
+          <th class="px-4 py-3"><%= MicroArea.human_attribute_name(:code) %></th>
+          <th class="px-4 py-3"><%= MicroArea.human_attribute_name(:name) %></th>
+          <th class="px-4 py-3"><%= MicroArea.human_attribute_name(:care_team_id) %></th>
+          <th class="px-4 py-3"><%= t("cidadaobr.micro_areas.table.households") %></th>
+          <th class="px-4 py-3"><%= t("cidadaobr.micro_areas.table.health_facilities") %></th>
         </tr>
       </thead>
       <tbody>
@@ -22,9 +22,9 @@
             <td class="px-4 py-3"><%= area.name %></td>
             <td class="px-4 py-3"><%= area.care_team.name %></td>
             <td class="px-4 py-3"><%= area.located_households_count %></td>
-            <td class="px-4 py-3"><%= area.health_facilities.pluck(:name).join(", ").presence || "—" %></td>
+            <td class="px-4 py-3"><%= area.health_facilities.pluck(:name).join(", ").presence || t("cidadaobr.micro_areas.empty_facilities") %></td>
             <td class="px-4 py-3 text-right">
-              <%= link_to "Editar", edit_web_micro_area_path(area), class: "text-emerald-700 hover:underline" %>
+              <%= link_to t("cidadaobr.micro_areas.edit"), edit_web_micro_area_path(area), class: "text-emerald-700 hover:underline" %>
             </td>
           </tr>
         <% end %>

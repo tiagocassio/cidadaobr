@@ -13,7 +13,7 @@ module Scheduling
       actual = scheduled_at.in_time_zone
       return if actual.change(sec: 0) == expected.change(sec: 0)
 
-      raise Scheduling::Errors::SlotUnavailableError, "Scheduled time does not match selected slot"
+      Scheduling::Errors::SlotUnavailableError.raise!(:slot_time_mismatch)
     end
 
     def coerce_scheduled_at_for_slot!(scheduled_at, slot)
@@ -24,7 +24,7 @@ module Scheduling
     def validate_room_slot_coherence!(room, capacity_slot)
       if capacity_slot.consultation_room_id != room.id ||
          capacity_slot.health_facility_id != room.health_facility_id
-        raise Scheduling::Errors::SlotUnavailableError, "Slot does not belong to the selected room"
+        Scheduling::Errors::SlotUnavailableError.raise!(:slot_room_mismatch)
       end
     end
   end

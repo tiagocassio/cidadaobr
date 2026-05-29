@@ -4,6 +4,7 @@ pt-BR:
       care_team:
         ine: "INE"
         name: "Nome"
+        health_facility_id: "UBS"
     errors:
       models:
         care_team:

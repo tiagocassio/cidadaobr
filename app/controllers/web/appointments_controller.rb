@@ -61,12 +61,12 @@ module Web
         care_team_id: attrs[:care_team_id],
         channel: "web_reception"
       )
-      redirect_to web_appointment_path(appointment), notice: "Consulta agendada."
+      redirect_to web_appointment_path(appointment), notice: t("cidadaobr.appointments.flash.booked")
     rescue Scheduling::Errors::SlotUnavailableError => e
-      flash.now[:alert] = e.message
+      flash.now[:alert] = Scheduling::ErrorMessages.slot_unavailable_message(e)
       render_new_with_errors
     rescue ActiveRecord::RecordNotFound, ArgumentError
-      flash.now[:alert] = "Dados inválidos para agendamento."
+      flash.now[:alert] = t("cidadaobr.appointments.flash.invalid_booking_data")
       render_new_with_errors
     end
 
@@ -79,25 +79,25 @@ module Web
 
     def check_in
       Scheduling::CheckInAppointment.call(appointment: @appointment)
-      redirect_to reception_web_appointments_path(facility_scope_params(@appointment.health_facility_id)), notice: "Check-in realizado."
+      redirect_to reception_web_appointments_path(facility_scope_params(@appointment.health_facility_id)), notice: t("cidadaobr.appointments.flash.check_in")
     rescue Scheduling::Errors::InvalidTransitionError
-      redirect_to reception_web_appointments_path(facility_scope_params(@appointment.health_facility_id)), alert: "Não foi possível fazer check-in."
+      redirect_to reception_web_appointments_path(facility_scope_params(@appointment.health_facility_id)), alert: t("cidadaobr.appointments.flash.check_in_failed")
     end
 
     def complete
       Scheduling::CompleteAppointment.call(appointment: @appointment)
-      redirect_to reception_web_appointments_path(facility_scope_params(@appointment.health_facility_id)), notice: "Atendimento concluído."
+      redirect_to reception_web_appointments_path(facility_scope_params(@appointment.health_facility_id)), notice: t("cidadaobr.appointments.flash.completed")
     rescue Scheduling::Errors::InvalidTransitionError
-      redirect_to reception_web_appointments_path(facility_scope_params(@appointment.health_facility_id)), alert: "Não foi possível concluir atendimento."
+      redirect_to reception_web_appointments_path(facility_scope_params(@appointment.health_facility_id)), alert: t("cidadaobr.appointments.flash.complete_failed")
     end
 
     def cancel
       Scheduling::CancelAppointment.call(appointment: @appointment)
-      redirect_to web_appointments_path(facility_scope_params(@appointment.health_facility_id)), notice: "Consulta cancelada."
+      redirect_to web_appointments_path(facility_scope_params(@appointment.health_facility_id)), notice: t("cidadaobr.appointments.flash.cancelled")
     rescue Scheduling::Errors::InvalidTransitionError
-      redirect_to web_appointment_path(@appointment), alert: "Não foi possível cancelar."
+      redirect_to web_appointment_path(@appointment), alert: t("cidadaobr.appointments.flash.cancel_failed")
     rescue Scheduling::Errors::SlotUnavailableError => e
-      redirect_to web_appointment_path(@appointment), alert: e.message
+      redirect_to web_appointment_path(@appointment), alert: Scheduling::ErrorMessages.slot_unavailable_message(e)
     end
 
     def reschedule
@@ -113,13 +113,13 @@ module Web
         scheduled_at: scheduled_at,
         room_capacity_slot_id: slot.id
       )
-      redirect_to web_appointment_path(@appointment), notice: "Consulta reagendada."
+      redirect_to web_appointment_path(@appointment), notice: t("cidadaobr.appointments.flash.rescheduled")
     rescue Scheduling::Errors::InvalidTransitionError
-      redirect_to web_appointment_path(@appointment), alert: "Não foi possível reagendar."
+      redirect_to web_appointment_path(@appointment), alert: t("cidadaobr.appointments.flash.reschedule_failed")
     rescue Scheduling::Errors::SlotUnavailableError => e
-      redirect_to web_appointment_path(@appointment), alert: e.message
+      redirect_to web_appointment_path(@appointment), alert: Scheduling::ErrorMessages.slot_unavailable_message(e)
     rescue ActiveRecord::RecordNotFound, ArgumentError
-      redirect_to web_appointment_path(@appointment), alert: "Dados inválidos para reagendamento."
+      redirect_to web_appointment_path(@appointment), alert: t("cidadaobr.appointments.flash.invalid_reschedule_data")
     end
 
     private
@@ -199,7 +199,9 @@ module Web
     end
 
     def render_new_with_errors
-      @appointment = Appointment.new(appointment_params)
+      attrs = appointment_params
+      @appointment = Appointment.new(attrs.except(:room_capacity_slot_id))
+      @selected_room_capacity_slot_id = attrs[:room_capacity_slot_id]
       set_form_collections
       render :new, status: :unprocessable_entity
     end

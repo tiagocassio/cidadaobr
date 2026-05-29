@@ -30,7 +30,7 @@ module Web
       @citizen.municipality = current_municipality
 
       if @citizen.save
-        redirect_to web_citizen_path(@citizen), notice: "Cidadão cadastrado com sucesso."
+        redirect_to web_citizen_path(@citizen), notice: t("cidadaobr.citizens.flash.created")
       else
         render :new, status: :unprocessable_entity
       end
@@ -41,7 +41,7 @@ module Web
 
     def update
       if @citizen.update(citizen_params)
-        redirect_to web_citizen_path(@citizen), notice: "Cidadão atualizado com sucesso."
+        redirect_to web_citizen_path(@citizen), notice: t("cidadaobr.citizens.flash.updated")
       else
         render :edit, status: :unprocessable_entity
       end

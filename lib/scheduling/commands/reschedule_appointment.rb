@@ -64,7 +64,7 @@ module Scheduling
       if capacity_slot.municipality_id != appointment.municipality_id ||
          capacity_slot.health_facility_id != appointment.health_facility_id ||
          capacity_slot.consultation_room_id != appointment.consultation_room_id
-        raise Scheduling::Errors::SlotUnavailableError, "Slot does not belong to this appointment"
+        Scheduling::Errors::SlotUnavailableError.raise!(:slot_appointment_mismatch)
       end
     end
 

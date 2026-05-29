@@ -273,6 +273,3 @@ pt-BR:
       health: "CidadãoBR Saúde"
       management: "CidadãoBR Saúde Gestão"
       field: "CidadãoBR Saúde Campo"
-    dashboard:
-      title: "Painel de Gestão"
-      subtitle: "Gestão Municipal e UBS"

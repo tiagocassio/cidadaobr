@@ -1,14 +1,15 @@
 <nav class="mb-6 flex flex-wrap gap-2 border-b border-slate-200 pb-4 text-sm">
-  <%= link_to "Painel", web_root_path, class: "rounded px-3 py-2 hover:bg-slate-100" %>
+  <%= link_to t("cidadaobr.nav.dashboard"), web_root_path, class: "rounded px-3 py-2 hover:bg-slate-100" %>
   <% if municipality_scope? %>
-    <%= link_to "UBS", web_health_facilities_path, class: "rounded px-3 py-2 hover:bg-slate-100" %>
-    <%= link_to "Microáreas", web_micro_areas_path, class: "rounded px-3 py-2 hover:bg-slate-100" %>
-    <%= link_to "Usuários", web_users_path, class: "rounded px-3 py-2 hover:bg-slate-100" %>
+    <%= link_to t("cidadaobr.nav.health_facilities"), web_health_facilities_path, class: "rounded px-3 py-2 hover:bg-slate-100" %>
+    <%= link_to t("cidadaobr.nav.micro_areas"), web_micro_areas_path, class: "rounded px-3 py-2 hover:bg-slate-100" %>
+    <%= link_to t("cidadaobr.nav.users"), web_users_path, class: "rounded px-3 py-2 hover:bg-slate-100" %>
   <% end %>
-  <%= link_to "Equipes", web_care_teams_path, class: "rounded px-3 py-2 hover:bg-slate-100" %>
-  <%= link_to "Cidadãos", web_citizens_path, class: "rounded px-3 py-2 hover:bg-slate-100" %>
-  <%= link_to "Domicílios", web_households_path, class: "rounded px-3 py-2 hover:bg-slate-100" %>
-  <%= link_to "Mapa", map_web_households_path, class: "rounded px-3 py-2 hover:bg-slate-100" %>
-  <%= link_to "Agenda", web_appointments_path, class: "rounded px-3 py-2 hover:bg-slate-100" %>
-  <%= link_to "Lotes LEDI", web_ledi_batches_path, class: "rounded px-3 py-2 hover:bg-slate-100" %>
+  <%= link_to t("cidadaobr.nav.care_teams"), web_care_teams_path, class: "rounded px-3 py-2 hover:bg-slate-100" %>
+  <%= link_to t("cidadaobr.nav.citizens"), web_citizens_path, class: "rounded px-3 py-2 hover:bg-slate-100" %>
+  <%= link_to t("cidadaobr.nav.households"), web_households_path, class: "rounded px-3 py-2 hover:bg-slate-100" %>
+  <%= link_to t("cidadaobr.nav.map"), map_web_households_path, class: "rounded px-3 py-2 hover:bg-slate-100" %>
+  <%= link_to t("cidadaobr.nav.appointments"), web_appointments_path, class: "rounded px-3 py-2 hover:bg-slate-100" %>
+  <%= link_to t("cidadaobr.nav.ledi_batches"), web_ledi_batches_path, class: "rounded px-3 py-2 hover:bg-slate-100" %>
+  <%= link_to t("cidadaobr.indicators.nav"), web_indicators_root_path, class: "rounded px-3 py-2 hover:bg-slate-100" %>
 </nav>

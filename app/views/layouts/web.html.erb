@@ -16,7 +16,7 @@
           <h1 class="text-xl font-bold"><%= t("cidadaobr.brand.management") %></h1>
         </div>
         <% if current_user %>
-          <%= button_to "Sair", web_logout_path, method: :delete, class: "rounded bg-slate-900 px-3 py-2 text-sm text-white" %>
+          <%= button_to t("cidadaobr.common.logout"), web_logout_path, method: :delete, class: "rounded bg-slate-900 px-3 py-2 text-sm text-white" %>
         <% end %>
       </div>
     </header>

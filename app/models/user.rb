@@ -37,7 +37,7 @@ class User < ApplicationRecord
       .find_each do |membership|
         next unless membership.last_active_municipal_admin?
 
-        errors.add(:base, "Não é possível desativar o último administrador municipal.")
+        errors.add(:base, :cannot_deactivate_last_municipal_admin)
         break
       end
   end

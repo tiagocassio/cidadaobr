@@ -10,7 +10,7 @@ module Web
       @household_animal = @household.household_animals.build(household_animal_params)
 
       if @household_animal.save
-        redirect_to web_household_path(@household), notice: "Animal registrado."
+        redirect_to web_household_path(@household), notice: t("cidadaobr.household_animals.flash.created")
       else
         redirect_to web_household_path(@household), alert: @household_animal.errors.full_messages.to_sentence
       end
@@ -20,7 +20,7 @@ module Web
       animal = HouseholdAnimal.joins(:household).merge(scoped_households).find(params[:id])
       household = animal.household
       animal.destroy!
-      redirect_to web_household_path(household), notice: "Animal removido."
+      redirect_to web_household_path(household), notice: t("cidadaobr.household_animals.flash.removed")
     end
 
     private

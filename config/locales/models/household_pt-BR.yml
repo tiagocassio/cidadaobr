@@ -1,0 +1,8 @@
+pt-BR:
+  activerecord:
+    attributes:
+      household:
+        street: "Logradouro"
+        street_number: "Número"
+        neighborhood: "Bairro"
+        health_facility_id: "UBS"

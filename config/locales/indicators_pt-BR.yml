@@ -1,0 +1,82 @@
+pt-BR:
+  cidadaobr:
+    indicators:
+      nav: "Indicadores"
+      dashboard:
+        title: "Indicadores APS"
+        subtitle: "Desempenho municipal — Portaria GM/MS 3.493/2024"
+        quadrimester_label: "Quadrimestre"
+        filter: "Filtrar"
+        municipal_score: "Score municipal (≥85)"
+        scoped_score: "Score das equipes visíveis (≥85)"
+        open_gaps: "Gaps abertos"
+        monitored_teams: "Equipes monitoradas"
+        municipal_average: "Indicadores — média municipal"
+        scoped_average: "Indicadores — média das equipes visíveis"
+        no_score: "Sem score"
+        teams: "Equipes"
+        transfer_projection: "Projeção de repasse"
+        details: "Detalhes"
+        ine: "INE"
+      teams:
+        back: "← Indicadores"
+        scores_by_indicator: "Scores por indicador"
+        no_scores: "Nenhum score calculado para este quadrimestre."
+        open_gaps: "Gaps abertos"
+        good_practice: "BP"
+        no_open_gaps: "Nenhum gap aberto para esta equipe."
+      projections:
+        back: "← Indicadores"
+        title: "Projeção de repasse"
+        subtitle: "Estimativa interna — %{quadrimester}"
+        total_stub: "Total projetado (stub)"
+        by_team: "Por equipe"
+      tiers:
+        excellent: "Excelente"
+        good: "Bom"
+        sufficient: "Suficiente"
+        regular: "Regular"
+      good_practices:
+        CAD: "Cadastro"
+        ACOMP: "Acompanhamento"
+        A: "Acesso / atendimento"
+        F: "Acompanhamento clínico"
+      catalog:
+        CVAT:
+          name: "Componente de Avaliação Territorial"
+        V_CAD:
+          name: "Vínculo e acompanhamento — cadastro"
+        V_ACOMP:
+          name: "Vínculo e acompanhamento — acompanhamento"
+        V_SAT:
+          name: "Vínculo e acompanhamento — satisfação"
+        C1:
+          name: "Mais acesso à APS"
+        C2:
+          name: "Cuidado no desenvolvimento infantil"
+        C3:
+          name: "Cuidado da gestante e puérpera"
+        C4:
+          name: "Cuidado da pessoa com diabetes"
+        C5:
+          name: "Cuidado da pessoa com hipertensão"
+        C6:
+          name: "Cuidado da pessoa idosa"
+        C7:
+          name: "Cuidado da mulher na prevenção do câncer"
+        C8:
+          name: "1ª consulta odontológica programada"
+        C9:
+          name: "Tratamento odontológico concluído"
+        C10:
+          name: "Exodontias"
+        C11:
+          name: "Escovação supervisionada"
+        C12:
+          name: "Procedimentos preventivos odontológicos"
+        C13:
+          name: "Tratamento restaurador atraumático"
+        C14:
+          name: "Média de atendimentos por pessoa"
+        C15:
+          name: "Ações interprofissionais"

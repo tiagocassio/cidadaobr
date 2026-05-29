@@ -4,47 +4,47 @@
 
   <div class="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
     <div class="rounded-lg border border-slate-200 bg-white p-4">
-      <p class="text-sm text-slate-500">UBS</p>
+      <p class="text-sm text-slate-500"><%= t("cidadaobr.dashboard.stats.health_facilities") %></p>
       <p class="text-2xl font-bold"><%= @stats[:health_facilities] %></p>
     </div>
     <div class="rounded-lg border border-slate-200 bg-white p-4">
-      <p class="text-sm text-slate-500">Equipes</p>
+      <p class="text-sm text-slate-500"><%= t("cidadaobr.dashboard.stats.care_teams") %></p>
       <p class="text-2xl font-bold"><%= @stats[:care_teams] %></p>
     </div>
     <div class="rounded-lg border border-slate-200 bg-white p-4">
-      <p class="text-sm text-slate-500">Cidadãos</p>
+      <p class="text-sm text-slate-500"><%= t("cidadaobr.dashboard.stats.citizens") %></p>
       <p class="text-2xl font-bold"><%= @stats[:citizens] %></p>
     </div>
     <div class="rounded-lg border border-slate-200 bg-white p-4">
-      <p class="text-sm text-slate-500">Domicílios</p>
+      <p class="text-sm text-slate-500"><%= t("cidadaobr.dashboard.stats.households") %></p>
       <p class="text-2xl font-bold"><%= @stats[:households] %></p>
     </div>
   </div>
 
   <% if @stats[:ledi_batches].any? %>
     <div class="mb-8 rounded-lg border border-slate-200 bg-white p-6">
-      <h3 class="mb-4 font-semibold">Lotes LEDI por status</h3>
+      <h3 class="mb-4 font-semibold"><%= t("cidadaobr.dashboard.ledi_batches_by_status") %></h3>
       <ul class="flex flex-wrap gap-3 text-sm">
         <% @stats[:ledi_batches].each do |status, count| %>
-          <li class="rounded bg-slate-100 px-3 py-1"><%= status %>: <%= count %></li>
+          <li class="rounded bg-slate-100 px-3 py-1"><%= ledi_batch_status_label(status) %>: <%= count %></li>
         <% end %>
       </ul>
     </div>
   <% end %>
 
   <div class="rounded-lg border border-slate-200 bg-white p-6">
-    <h3 class="mb-4 font-semibold">Eventos recentes da plataforma</h3>
+    <h3 class="mb-4 font-semibold"><%= t("cidadaobr.dashboard.recent_events") %></h3>
     <% if @events.any? %>
       <ul class="space-y-2 text-sm">
         <% @events.each do |event| %>
           <li class="rounded border border-slate-100 px-3 py-2">
-            <strong><%= event.event_type %></strong>
+            <strong><%= platform_event_type_label(event.event_type) %></strong>
             <span class="text-slate-500">— <%= l(event.occurred_at, format: :short) %></span>
           </li>
         <% end %>
       </ul>
     <% else %>
-      <p class="text-sm text-slate-500">Nenhum evento registrado ainda.</p>
+      <p class="text-sm text-slate-500"><%= t("cidadaobr.dashboard.no_events") %></p>
     <% end %>
   </div>
 </section>

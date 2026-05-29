@@ -37,6 +37,12 @@ Rails.application.routes.draw do
       end
     end
     resources :ledi_batches, only: %i[index show]
+
+    namespace :indicators do
+      root "dashboard#show"
+      resources :teams, only: :show
+      get "projections", to: "projections#show"
+    end
   end
 
   namespace :api, defaults: { format: :json } do

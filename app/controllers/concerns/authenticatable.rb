@@ -33,7 +33,7 @@ module Authenticatable
     if request.format.json? || request.path.start_with?("/api/")
       render_json_error("Unauthorized", status: :unauthorized)
     else
-      redirect_to web_login_path, alert: "Faça login para continuar."
+      redirect_to web_login_path, alert: t("cidadaobr.sessions.flash.sign_in_required")
     end
   end
 

@@ -1,5 +1,5 @@
 <section>
-  <h2 class="mb-6 text-2xl font-bold"><%= @user.persisted? ? @user.full_name : "Novo usuário" %></h2>
+  <h2 class="mb-6 text-2xl font-bold"><%= @user.persisted? ? @user.full_name : t("cidadaobr.users.new_title") %></h2>
 
   <%= form_with model: [:web, @user], class: "max-w-xl space-y-4 rounded-lg border border-slate-200 bg-white p-6" do |form| %>
     <% if @user.errors.any? || @membership&.errors&.any? %>
@@ -9,56 +9,56 @@
     <% end %>
 
     <div>
-      <%= form.label :full_name, "Nome", class: "mb-1 block text-sm font-medium" %>
+      <%= form.label :full_name, class: "mb-1 block text-sm font-medium" %>
       <%= form.text_field :full_name, required: true, class: "w-full rounded border border-slate-300 px-3 py-2" %>
     </div>
     <div>
-      <%= form.label :email, "E-mail", class: "mb-1 block text-sm font-medium" %>
+      <%= form.label :email, class: "mb-1 block text-sm font-medium" %>
       <%= form.email_field :email, required: true, class: "w-full rounded border border-slate-300 px-3 py-2" %>
     </div>
     <div>
-      <%= form.label :password, "Senha", class: "mb-1 block text-sm font-medium" %>
+      <%= form.label :password, class: "mb-1 block text-sm font-medium" %>
       <%= form.password_field :password, required: @user.new_record?, class: "w-full rounded border border-slate-300 px-3 py-2" %>
     </div>
     <div>
-      <%= form.label :password_confirmation, "Confirmar senha", class: "mb-1 block text-sm font-medium" %>
+      <%= form.label :password_confirmation, class: "mb-1 block text-sm font-medium" %>
       <%= form.password_field :password_confirmation, class: "w-full rounded border border-slate-300 px-3 py-2" %>
     </div>
     <% if @user.persisted? %>
       <div>
         <%= form.label :active, class: "inline-flex items-center gap-2 text-sm" do %>
           <%= form.check_box :active %>
-          Ativo
+          <%= t("cidadaobr.users.active") %>
         <% end %>
       </div>
     <% end %>
 
     <%= fields_for :user_municipality_membership, @membership do |membership_form| %>
       <div>
-        <%= membership_form.label :scope, "Escopo", class: "mb-1 block text-sm font-medium" %>
-        <%= membership_form.select :scope, [["Município", "municipality"], ["UBS", "facility"]], {}, class: "w-full rounded border border-slate-300 px-3 py-2" %>
+        <%= membership_form.label :scope, class: "mb-1 block text-sm font-medium" %>
+        <%= membership_form.select :scope, [[t("cidadaobr.users.scopes.municipality"), "municipality"], [t("cidadaobr.users.scopes.facility"), "facility"]], {}, class: "w-full rounded border border-slate-300 px-3 py-2" %>
       </div>
       <div>
-        <%= membership_form.label :role_code, "Papel", class: "mb-1 block text-sm font-medium" %>
+        <%= membership_form.label :role_code, class: "mb-1 block text-sm font-medium" %>
         <%= membership_form.select :role_code,
-          UserMunicipalityMembership::WEB_ROLE_CODES.map { |code| [ code.humanize, code ] },
+          user_membership_role_options,
           {},
           class: "w-full rounded border border-slate-300 px-3 py-2" %>
       </div>
       <div>
-        <%= membership_form.label :health_facility_id, "UBS", class: "mb-1 block text-sm font-medium" %>
-        <%= membership_form.collection_select :health_facility_id, @health_facilities, :id, :name, { include_blank: "—" }, class: "w-full rounded border border-slate-300 px-3 py-2" %>
+        <%= membership_form.label :health_facility_id, class: "mb-1 block text-sm font-medium" %>
+        <%= membership_form.collection_select :health_facility_id, @health_facilities, :id, :name, { include_blank: t("cidadaobr.common.empty") }, class: "w-full rounded border border-slate-300 px-3 py-2" %>
       </div>
       <% if @user.persisted? %>
         <div>
           <%= membership_form.label :active, class: "inline-flex items-center gap-2 text-sm" do %>
             <%= membership_form.check_box :active %>
-            Vínculo ativo
+            <%= t("cidadaobr.users.membership_active") %>
           <% end %>
         </div>
       <% end %>
     <% end %>
 
-    <%= form.submit "Salvar", class: "rounded bg-emerald-700 px-4 py-2 font-semibold text-white" %>
+    <%= form.submit t("cidadaobr.common.save"), class: "rounded bg-emerald-700 px-4 py-2 font-semibold text-white" %>
   <% end %>
 </section>

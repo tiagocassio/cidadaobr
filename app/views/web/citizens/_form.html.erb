@@ -1,5 +1,5 @@
 <section>
-  <h2 class="mb-6 text-2xl font-bold"><%= @citizen.persisted? ? (@citizen.full_name.presence || "Cidadão") : "Novo cidadão" %></h2>
+  <h2 class="mb-6 text-2xl font-bold"><%= @citizen.persisted? ? (@citizen.full_name.presence || t("cidadaobr.citizens.fallback_name")) : t("cidadaobr.citizens.new_title") %></h2>
 
   <%= form_with model: [:web, @citizen], class: "max-w-xl space-y-4 rounded-lg border border-slate-200 bg-white p-6" do |form| %>
     <% if @citizen.errors.any? %>
@@ -7,39 +7,39 @@
     <% end %>
 
     <div>
-      <%= form.label :full_name, "Nome completo", class: "mb-1 block text-sm font-medium" %>
+      <%= form.label :full_name, class: "mb-1 block text-sm font-medium" %>
       <%= form.text_field :full_name, class: "w-full rounded border border-slate-300 px-3 py-2" %>
     </div>
     <div class="grid gap-4 sm:grid-cols-2">
       <div>
-        <%= form.label :cpf, "CPF", class: "mb-1 block text-sm font-medium" %>
+        <%= form.label :cpf, class: "mb-1 block text-sm font-medium" %>
         <%= form.text_field :cpf, class: "w-full rounded border border-slate-300 px-3 py-2" %>
       </div>
       <div>
-        <%= form.label :cns, "CNS", class: "mb-1 block text-sm font-medium" %>
+        <%= form.label :cns, class: "mb-1 block text-sm font-medium" %>
         <%= form.text_field :cns, class: "w-full rounded border border-slate-300 px-3 py-2" %>
       </div>
     </div>
     <div class="grid gap-4 sm:grid-cols-2">
       <div>
-        <%= form.label :birth_date, "Data de nascimento", class: "mb-1 block text-sm font-medium" %>
+        <%= form.label :birth_date, class: "mb-1 block text-sm font-medium" %>
         <%= form.date_field :birth_date, class: "w-full rounded border border-slate-300 px-3 py-2" %>
       </div>
       <div>
-        <%= form.label :sex, "Sexo", class: "mb-1 block text-sm font-medium" %>
-        <%= form.select :sex, [["—", ""], ["Feminino", "F"], ["Masculino", "M"], ["Indeterminado", "I"]], {}, class: "w-full rounded border border-slate-300 px-3 py-2" %>
+        <%= form.label :sex, class: "mb-1 block text-sm font-medium" %>
+        <%= form.select :sex, [[t("cidadaobr.common.empty"), ""], [t("cidadaobr.citizens.sex_options.female"), "F"], [t("cidadaobr.citizens.sex_options.male"), "M"], [t("cidadaobr.citizens.sex_options.indeterminate"), "I"]], {}, class: "w-full rounded border border-slate-300 px-3 py-2" %>
       </div>
     </div>
     <% if municipality_scope? %>
       <div>
-        <%= form.label :health_facility_id, "UBS", class: "mb-1 block text-sm font-medium" %>
-        <%= form.collection_select :health_facility_id, @health_facilities, :id, :name, { include_blank: "—" }, class: "w-full rounded border border-slate-300 px-3 py-2" %>
+        <%= form.label :health_facility_id, class: "mb-1 block text-sm font-medium" %>
+        <%= form.collection_select :health_facility_id, @health_facilities, :id, :name, { include_blank: t("cidadaobr.common.empty") }, class: "w-full rounded border border-slate-300 px-3 py-2" %>
       </div>
     <% end %>
     <div>
-      <%= form.label :care_team_id, "Equipe", class: "mb-1 block text-sm font-medium" %>
-      <%= form.collection_select :care_team_id, @care_teams, :id, :name, { include_blank: "—" }, class: "w-full rounded border border-slate-300 px-3 py-2" %>
+      <%= form.label :care_team_id, class: "mb-1 block text-sm font-medium" %>
+      <%= form.collection_select :care_team_id, @care_teams, :id, :name, { include_blank: t("cidadaobr.common.empty") }, class: "w-full rounded border border-slate-300 px-3 py-2" %>
     </div>
-    <%= form.submit "Salvar", class: "rounded bg-emerald-700 px-4 py-2 font-semibold text-white" %>
+    <%= form.submit t("cidadaobr.common.save"), class: "rounded bg-emerald-700 px-4 py-2 font-semibold text-white" %>
   <% end %>
 </section>

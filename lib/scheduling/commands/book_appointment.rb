@@ -88,7 +88,7 @@ module Scheduling
          service_type.municipality_id != tenant.municipality_id ||
          room.municipality_id != tenant.municipality_id ||
          capacity_slot.municipality_id != tenant.municipality_id
-        raise Scheduling::Errors::SlotUnavailableError, "Booking data is outside the current municipality"
+        Scheduling::Errors::SlotUnavailableError.raise!(:outside_municipality)
       end
 
       BookingGuards.validate_room_slot_coherence!(room, capacity_slot)
@@ -98,12 +98,12 @@ module Scheduling
       return unless @channel == "citizen_app"
 
       if citizen.health_facility_id.blank?
-        raise Scheduling::Errors::SlotUnavailableError, "Citizen must be linked to a health facility before booking"
+        Scheduling::Errors::SlotUnavailableError.raise!(:citizen_missing_facility)
       end
 
       return if citizen.health_facility_id == room.health_facility_id
 
-      raise Scheduling::Errors::SlotUnavailableError, "Citizen is not linked to the selected facility"
+      Scheduling::Errors::SlotUnavailableError.raise!(:citizen_facility_mismatch)
     end
 
     def resolve_care_team_id!(tenant, citizen, room)
@@ -112,7 +112,7 @@ module Scheduling
 
       if @channel == "citizen_app"
         if team_id.present? && citizen.care_team_id.present? && citizen.care_team_id != team_id
-          raise Scheduling::Errors::SlotUnavailableError, "Care team is not linked to the citizen"
+          Scheduling::Errors::SlotUnavailableError.raise!(:care_team_citizen_mismatch)
         end
 
         return team_id
@@ -120,7 +120,7 @@ module Scheduling
 
       team = CareTeam.find_by(id: team_id, municipality_id: tenant.municipality_id)
       unless team && team.health_facility_id == room.health_facility_id
-        raise Scheduling::Errors::SlotUnavailableError, "Care team is not linked to the selected facility"
+        Scheduling::Errors::SlotUnavailableError.raise!(:care_team_facility_mismatch)
       end
 
       team.id
@@ -129,7 +129,7 @@ module Scheduling
     def find_capacity_slot!(room)
       if @room_capacity_slot_id.present?
         slot = SlotCapacity.find_for_booking!(@room_capacity_slot_id)
-        raise Scheduling::Errors::SlotUnavailableError, "Slot belongs to another room" if slot.consultation_room_id != room.id
+        Scheduling::Errors::SlotUnavailableError.raise!(:slot_belongs_to_another_room) if slot.consultation_room_id != room.id
 
         return slot
       end

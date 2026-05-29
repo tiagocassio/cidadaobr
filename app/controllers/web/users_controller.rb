@@ -32,7 +32,7 @@ module Web
       end
 
       if saved
-        redirect_to web_users_path, notice: "Usuário cadastrado com sucesso."
+        redirect_to web_users_path, notice: t("cidadaobr.users.flash.created")
       else
         @membership = @user.user_municipality_memberships.first || UserMunicipalityMembership.new(sanitized_membership_params)
         render :new, status: :unprocessable_entity
@@ -53,7 +53,7 @@ module Web
       end
 
       if success
-        redirect_to web_users_path, notice: "Usuário atualizado com sucesso."
+        redirect_to web_users_path, notice: t("cidadaobr.users.flash.updated")
       else
         render :edit, status: :unprocessable_entity
       end

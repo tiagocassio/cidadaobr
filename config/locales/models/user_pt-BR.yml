@@ -4,6 +4,9 @@ pt-BR:
       user:
         email: "E-mail"
         full_name: "Nome completo"
+        password: "Senha"
+        password_confirmation: "Confirmar senha"
+        active: "Ativo"
     errors:
       models:
         user:
@@ -13,3 +16,5 @@ pt-BR:
               taken: "já está em uso"
             full_name:
               blank: "é obrigatório"
+            base:
+              cannot_deactivate_last_municipal_admin: "Não é possível desativar o último administrador municipal."

@@ -1,0 +1,42 @@
+<section>
+  <div class="mb-6">
+    <%= link_to t("cidadaobr.indicators.teams.back"), web_indicators_root_path(quadrimester: @quadrimester), class: "text-sm text-slate-600 underline" %>
+    <h2 class="mt-2 text-2xl font-bold"><%= @team.name %></h2>
+    <p class="text-slate-600"><%= t("cidadaobr.indicators.dashboard.ine") %> <%= @team.ine %> — <%= @quadrimester %></p>
+  </div>
+
+  <div class="mb-8 rounded-lg border border-slate-200 bg-white p-6">
+    <h3 class="mb-4 font-semibold"><%= t("cidadaobr.indicators.teams.scores_by_indicator") %></h3>
+    <% if @results.any? %>
+      <ul class="divide-y divide-slate-100 text-sm">
+        <% @results.each do |result| %>
+          <li class="flex items-center justify-between py-2">
+            <span><%= indicator_catalog_name(result.indicator_code) %></span>
+            <span><%= result.score %>% — <%= indicator_tier_label(result.tier) %></span>
+          </li>
+        <% end %>
+      </ul>
+    <% else %>
+      <p class="text-sm text-slate-500"><%= t("cidadaobr.indicators.teams.no_scores") %></p>
+    <% end %>
+  </div>
+
+  <div class="rounded-lg border border-slate-200 bg-white p-6">
+    <h3 class="mb-4 font-semibold"><%= t("cidadaobr.indicators.teams.open_gaps") %></h3>
+    <% if @open_gaps.any? %>
+      <ul class="divide-y divide-slate-100 text-sm">
+        <% @open_gaps.each do |gap| %>
+          <li class="py-2">
+            <strong><%= indicator_catalog_name(gap.indicator_code) %></strong>
+            <% if gap.good_practice_code.present? %>
+              — <%= t("cidadaobr.indicators.teams.good_practice") %> <%= good_practice_label(gap.good_practice_code) %>
+            <% end %>
+            <span class="text-slate-500">— <%= gap.citizen.full_name %></span>
+          </li>
+        <% end %>
+      </ul>
+    <% else %>
+      <p class="text-sm text-slate-500"><%= t("cidadaobr.indicators.teams.no_open_gaps") %></p>
+    <% end %>
+  </div>
+</section>

@@ -209,6 +209,11 @@ RSpec.describe "Web appointments", type: :request do
         create(:citizen, municipality: municipality, health_facility: facility, care_team: team)
       end
     end
+    let!(:another_citizen) do
+      with_tenant(facility_manager) do
+        create(:citizen, municipality: municipality, health_facility: facility, care_team: team, full_name: "Maria Silva")
+      end
+    end
     let!(:appointment) do
       with_tenant(facility_manager) do
         Scheduling::BookAppointment.call(
@@ -256,6 +261,40 @@ RSpec.describe "Web appointments", type: :request do
         expect(appointment.reload.scheduled_at).to eq(Time.zone.parse("#{Date.current} 09:00"))
         expect(appointment.appointment_room_slot.room_capacity_slot_id).to eq(morning_slot.id)
       end
+    end
+
+    it "shows a translated flash when booking a full slot" do
+      post web_appointments_path(health_facility_id: facility.id), params: {
+        appointment: {
+          citizen_id: another_citizen.id,
+          appointment_service_type_id: service_type.id,
+          consultation_room_id: room.id,
+          room_capacity_slot_id: morning_slot.id,
+          care_team_id: team.id
+        }
+      }
+
+      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response.body).to include(I18n.t("cidadaobr.scheduling.slot_unavailable.slot_full"))
+    end
+
+    it "shows a translated flash when rescheduling to a full slot" do
+      with_tenant(facility_manager) do
+        Scheduling::BookAppointment.call(
+          citizen_id: another_citizen.id,
+          appointment_service_type_id: service_type.id,
+          consultation_room_id: room.id,
+          scheduled_at: Time.zone.parse("#{Date.current} 10:00"),
+          room_capacity_slot_id: later_slot.id,
+          channel: "web_reception"
+        )
+      end
+
+      post reschedule_web_appointment_path(appointment), params: { room_capacity_slot_id: later_slot.id }
+
+      expect(response).to redirect_to(web_appointment_path(appointment))
+      follow_redirect!
+      expect(response.body).to include(I18n.t("cidadaobr.scheduling.slot_unavailable.slot_full"))
     end
   end
 end

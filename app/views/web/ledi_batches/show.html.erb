@@ -1,26 +1,26 @@
 <section>
-  <h2 class="mb-2 text-2xl font-bold">Lote <%= @ledi_batch.batch_number %></h2>
+  <h2 class="mb-2 text-2xl font-bold"><%= t("cidadaobr.ledi_batches.show_title", batch_number: @ledi_batch.batch_number) %></h2>
   <p class="mb-6 text-slate-600">
-    Status: <%= @ledi_batch.status %> · LEDI <%= @ledi_batch.ledi_version %>
+    <%= t("cidadaobr.ledi_batches.status_label") %>: <%= ledi_batch_status_label(@ledi_batch.status) %> · LEDI <%= @ledi_batch.ledi_version %>
     <% if @ledi_batch.rejected_at.present? %>
-      · Rejeitado em <%= @ledi_batch.rejected_at.strftime("%d/%m/%Y %H:%M") %>
+      · <%= t("cidadaobr.ledi_batches.rejected_at", datetime: @ledi_batch.rejected_at.strftime("%d/%m/%Y %H:%M")) %>
     <% end %>
   </p>
 
   <% if @ledi_batch.rejection_reason.present? %>
     <div class="mb-6 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-900">
-      <strong>Motivo PEC:</strong> <%= @ledi_batch.rejection_reason %>
+      <strong><%= t("cidadaobr.ledi_batches.pec_reason") %>:</strong> <%= @ledi_batch.rejection_reason %>
     </div>
   <% end %>
 
   <div class="rounded-lg border border-slate-200 bg-white p-6">
-    <h3 class="mb-4 font-semibold">Registros de transporte</h3>
+    <h3 class="mb-4 font-semibold"><%= t("cidadaobr.ledi_batches.transport_records.section_title") %></h3>
     <ul class="space-y-2 text-sm">
       <% @transport_records.each do |record| %>
         <li class="rounded border border-slate-100 px-3 py-2">
-          <%= record.serialized_type %> — <%= record.status %>
+          <%= serialized_type_label(record.serialized_type) %> — <%= transport_record_status_label(record.status) %>
           <% if record.clinical_record %>
-            <span class="text-slate-500">(<%= record.clinical_record.record_type %> · <%= record.clinical_record.validation_status %>)</span>
+            <span class="text-slate-500">(<%= clinical_record_type_label(record.clinical_record.record_type) %> · <%= clinical_record_validation_status_label(record.clinical_record.validation_status) %>)</span>
           <% end %>
         </li>
       <% end %>

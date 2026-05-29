@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
 class HealthFacility < ApplicationRecord
+  SERVICE_KINDS = %w[primary_care zoonoses].freeze
+
   belongs_to :municipality
   has_many :care_teams, dependent: :destroy
   has_many :user_municipality_memberships, dependent: :nullify

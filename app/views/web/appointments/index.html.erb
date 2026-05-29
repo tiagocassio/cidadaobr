@@ -1,26 +1,26 @@
 <section>
   <div class="mb-6 flex flex-wrap items-center justify-between gap-4">
     <div>
-      <h2 class="text-2xl font-bold">Agenda UBS</h2>
+      <h2 class="text-2xl font-bold"><%= t("cidadaobr.appointments.index_title") %></h2>
       <p class="text-sm text-slate-600"><%= l(@schedule[:date], format: :long) %></p>
     </div>
     <div class="flex flex-wrap gap-2">
-      <%= link_to "Dia anterior", web_appointments_path(facility_scope_params.merge(date: @schedule[:date] - 1.day)), class: "rounded border border-slate-300 px-3 py-2 text-sm" %>
-      <%= link_to "Hoje", web_appointments_path(facility_scope_params.merge(date: Date.current)), class: "rounded border border-slate-300 px-3 py-2 text-sm" %>
-      <%= link_to "Próximo dia", web_appointments_path(facility_scope_params.merge(date: @schedule[:date] + 1.day)), class: "rounded border border-slate-300 px-3 py-2 text-sm" %>
-      <%= link_to "Nova marcação", new_web_appointment_path(facility_scope_params), class: "rounded bg-emerald-700 px-4 py-2 text-sm font-semibold text-white" %>
-      <%= link_to "Fila recepção", reception_web_appointments_path(facility_scope_params), class: "rounded border border-slate-300 px-4 py-2 text-sm" %>
+      <%= link_to t("cidadaobr.appointments.previous_day"), web_appointments_path(facility_scope_params.merge(date: @schedule[:date] - 1.day)), class: "rounded border border-slate-300 px-3 py-2 text-sm" %>
+      <%= link_to t("cidadaobr.appointments.today"), web_appointments_path(facility_scope_params.merge(date: Date.current)), class: "rounded border border-slate-300 px-3 py-2 text-sm" %>
+      <%= link_to t("cidadaobr.appointments.next_day"), web_appointments_path(facility_scope_params.merge(date: @schedule[:date] + 1.day)), class: "rounded border border-slate-300 px-3 py-2 text-sm" %>
+      <%= link_to t("cidadaobr.appointments.new_booking"), new_web_appointment_path(facility_scope_params), class: "rounded bg-emerald-700 px-4 py-2 text-sm font-semibold text-white" %>
+      <%= link_to t("cidadaobr.appointments.reception_queue"), reception_web_appointments_path(facility_scope_params), class: "rounded border border-slate-300 px-4 py-2 text-sm" %>
     </div>
   </div>
 
   <div class="mb-8 overflow-hidden rounded-lg border border-slate-200 bg-white">
-    <h3 class="border-b border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold">Capacidade por sala</h3>
+    <h3 class="border-b border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold"><%= t("cidadaobr.appointments.capacity_by_room") %></h3>
     <table class="min-w-full text-sm">
       <thead class="bg-slate-50 text-left">
         <tr>
-          <th class="px-4 py-3">Horário</th>
-          <th class="px-4 py-3">Sala</th>
-          <th class="px-4 py-3">Ocupação</th>
+          <th class="px-4 py-3"><%= t("cidadaobr.appointments.table.time") %></th>
+          <th class="px-4 py-3"><%= t("cidadaobr.appointments.table.room") %></th>
+          <th class="px-4 py-3"><%= t("cidadaobr.appointments.table.occupancy") %></th>
         </tr>
       </thead>
       <tbody>
@@ -33,7 +33,7 @@
         <% end %>
         <% if @schedule[:capacity_slots].empty? %>
           <tr class="border-t border-slate-100">
-            <td class="px-4 py-3 text-slate-500" colspan="3">Nenhum slot cadastrado para este dia.</td>
+            <td class="px-4 py-3 text-slate-500" colspan="3"><%= t("cidadaobr.appointments.no_slots") %></td>
           </tr>
         <% end %>
       </tbody>
@@ -41,14 +41,14 @@
   </div>
 
   <div class="overflow-hidden rounded-lg border border-slate-200 bg-white">
-    <h3 class="border-b border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold">Consultas do dia</h3>
+    <h3 class="border-b border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold"><%= t("cidadaobr.appointments.daily_appointments") %></h3>
     <table class="min-w-full text-sm">
       <thead class="bg-slate-50 text-left">
         <tr>
-          <th class="px-4 py-3">Horário</th>
-          <th class="px-4 py-3">Cidadão</th>
-          <th class="px-4 py-3">Serviço</th>
-          <th class="px-4 py-3">Status</th>
+          <th class="px-4 py-3"><%= t("cidadaobr.appointments.table.time") %></th>
+          <th class="px-4 py-3"><%= t("cidadaobr.appointments.table.citizen") %></th>
+          <th class="px-4 py-3"><%= t("cidadaobr.appointments.table.service") %></th>
+          <th class="px-4 py-3"><%= t("cidadaobr.appointments.table.status") %></th>
           <th class="px-4 py-3"></th>
         </tr>
       </thead>
@@ -58,15 +58,15 @@
             <td class="px-4 py-3"><%= appointment.scheduled_at.strftime("%d/%m %H:%M") %></td>
             <td class="px-4 py-3"><%= appointment.citizen.full_name.presence || appointment.citizen.cpf %></td>
             <td class="px-4 py-3"><%= appointment.appointment_service_type.name %></td>
-            <td class="px-4 py-3"><%= appointment.status %></td>
+            <td class="px-4 py-3"><%= appointment_status_label(appointment.status) %></td>
             <td class="px-4 py-3 text-right">
-              <%= link_to "Ver", web_appointment_path(appointment), class: "text-emerald-700 hover:underline" %>
+              <%= link_to t("cidadaobr.appointments.view"), web_appointment_path(appointment), class: "text-emerald-700 hover:underline" %>
             </td>
           </tr>
         <% end %>
         <% if @schedule[:appointments].empty? %>
           <tr class="border-t border-slate-100">
-            <td class="px-4 py-3 text-slate-500" colspan="5">Nenhuma consulta agendada.</td>
+            <td class="px-4 py-3 text-slate-500" colspan="5"><%= t("cidadaobr.appointments.no_appointments") %></td>
           </tr>
         <% end %>
       </tbody>

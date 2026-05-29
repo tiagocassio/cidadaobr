@@ -3,8 +3,9 @@ pt-BR:
     attributes:
       user_municipality_membership:
         scope: "Escopo"
-        role_code: "Código de papel"
-        health_facility_id: "Unidade de saúde"
+        role_code: "Papel"
+        health_facility_id: "UBS"
+        active: "Vínculo ativo"
     errors:
       models:
         user_municipality_membership:
@@ -15,3 +16,5 @@ pt-BR:
               blank: "é obrigatório"
             health_facility_id:
               required_for_facility_scope: "é obrigatória para escopo de UBS"
+            base:
+              cannot_remove_last_municipal_admin: "Não é possível remover o último administrador municipal."

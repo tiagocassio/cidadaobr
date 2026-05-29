@@ -7,13 +7,13 @@ module Scheduling
     # Citizens cannot SELECT FOR UPDATE under RLS until a reserved appointment_room_slot exists;
     # staff scopes use row locks, citizens rely on atomic reserve!/release!.
     def find_for_booking!(slot_id)
-      raise Scheduling::Errors::SlotUnavailableError, "Slot not found" if slot_id.blank?
+      Scheduling::Errors::SlotUnavailableError.raise!(:slot_not_found) if slot_id.blank?
 
       scope = RoomCapacitySlot
       scope = scope.lock unless citizen_booking_scope?
       scope.find(slot_id)
     rescue ActiveRecord::RecordNotFound
-      raise Scheduling::Errors::SlotUnavailableError, "Slot not found"
+      Scheduling::Errors::SlotUnavailableError.raise!(:slot_not_found)
     end
 
     def citizen_booking_scope?
@@ -27,7 +27,7 @@ module Scheduling
         .update_all("booked_count = booked_count + 1")
       return if reserved.positive?
 
-      raise Scheduling::Errors::SlotUnavailableError, "No capacity remaining for slot"
+      Scheduling::Errors::SlotUnavailableError.raise!(:slot_full)
     end
 
     def release!(capacity_slot_id)
@@ -36,7 +36,7 @@ module Scheduling
         .update_all("booked_count = booked_count - 1")
       return if released.positive?
 
-      raise Scheduling::Errors::SlotUnavailableError, "Could not release slot capacity"
+      Scheduling::Errors::SlotUnavailableError.raise!(:slot_release_failed)
     end
   end
 end

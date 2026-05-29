@@ -1,24 +1,24 @@
 <section>
-  <h2 class="mb-6 text-2xl font-bold">Nova marcação</h2>
+  <h2 class="mb-6 text-2xl font-bold"><%= t("cidadaobr.appointments.new_title") %></h2>
 
   <%= form_with url: web_appointments_path(facility_scope_params), class: "max-w-xl space-y-4 rounded-lg border border-slate-200 bg-white p-6" do |form| %>
     <div>
-      <%= label_tag "appointment[citizen_id]", "Cidadão", class: "mb-1 block text-sm font-medium" %>
+      <%= label_tag "appointment[citizen_id]", Citizen.human_attribute_name(:full_name), class: "mb-1 block text-sm font-medium" %>
       <%= select_tag "appointment[citizen_id]", options_from_collection_for_select(@citizens, :id, ->(c) { c.full_name.presence || c.cpf }), class: "w-full rounded border border-slate-300 px-3 py-2", required: true %>
     </div>
     <div>
-      <%= label_tag "appointment[appointment_service_type_id]", "Tipo de serviço", class: "mb-1 block text-sm font-medium" %>
+      <%= label_tag "appointment[appointment_service_type_id]", t("cidadaobr.appointments.form.service_type"), class: "mb-1 block text-sm font-medium" %>
       <%= select_tag "appointment[appointment_service_type_id]", options_from_collection_for_select(@service_types, :id, :name), class: "w-full rounded border border-slate-300 px-3 py-2", required: true %>
     </div>
     <div>
-      <%= label_tag "appointment[consultation_room_id]", "Sala", class: "mb-1 block text-sm font-medium" %>
+      <%= label_tag "appointment[consultation_room_id]", t("cidadaobr.appointments.room"), class: "mb-1 block text-sm font-medium" %>
       <%= select_tag "appointment[consultation_room_id]", options_from_collection_for_select(@rooms, :id, :name), class: "w-full rounded border border-slate-300 px-3 py-2", required: true %>
     </div>
     <div>
-      <%= label_tag "appointment[room_capacity_slot_id]", "Vaga (data e horário)", class: "mb-1 block text-sm font-medium" %>
-      <%= select_tag "appointment[room_capacity_slot_id]", options_from_collection_for_select(@capacity_slots, :id, ->(s) { "#{s.slot_date.strftime('%d/%m/%Y')} — #{s.consultation_room.name} #{s.starts_at.strftime('%H:%M')}" }), class: "w-full rounded border border-slate-300 px-3 py-2", required: true %>
-      <p class="mt-1 text-xs text-slate-500">O horário da consulta é definido pela vaga selecionada.</p>
+      <%= label_tag "appointment[room_capacity_slot_id]", t("cidadaobr.appointments.form.slot"), class: "mb-1 block text-sm font-medium" %>
+      <%= select_tag "appointment[room_capacity_slot_id]", options_from_collection_for_select(@capacity_slots, :id, ->(s) { "#{s.slot_date.strftime('%d/%m/%Y')} — #{s.consultation_room.name} #{s.starts_at.strftime('%H:%M')}" }, @selected_room_capacity_slot_id), class: "w-full rounded border border-slate-300 px-3 py-2", required: true %>
+      <p class="mt-1 text-xs text-slate-500"><%= t("cidadaobr.appointments.slot_hint") %></p>
     </div>
-    <%= form.submit "Agendar", class: "rounded bg-emerald-700 px-4 py-2 font-semibold text-white" %>
+    <%= form.submit t("cidadaobr.appointments.book"), class: "rounded bg-emerald-700 px-4 py-2 font-semibold text-white" %>
   <% end %>
 </section>

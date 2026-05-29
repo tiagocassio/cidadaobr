@@ -1,7 +1,7 @@
 <% if pagy.pages > 1 %>
-  <nav class="pagy-nav mt-4 flex flex-wrap items-center gap-2 text-sm" aria-label="Paginação">
+  <nav class="pagy-nav mt-4 flex flex-wrap items-center gap-2 text-sm" aria-label="<%= t("cidadaobr.pagination.aria_label") %>">
     <% if pagy.prev %>
-      <%= link_to "Anterior", pagy_url_for(pagy, pagy.prev), class: "rounded border border-slate-300 px-3 py-1 hover:bg-slate-50" %>
+      <%= link_to t("cidadaobr.pagination.previous"), pagy_url_for(pagy, pagy.prev), class: "rounded border border-slate-300 px-3 py-1 hover:bg-slate-50" %>
     <% end %>
 
     <% pagy.series.each do |item| %>
@@ -17,9 +17,9 @@
     <% end %>
 
     <% if pagy.next %>
-      <%= link_to "Próxima", pagy_url_for(pagy, pagy.next), class: "rounded border border-slate-300 px-3 py-1 hover:bg-slate-50" %>
+      <%= link_to t("cidadaobr.pagination.next"), pagy_url_for(pagy, pagy.next), class: "rounded border border-slate-300 px-3 py-1 hover:bg-slate-50" %>
     <% end %>
 
-    <span class="ml-2 text-slate-500">Página <%= pagy.page %> de <%= pagy.pages %></span>
+    <span class="ml-2 text-slate-500"><%= t("cidadaobr.pagination.page_of", page: pagy.page, pages: pagy.pages) %></span>
   </nav>
 <% end %>

@@ -1,0 +1,17 @@
+pt-BR:
+  activerecord:
+    attributes:
+      micro_area:
+        code: "Código"
+        name: "Nome"
+        care_team_id: "Equipe"
+        coverage_sw_lat: "SW lat"
+        coverage_sw_lng: "SW lng"
+        coverage_ne_lat: "NE lat"
+        coverage_ne_lng: "NE lng"
+    errors:
+      models:
+        micro_area:
+          attributes:
+            base:
+              invalid_coverage: "Cobertura geográfica inválida"

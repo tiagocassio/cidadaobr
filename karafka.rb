@@ -31,8 +31,16 @@ class KarafkaApp < Karafka::App
       appointment.cancelled
     ].each do |topic_name|
       topic topic_name do
-        consumer PlatformEventConsumer
+        consumer IndicatorRecalculationConsumer
       end
+    end
+
+    topic "indicator.gap.detected" do
+      consumer PlatformEventConsumer
+    end
+
+    topic "indicator.team.score.updated" do
+      consumer PlatformEventConsumer
     end
 
     topic "citizen.registered" do

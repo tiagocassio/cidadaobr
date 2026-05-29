@@ -2,10 +2,34 @@
 
 METHODOLOGY_VERSION = "3493/2024" unless defined?(METHODOLOGY_VERSION)
 
-def upsert_indicator!(code:, name:, funding_component:, team_kind:, display_order:, rule_code: "default")
+def stub_expression(code)
+  {
+    "version" => "dsl_v1_stub",
+    "indicator_code" => code,
+    "methodology_version" => METHODOLOGY_VERSION,
+    "status" => "seed_placeholder"
+  }
+end
+
+def dsl_v1_expression(indicator_code:, good_practice_code:, denominator:, numerator:)
+  {
+    "version" => "dsl_v1",
+    "indicator_code" => indicator_code,
+    "good_practice_code" => good_practice_code,
+    "methodology_version" => METHODOLOGY_VERSION,
+    "denominator" => denominator,
+    "numerator" => numerator
+  }
+end
+
+def indicator_display_name(code)
+  I18n.t!("cidadaobr.indicators.catalog.#{code}.name")
+end
+
+def upsert_indicator!(code:, funding_component:, team_kind:, display_order:, rule_code: "default", expression: nil)
   catalog = IndicatorCatalog.find_or_initialize_by(code: code)
   catalog.assign_attributes(
-    name: name,
+    name: indicator_display_name(code),
     funding_component: funding_component,
     team_kind: team_kind,
     methodology_version: METHODOLOGY_VERSION,
@@ -17,12 +41,7 @@ def upsert_indicator!(code:, name:, funding_component:, team_kind:, display_orde
 
   IndicatorRule.find_or_initialize_by(indicator_catalog: catalog, rule_code: rule_code).tap do |rule|
     rule.rule_kind = "good_practice"
-    rule.expression = {
-      "version" => "dsl_v1_stub",
-      "indicator_code" => code,
-      "methodology_version" => METHODOLOGY_VERSION,
-      "status" => "seed_placeholder"
-    }
+    rule.expression = expression || stub_expression(code)
     rule.save!
   end
 
@@ -31,38 +50,160 @@ end
 
 upsert_indicator!(
   code: "CVAT",
-  name: "Componente de Avaliação Territorial",
   funding_component: "linkage",
   team_kind: "esf",
   display_order: 0
 )
 
-[
-  [ "V_CAD", "Vínculo e acompanhamento — cadastro", "linkage", "esf", 1 ],
-  [ "V_ACOMP", "Vínculo e acompanhamento — acompanhamento", "linkage", "esf", 2 ],
-  [ "V_SAT", "Vínculo e acompanhamento — satisfação", "linkage", "esf", 3 ]
-].each do |code, name, component, team_kind, order|
-  upsert_indicator!(code: code, name: name, funding_component: component, team_kind: team_kind, display_order: order)
-end
+upsert_indicator!(
+  code: "V_CAD",
+  funding_component: "linkage",
+  team_kind: "esf",
+  display_order: 1,
+  expression: dsl_v1_expression(
+    indicator_code: "V_CAD",
+    good_practice_code: "CAD",
+    denominator: { "type" => "citizens_on_team" },
+    numerator: { "type" => "registration_complete" }
+  )
+)
+
+upsert_indicator!(
+  code: "V_ACOMP",
+  funding_component: "linkage",
+  team_kind: "esf",
+  display_order: 2,
+  expression: dsl_v1_expression(
+    indicator_code: "V_ACOMP",
+    good_practice_code: "ACOMP",
+    denominator: { "type" => "citizens_on_team" },
+    numerator: { "type" => "encounter_in_window", "within_months" => 12 }
+  )
+)
+
+upsert_indicator!(
+  code: "V_SAT",
+  funding_component: "linkage",
+  team_kind: "esf",
+  display_order: 3
+)
+
+upsert_indicator!(
+  code: "C1",
+  funding_component: "quality",
+  team_kind: "esf",
+  display_order: 10,
+  expression: dsl_v1_expression(
+    indicator_code: "C1",
+    good_practice_code: "A",
+    denominator: { "type" => "citizens_on_team" },
+    numerator: { "type" => "appointment_in_quadrimester", "statuses" => %w[scheduled checked_in completed] }
+  )
+)
+
+upsert_indicator!(
+  code: "C2",
+  funding_component: "quality",
+  team_kind: "esf",
+  display_order: 11
+)
+
+upsert_indicator!(
+  code: "C3",
+  funding_component: "quality",
+  team_kind: "esf",
+  display_order: 12,
+  expression: dsl_v1_expression(
+    indicator_code: "C3",
+    good_practice_code: "A",
+    denominator: { "type" => "citizens_with_condition", "source" => "fci", "flag" => "pregnant" },
+    numerator: {
+      "type" => "clinical_predicate",
+      "record_types" => %w[FAI],
+      "within_months" => 6,
+      "predicate" => { "type" => "present", "field_path" => "individual_attendances" }
+    }
+  )
+)
+
+upsert_indicator!(
+  code: "C4",
+  funding_component: "quality",
+  team_kind: "esf",
+  display_order: 13,
+  expression: dsl_v1_expression(
+    indicator_code: "C4",
+    good_practice_code: "F",
+    denominator: { "type" => "citizens_with_condition", "source" => "fci", "flag" => "diabetes" },
+    numerator: {
+      "type" => "clinical_predicate",
+      "record_types" => %w[FAI FP],
+      "within_months" => 6,
+      "predicate" => { "type" => "procedure_present", "code" => "0301040095" }
+    }
+  )
+)
+
+upsert_indicator!(
+  code: "C5",
+  funding_component: "quality",
+  team_kind: "esf",
+  display_order: 14,
+  expression: dsl_v1_expression(
+    indicator_code: "C5",
+    good_practice_code: "F",
+    denominator: { "type" => "citizens_with_condition", "source" => "fci", "flag" => "hypertension" },
+    numerator: {
+      "type" => "clinical_predicate",
+      "record_types" => %w[FAI FP],
+      "within_months" => 6,
+      "predicate" => { "type" => "present", "field_path" => "measurements" }
+    }
+  )
+)
+
+upsert_indicator!(
+  code: "C6",
+  funding_component: "quality",
+  team_kind: "esf",
+  display_order: 15,
+  expression: dsl_v1_expression(
+    indicator_code: "C6",
+    good_practice_code: "A",
+    denominator: { "type" => "citizens_age_gte", "min_age" => 60 },
+    numerator: { "type" => "encounter_in_window", "within_months" => 12 }
+  )
+)
+
+upsert_indicator!(
+  code: "C7",
+  funding_component: "quality",
+  team_kind: "esf",
+  display_order: 16,
+  expression: dsl_v1_expression(
+    indicator_code: "C7",
+    good_practice_code: "A",
+    denominator: { "type" => "citizens_sex_female" },
+    numerator: {
+      "type" => "clinical_predicate",
+      "record_types" => %w[FAI FP],
+      "within_months" => 36,
+      "predicate" => { "type" => "procedure_present", "code" => "0201020074" }
+    }
+  )
+)
 
 [
-  [ "C1", "Mais acesso à APS", "quality", "esf", 10 ],
-  [ "C2", "Cuidado no desenvolvimento infantil", "quality", "esf", 11 ],
-  [ "C3", "Cuidado da gestante e puérpera", "quality", "esf", 12 ],
-  [ "C4", "Cuidado da pessoa com diabetes", "quality", "esf", 13 ],
-  [ "C5", "Cuidado da pessoa com hipertensão", "quality", "esf", 14 ],
-  [ "C6", "Cuidado da pessoa idosa", "quality", "esf", 15 ],
-  [ "C7", "Cuidado da mulher na prevenção do câncer", "quality", "esf", 16 ],
-  [ "C8", "1ª consulta odontológica programada", "quality", "esb", 17 ],
-  [ "C9", "Tratamento odontológico concluído", "quality", "esb", 18 ],
-  [ "C10", "Exodontias", "quality", "esb", 19 ],
-  [ "C11", "Escovação supervisionada", "quality", "esb", 20 ],
-  [ "C12", "Procedimentos preventivos odontológicos", "quality", "esb", 21 ],
-  [ "C13", "Tratamento restaurador atraumático", "quality", "esb", 22 ],
-  [ "C14", "Média de atendimentos por pessoa", "quality", "emulti", 23 ],
-  [ "C15", "Ações interprofissionais", "quality", "emulti", 24 ]
-].each do |code, name, component, team_kind, order|
-  upsert_indicator!(code: code, name: name, funding_component: component, team_kind: team_kind, display_order: order)
+  [ "C8", "quality", "esb", 17 ],
+  [ "C9", "quality", "esb", 18 ],
+  [ "C10", "quality", "esb", 19 ],
+  [ "C11", "quality", "esb", 20 ],
+  [ "C12", "quality", "esb", 21 ],
+  [ "C13", "quality", "esb", 22 ],
+  [ "C14", "quality", "emulti", 23 ],
+  [ "C15", "quality", "emulti", 24 ]
+].each do |code, component, team_kind, order|
+  upsert_indicator!(code: code, funding_component: component, team_kind: team_kind, display_order: order)
 end
 
 puts "  Indicator catalog: #{IndicatorCatalog.count} entries, #{IndicatorRule.count} rules"

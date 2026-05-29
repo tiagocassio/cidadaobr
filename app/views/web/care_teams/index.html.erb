@@ -1,8 +1,8 @@
 <section>
   <div class="mb-6 flex items-center justify-between">
-    <h2 class="text-2xl font-bold">Equipes</h2>
+    <h2 class="text-2xl font-bold"><%= t("cidadaobr.care_teams.index_title") %></h2>
     <% if municipality_scope? || facility_scope? %>
-      <%= link_to "Nova equipe", new_web_care_team_path, class: "rounded bg-emerald-700 px-4 py-2 text-sm font-semibold text-white" %>
+      <%= link_to t("cidadaobr.care_teams.new"), new_web_care_team_path, class: "rounded bg-emerald-700 px-4 py-2 text-sm font-semibold text-white" %>
     <% end %>
   </div>
 
@@ -10,9 +10,9 @@
     <table class="min-w-full text-sm">
       <thead class="bg-slate-50 text-left">
         <tr>
-          <th class="px-4 py-3">Nome</th>
-          <th class="px-4 py-3">INE</th>
-          <th class="px-4 py-3">UBS</th>
+          <th class="px-4 py-3"><%= CareTeam.human_attribute_name(:name) %></th>
+          <th class="px-4 py-3"><%= CareTeam.human_attribute_name(:ine) %></th>
+          <th class="px-4 py-3"><%= CareTeam.human_attribute_name(:health_facility_id) %></th>
           <th class="px-4 py-3"></th>
         </tr>
       </thead>
@@ -23,7 +23,7 @@
             <td class="px-4 py-3"><%= team.ine %></td>
             <td class="px-4 py-3"><%= team.health_facility.name %></td>
             <td class="px-4 py-3 text-right">
-              <%= link_to "Ver", web_care_team_path(team), class: "text-emerald-700 hover:underline" %>
+              <%= link_to t("cidadaobr.common.view"), web_care_team_path(team), class: "text-emerald-700 hover:underline" %>
             </td>
           </tr>
         <% end %>

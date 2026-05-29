@@ -45,7 +45,7 @@ class UserMunicipalityMembership < ApplicationRecord
 
     return unless last_active_municipal_admin?
 
-    errors.add(:base, "Não é possível remover o último administrador municipal.")
+    errors.add(:base, :cannot_remove_last_municipal_admin)
   end
 
   def removes_municipal_admin?

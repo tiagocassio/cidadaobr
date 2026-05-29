@@ -1,17 +1,17 @@
 <section>
   <div class="mb-6 flex flex-wrap items-center justify-between gap-4">
-    <h2 class="text-2xl font-bold">Fila — recepção</h2>
-    <%= link_to "Voltar à agenda", web_appointments_path(facility_scope_params), class: "rounded border border-slate-300 px-4 py-2 text-sm" %>
+    <h2 class="text-2xl font-bold"><%= t("cidadaobr.appointments.reception_title") %></h2>
+    <%= link_to t("cidadaobr.appointments.back_to_schedule"), web_appointments_path(facility_scope_params), class: "rounded border border-slate-300 px-4 py-2 text-sm" %>
   </div>
 
   <div class="overflow-hidden rounded-lg border border-slate-200 bg-white">
     <table class="min-w-full text-sm">
       <thead class="bg-slate-50 text-left">
         <tr>
-          <th class="px-4 py-3">Horário</th>
-          <th class="px-4 py-3">Cidadão</th>
-          <th class="px-4 py-3">Serviço</th>
-          <th class="px-4 py-3">Status</th>
+          <th class="px-4 py-3"><%= t("cidadaobr.appointments.table.time") %></th>
+          <th class="px-4 py-3"><%= t("cidadaobr.appointments.table.citizen") %></th>
+          <th class="px-4 py-3"><%= t("cidadaobr.appointments.table.service") %></th>
+          <th class="px-4 py-3"><%= t("cidadaobr.appointments.table.status") %></th>
           <th class="px-4 py-3"></th>
         </tr>
       </thead>
@@ -21,12 +21,12 @@
             <td class="px-4 py-3"><%= l(appointment.scheduled_at, format: :short) %></td>
             <td class="px-4 py-3"><%= appointment.citizen.full_name.presence || appointment.citizen.cpf %></td>
             <td class="px-4 py-3"><%= appointment.appointment_service_type.name %></td>
-            <td class="px-4 py-3"><%= appointment.status %></td>
+            <td class="px-4 py-3"><%= appointment_status_label(appointment.status) %></td>
             <td class="px-4 py-3 text-right space-x-2">
               <% if appointment.status.in?(%w[scheduled confirmed]) %>
-                <%= button_to "Check-in", check_in_web_appointment_path(appointment), class: "text-emerald-700 hover:underline" %>
+                <%= button_to t("cidadaobr.appointments.check_in"), check_in_web_appointment_path(appointment), class: "text-emerald-700 hover:underline" %>
               <% elsif appointment.status == "checked_in" %>
-                <%= button_to "Concluir", complete_web_appointment_path(appointment), class: "text-emerald-700 hover:underline" %>
+                <%= button_to t("cidadaobr.appointments.complete"), complete_web_appointment_path(appointment), class: "text-emerald-700 hover:underline" %>
               <% end %>
             </td>
           </tr>

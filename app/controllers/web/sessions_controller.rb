@@ -13,16 +13,16 @@ module Web
 
       if user&.authenticate(params[:password]) && membership
         sign_in_user!(user, membership)
-        redirect_to web_root_path, notice: "Login realizado com sucesso."
+        redirect_to web_root_path, notice: t("cidadaobr.sessions.flash.signed_in")
       else
-        flash.now[:alert] = "Credenciais inválidas."
+        flash.now[:alert] = t("cidadaobr.sessions.flash.invalid_credentials")
         render :new, status: :unprocessable_entity
       end
     end
 
     def destroy
       sign_out_user!
-      redirect_to web_login_path, notice: "Sessão encerrada."
+      redirect_to web_login_path, notice: t("cidadaobr.sessions.flash.signed_out")
     end
   end
 end

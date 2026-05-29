@@ -29,25 +29,25 @@ module Web
     def require_municipality_scope!
       return if municipality_scope?
 
-      redirect_to web_root_path, alert: "Acesso restrito a administradores municipais."
+      redirect_to web_root_path, alert: t("cidadaobr.authorization.municipality_admin_only")
     end
 
     def require_facility_or_municipality!
       return if municipality_scope? || facility_scope? || current_membership&.scope == "team"
 
-      redirect_to web_root_path, alert: "Acesso não autorizado."
+      redirect_to web_root_path, alert: t("cidadaobr.authorization.unauthorized")
     end
 
     def require_facility_or_municipality_write!
       return if municipality_scope? || facility_scope?
 
-      redirect_to web_root_path, alert: "Acesso não autorizado."
+      redirect_to web_root_path, alert: t("cidadaobr.authorization.unauthorized")
     end
 
     def require_reception_operations!
       return if municipality_scope? || facility_scope? || team_scope?
 
-      redirect_to web_root_path, alert: "Acesso não autorizado."
+      redirect_to web_root_path, alert: t("cidadaobr.authorization.unauthorized")
     end
 
     def scoped_health_facilities
@@ -127,6 +127,22 @@ module Web
       end
 
       scope.where(health_facility_id: scoped_health_facilities.select(:id))
+    end
+
+    def scoped_team_indicator_results
+      scope = TeamIndicatorResult.where(municipality_id: current_municipality.id)
+      return scope if municipality_scope?
+
+      team_ids = scoped_care_teams.select(:id)
+      scope.where(care_team_id: team_ids)
+    end
+
+    def scoped_citizen_indicator_gaps
+      scope = CitizenIndicatorGap.where(municipality_id: current_municipality.id)
+      return scope if municipality_scope?
+
+      team_ids = scoped_care_teams.select(:id)
+      scope.where(care_team_id: team_ids)
     end
 
     def scope_for_health_facility(scope)

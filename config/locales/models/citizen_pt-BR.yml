@@ -1,0 +1,6 @@
+pt-BR:
+  activerecord:
+    attributes:
+      citizen:
+        health_facility_id: "UBS"
+        care_team_id: "Equipe"

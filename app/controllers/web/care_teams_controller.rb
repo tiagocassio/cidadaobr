@@ -23,7 +23,7 @@ module Web
       @care_team.municipality = current_municipality
 
       if @care_team.save
-        redirect_to web_care_team_path(@care_team), notice: "Equipe cadastrada com sucesso."
+        redirect_to web_care_team_path(@care_team), notice: t("cidadaobr.care_teams.flash.created")
       else
         render :new, status: :unprocessable_entity
       end
@@ -34,7 +34,7 @@ module Web
 
     def update
       if @care_team.update(care_team_params)
-        redirect_to web_care_team_path(@care_team), notice: "Equipe atualizada com sucesso."
+        redirect_to web_care_team_path(@care_team), notice: t("cidadaobr.care_teams.flash.updated")
       else
         render :edit, status: :unprocessable_entity
       end

@@ -9,6 +9,8 @@ class ClinicalRecordPersistedConsumer < ApplicationConsumer
       process_with_idempotency(message) do |payload|
         envelope = payload
         project_clinical_record!(payload)
+        # Inline recalc keeps indicator dashboard current without a separate Kafka hop.
+        recalculate_indicators!(payload)
       end
     rescue Ledi::Errors::MissingClinicalRecordError => e
       if projection_stale?(envelope, message: message)
@@ -35,6 +37,14 @@ class ClinicalRecordPersistedConsumer < ApplicationConsumer
     end
 
     Ledi::ProjectionRunner.call(clinical_record: clinical_record)
+  end
+
+  def recalculate_indicators!(payload)
+    clinical_record_id = payload.dig("payload", "clinical_record_id") || payload["clinical_record_id"]
+    clinical_record = ClinicalRecord.find_by(id: clinical_record_id)
+    return unless clinical_record
+
+    Indicators::RecalculateForClinicalRecord.call(clinical_record: clinical_record)
   end
 
   def projection_stale?(payload, message: nil)

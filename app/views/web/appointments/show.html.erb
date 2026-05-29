@@ -1,26 +1,26 @@
 <section>
-  <h2 class="mb-2 text-2xl font-bold">Consulta</h2>
+  <h2 class="mb-2 text-2xl font-bold"><%= t("cidadaobr.appointments.show_title") %></h2>
   <p class="mb-6 text-slate-600"><%= @appointment.citizen.full_name %> · <%= @appointment.scheduled_at.strftime("%d/%m/%Y %H:%M") %></p>
 
   <div class="rounded-lg border border-slate-200 bg-white p-6 text-sm space-y-2">
-    <p><strong>Status:</strong> <%= @appointment.status %></p>
-    <p><strong>Serviço:</strong> <%= @appointment.appointment_service_type.name %></p>
-    <p><strong>Sala:</strong> <%= @appointment.consultation_room.name %></p>
-    <p><strong>Canal:</strong> <%= @appointment.channel %></p>
+    <p><strong><%= t("cidadaobr.appointments.status") %>:</strong> <%= appointment_status_label(@appointment.status) %></p>
+    <p><strong><%= t("cidadaobr.appointments.service") %>:</strong> <%= @appointment.appointment_service_type.name %></p>
+    <p><strong><%= t("cidadaobr.appointments.room") %>:</strong> <%= @appointment.consultation_room.name %></p>
+    <p><strong><%= t("cidadaobr.appointments.channel") %>:</strong> <%= appointment_channel_label(@appointment.channel) %></p>
   </div>
 
   <div class="mt-4 flex flex-wrap gap-2">
     <% unless @appointment.status.in?(%w[completed cancelled no_show]) %>
-      <%= button_to "Cancelar", cancel_web_appointment_path(@appointment), class: "rounded border border-red-300 px-4 py-2 text-sm text-red-700" %>
+      <%= button_to t("cidadaobr.appointments.cancel"), cancel_web_appointment_path(@appointment), class: "rounded border border-red-300 px-4 py-2 text-sm text-red-700" %>
     <% end %>
   </div>
 
   <% if @reschedule_slots.present? %>
     <div class="mt-8 rounded-lg border border-slate-200 bg-white p-6">
-      <h3 class="mb-4 text-lg font-semibold">Reagendar</h3>
+      <h3 class="mb-4 text-lg font-semibold"><%= t("cidadaobr.appointments.reschedule") %></h3>
       <%= form_with url: reschedule_web_appointment_path(@appointment), method: :post, class: "flex flex-wrap items-end gap-4" do |form| %>
         <div>
-          <label class="mb-1 block text-sm font-medium" for="room_capacity_slot_id">Novo horário</label>
+          <label class="mb-1 block text-sm font-medium" for="room_capacity_slot_id"><%= t("cidadaobr.appointments.new_time") %></label>
           <select id="room_capacity_slot_id" name="room_capacity_slot_id" class="rounded border border-slate-300 px-3 py-2 text-sm" required>
             <% @reschedule_slots.each do |slot| %>
               <option value="<%= slot.id %>">
@@ -29,7 +29,7 @@
             <% end %>
           </select>
         </div>
-        <%= form.submit "Reagendar", class: "rounded bg-emerald-700 px-4 py-2 text-sm font-semibold text-white" %>
+        <%= form.submit t("cidadaobr.appointments.reschedule"), class: "rounded bg-emerald-700 px-4 py-2 text-sm font-semibold text-white" %>
       <% end %>
     </div>
   <% end %>
