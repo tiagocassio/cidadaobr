@@ -78,13 +78,13 @@ RSpec.describe Routing::Commands::PublishVisitRoutes do
 
   it "blocks publish when provisioning is blocked" do
     with_tenant(membership) do
-      product = create(:immunobiologic_product, municipality: municipality)
+      product = create(:immunobiological_product, municipality: municipality)
       campaign = create(
         :home_visit_campaign,
         municipality: municipality,
         health_facility: facility,
         status: "routes_generated",
-        target_audience_definition: { "immunologic_product_id" => product.id }
+        target_audience_definition: { "immunobiological_product_id" => product.id }
       )
       citizen = create(:citizen, municipality: municipality, health_facility: facility, care_team: team)
       create(

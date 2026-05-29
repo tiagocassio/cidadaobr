@@ -2,7 +2,7 @@
 
 module Inventory
   class PreviewCampaignProvisioning
-    Line = Data.define(:key, :label, :quantity_required, :unit, :calculation_source, :supply_item_code, :immunobiologic_product_id)
+    Line = Data.define(:key, :label, :quantity_required, :unit, :calculation_source, :supply_item_code, :immunobiological_product_id)
 
     class << self
       def preview(campaign:)
@@ -18,24 +18,24 @@ module Inventory
             unit: entry["unit"] || "unit",
             calculation_source: "campaign_plan:#{stop_count}×stops",
             supply_item_code: entry["supply_item_code"],
-            immunobiologic_product_id: nil
+            immunobiological_product_id: nil
           )
         end
 
-        immunologic_count = campaign.campaign_targets.count
-        product_id = campaign.target_audience_definition.to_h["immunologic_product_id"]
-        if immunologic_count.positive? && product_id.present?
-          product = ImmunobiologicProduct.find_by(id: product_id)
+        immunobiological_count = campaign.campaign_targets.count
+        product_id = campaign.target_audience_definition.to_h["immunobiological_product_id"]
+        if immunobiological_count.positive? && product_id.present?
+          product = ImmunobiologicalProduct.find_by(id: product_id)
           waste = 1 + campaign.waste_factor.to_f
-          qty = (immunologic_count * waste).ceil
+          qty = (immunobiological_count * waste).ceil
           lines << Line.new(
-            key: "immunologic",
+            key: "immunobiological",
             label: product&.name || "Imunobiológico",
             quantity_required: qty,
             unit: "dose",
-            calculation_source: "immunologic:#{immunologic_count}×dose",
+            calculation_source: "immunobiological:#{immunobiological_count}×dose",
             supply_item_code: nil,
-            immunobiologic_product_id: product_id
+            immunobiological_product_id: product_id
           )
         end
 
@@ -54,7 +54,7 @@ module Inventory
             bucket["label"] = line["label"]
             bucket["unit"] = line["unit"]
             bucket["supply_item_code"] = line["supply_item_code"]
-            bucket["immunobiologic_product_id"] = line["immunobiologic_product_id"]
+            bucket["immunobiological_product_id"] = line["immunobiological_product_id"]
             bucket["quantity_required"] += line["quantity_required"].to_i
           end
         end
@@ -65,7 +65,7 @@ module Inventory
           bucket["label"] = line.label
           bucket["unit"] = line.unit
           bucket["supply_item_code"] = line.supply_item_code
-          bucket["immunobiologic_product_id"] = line.immunobiologic_product_id
+          bucket["immunobiological_product_id"] = line.immunobiological_product_id
           bucket["quantity_required"] = [ bucket["quantity_required"], line.quantity_required ].max
         end
 
@@ -97,7 +97,7 @@ module Inventory
             "unit" => line.unit,
             "calculation_source" => line.calculation_source,
             "supply_item_code" => line.supply_item_code,
-            "immunobiologic_product_id" => line.immunobiologic_product_id
+            "immunobiological_product_id" => line.immunobiological_product_id
           }
         end
 
@@ -117,25 +117,25 @@ module Inventory
       def available_for_line(campaign:, line:)
         case line["unit"]
         when "dose"
-          return 0 if line["immunobiologic_product_id"].blank?
+          return 0 if line["immunobiological_product_id"].blank?
 
           Inventory::ProvisioningValidator.available_doses_at(
             municipality_id: campaign.municipality_id,
             health_facility_id: campaign.health_facility_id,
-            immunobiologic_product_id: line["immunobiologic_product_id"]
+            immunobiological_product_id: line["immunobiological_product_id"]
           )
         else
           code = line["supply_item_code"].presence || line["key"]
           return 0 if code.blank?
 
           code_prefix = code.start_with?("SYRINGE") ? "SYRINGE" : code
-          product_id = campaign.target_audience_definition.to_h["immunologic_product_id"]
+          product_id = campaign.target_audience_definition.to_h["immunobiological_product_id"]
 
           Inventory::ProvisioningValidator.available_supply_at(
             municipality_id: campaign.municipality_id,
             health_facility_id: campaign.health_facility_id,
             code_prefix: code_prefix,
-            immunobiologic_product_id: product_id
+            immunobiological_product_id: product_id
           )
         end
       end

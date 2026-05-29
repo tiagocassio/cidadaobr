@@ -803,8 +803,8 @@ Gestão web que **alimenta** indicadores e logística; emite eventos de domínio
 |----------------|------------------|
 | `consultation_rooms` | Salas de atendimento por `health_facility` |
 | `room_capacity_slots` | Capacidade por sala/dia/turno (vagas) |
-| `immunobiologic_products` | Catálogo PNI/SIGTAP (**human**) e imunobiológicos **veterinários** MS/zoonoses (**animal**); coluna `target_species` |
-| `immunobiologic_lots` | Lote, validade, fabricante |
+| `immunobiological_products` | Catálogo PNI/SIGTAP (**human**) e imunobiológicos **veterinários** MS/zoonoses (**animal**); coluna `target_species` |
+| `immunobiological_lots` | Lote, validade, fabricante |
 | `stock_balances` | Saldo por facility, room ou campanha |
 | `stock_movements` | Entrada/saída/transferência/perda |
 | `supply_items` | Catálogo de insumos da UBS (imunobiológico, material consumo, kit visita, etc.) |
@@ -858,7 +858,7 @@ flowchart TB
 | `visit_route_stops` | Parada ordenada: `stop_order` 1..N, `household_id`, `citizen_id`, `status`, `visited_at` |
 | `visit_route_stop_attempts` | Tentativas (morador ausente, recusa) — auditoria |
 | `visit_route_provisionings` | Kit de insumos do roteiro (`status`: draft → calculated → reserved → dispatched → closed) |
-| `visit_route_provisioning_lines` | `supply_item_id` ou `immunobiologic_product_id`, `quantity_required`, `unit`, `citizen_count_basis`, `calculation_source`, lote reservado |
+| `visit_route_provisioning_lines` | `supply_item_id` ou `immunobiological_product_id`, `quantity_required`, `unit`, `citizen_count_basis`, `calculation_source`, lote reservado |
 | `home_visit_campaign_provisionings` | **Consolidado da campanha** (soma de todas as rotas / preview antes de rotear) |
 
 ### L.1 — Provisionamento de insumos por roteiro (recurso transversal)
@@ -867,7 +867,7 @@ Cada `visit_route` e a **campanha inteira** geram um **romaneio quantificado**: 
 
 | Tipo de insumo | Origem catálogo | Exemplo de cálculo |
 |----------------|-----------------|-------------------|
-| Imunobiológico | `immunobiologic_products` + `immunobiologic_lots` | 1 dose por cidadão elegível à vacina X (gap ou calendário) |
+| Imunobiológico | `immunobiological_products` + `immunobiological_lots` | 1 dose por cidadão elegível à vacina X (gap ou calendário) |
 | Medicamento (entrega/adesão) | `citizen_medications` + `supply_items` | Soma `dose_per_visit × citizens` (ex.: insulina NPH) |
 | Medicamento genérico campanha | `home_visit_campaigns.supply_plan` | Gestor define “remédio XYZ, 1 unidade/visita” → × paradas |
 | Insumo geral | `supply_items` | Kit visita × paradas; lancetas, seringas, gaze |
@@ -879,10 +879,10 @@ Gestor define campanha “Visita domiciliar — vacina X + adesão medicamentos�
 
 | # | Insumo | Regra de contagem | Qtd calculada | `calculation_source` |
 |---|--------|-------------------|---------------|---------------------|
-| 1 | **Vacina X** | 500 alvos com gap `FV:vaccine_x` ou critério campanha | **500 doses** | `immunologic:500×dose` |
+| 1 | **Vacina X** | 500 alvos com gap `FV:vaccine_x` ou critério campanha | **500 doses** | `immunobiological:500×dose` |
 | 2 | **Insulina** (ex.: NPH 100 UI/ml) | 43 cidadãos com `citizen_medications` insulina + visita para aplicar/entregar 1 frasco | **43 unidades** | `medication:43×citizens` |
 | 3 | **Remédio XYZ** | Campanha: 1 unidade por visita × 534 paradas planejadas (pode incluir não-vacina) | **534 unidades** | `campaign_plan:534×stops` |
-| 4 | Seringas 5 ml | 500 vacinas + margem | **520 un** | `derived:immunologic+waste` |
+| 4 | Seringas 5 ml | 500 vacinas + margem | **520 un** | `derived:immunobiological+waste` |
 | 5 | Gaze / álcool 70% | 1 kit × 500 paradas | **500 kits** | `supply_kit×stops` |
 
 - **+10% perda** opcional em imunobiológicos (`waste_factor` na campanha) → Vacina X pode virar **550 doses** reservadas.
@@ -914,7 +914,7 @@ Command: `CalculateVisitRouteProvisioning` (`visit_route_id`):
 5. Compara totais da campanha com `stock_balances` da UBS.
 6. Se faltar estoque → `status: blocked` na campanha e nas rotas afetadas; **WEB-CAMP-06** exibe défcit por item (ex.: “Vacina X: faltam 120 doses”).
 
-Command: `ReserveVisitRouteSupplies` — cria `stock_movements` tipo `reserve` ligados ao `visit_route_provisioning_id` e lotes (`immunobiologic_lots` FEFO por validade).
+Command: `ReserveVisitRouteSupplies` — cria `stock_movements` tipo `reserve` ligados ao `visit_route_provisioning_id` e lotes (`immunobiological_lots` FEFO por validade).
 
 Command: `DispatchTeamSupplyKit` — agrupa rotas do mesmo dia/INE em `team_supply_dispatches`; baixa estoque (`movement: dispatch_to_team`); romaneio impresso/PDF na web.
 
@@ -1172,9 +1172,9 @@ A vacinação de animais **reutiliza a mesma arquitetura** da vacinação humana
 |---------|------------------------|----------------------------------|
 | Estabelecimento | UBS (`health_facilities`, CNES APS) | **UVZ** / CCZ ou UBS com tipologia zoonoses no CNES (`facility_service_kind: zoonoses`) |
 | Registro nacional | **FV** LEDI → SI-PNI / e-SUS PEC | **SinPatinhas** (MS) + prontuário/carteira **CFMV**; LEDI **FCD** (animais no domicílio) |
-| Imunobiológicos | PNI, Notas Técnicas DPNI | Catálogo MS zoonoses (ex.: antirrábica canina/felina, leishmaniose) em `immunobiologic_products` com `target_species: animal` |
+| Imunobiológicos | PNI, Notas Técnicas DPNI | Catálogo MS zoonoses (ex.: antirrábica canina/felina, leishmaniose) em `immunobiological_products` com `target_species: animal` |
 | Campanha | `vaccination_campaigns` `human_immunization` | `vaccination_campaigns` `animal_zoonoses` (campanha antirrábica municipal) |
-| Estoque / lote / vencimento | `immunobiologic_lots`, `stock_balances`, `stock_movements` | **Mesmas tabelas** — saldo por UVZ/UBS/sala/campanha |
+| Estoque / lote / vencimento | `immunobiological_lots`, `stock_balances`, `stock_movements` | **Mesmas tabelas** — saldo por UVZ/UBS/sala/campanha |
 | Capacidade sala | `consultation_rooms`, `room_capacity_slots` | **Mesmo modelo** — sala de vacinação zoonoses na UVZ ou UBS |
 | Provisionamento | `supply_provisionings` | **Mesma fórmula**: doses campanha × capacidade × estoque |
 | Profissional | Enfermeiro/médico (CBO APS) | **Médico-veterinário** (CRMV) em `professionals` + `professional_credentials` |

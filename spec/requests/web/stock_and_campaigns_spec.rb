@@ -18,74 +18,74 @@ RSpec.describe "Web stock and campaigns", type: :request do
       role_code: "facility_manager"
     )
   end
-  let(:product) { create(:immunobiologic_product, municipality: municipality) }
+  let(:product) { create(:immunobiological_product, municipality: municipality) }
 
   before { sign_in_web(user: membership.user, membership: membership) }
 
-  describe "immunobiologic products" do
+  describe "immunobiological products" do
     it "lists and creates products" do
-      get web_stock_immunobiologic_products_path
+      get web_stock_immunobiological_products_path
       expect(response).to have_http_status(:ok)
 
       expect {
-        post web_stock_immunobiologic_products_path, params: {
-          immunobiologic_product: { code: "HEPB", name: "Hepatite B", target_species: "human", active: true }
+        post web_stock_immunobiological_products_path, params: {
+          immunobiological_product: { code: "HEPB", name: "Hepatite B", target_species: "human", active: true }
         }
-      }.to change { with_tenant(membership) { ImmunobiologicProduct.count } }.by(1)
+      }.to change { with_tenant(membership) { ImmunobiologicalProduct.count } }.by(1)
 
-      expect(response).to redirect_to(web_stock_immunobiologic_products_path)
+      expect(response).to redirect_to(web_stock_immunobiological_products_path)
     end
   end
 
-  describe "immunobiologic lots" do
+  describe "immunobiological lots" do
     it "registers a lot" do
       expect {
-        post web_stock_immunobiologic_lots_path, params: {
-          immunobiologic_lot: {
+        post web_stock_immunobiological_lots_path, params: {
+          immunobiological_lot: {
             health_facility_id: facility.id,
-            immunobiologic_product_id: product.id,
+            immunobiological_product_id: product.id,
             lot_number: "LOT-1",
             expires_on: 1.year.from_now.to_date,
             quantity_on_hand: 100
           }
         }
-      }.to change { with_tenant(membership) { ImmunobiologicLot.count } }.by(1)
+      }.to change { with_tenant(membership) { ImmunobiologicalLot.count } }.by(1)
 
-      expect(response).to redirect_to(web_stock_immunobiologic_lots_path)
+      expect(response).to redirect_to(web_stock_immunobiological_lots_path)
     end
 
     it "ignores a foreign facility id and registers the lot in the user facility" do
       sign_in_web(user: facility_membership.user, membership: facility_membership)
 
       expect {
-        post web_stock_immunobiologic_lots_path, params: {
-          immunobiologic_lot: {
+        post web_stock_immunobiological_lots_path, params: {
+          immunobiological_lot: {
             health_facility_id: other_facility.id,
-            immunobiologic_product_id: product.id,
+            immunobiological_product_id: product.id,
             lot_number: "LOT-X",
             expires_on: 1.year.from_now.to_date,
             quantity_on_hand: 100
           }
         }
-      }.to change { with_tenant(facility_membership) { ImmunobiologicLot.count } }.by(1)
+      }.to change { with_tenant(facility_membership) { ImmunobiologicalLot.count } }.by(1)
 
-      lot = with_tenant(facility_membership) { ImmunobiologicLot.order(:created_at).last }
+      lot = with_tenant(facility_membership) { ImmunobiologicalLot.order(:created_at).last }
       expect(lot.health_facility_id).to eq(facility.id)
-      expect(response).to redirect_to(web_stock_immunobiologic_lots_path)
+      expect(response).to redirect_to(web_stock_immunobiological_lots_path)
     end
 
     it "rejects an unknown facility id for municipality users" do
       expect {
-        post web_stock_immunobiologic_lots_path, params: {
-          immunobiologic_lot: {
+        post web_stock_immunobiological_lots_path, params: {
+          immunobiological_lot: {
             health_facility_id: SecureRandom.uuid,
-            immunobiologic_product_id: product.id,
+            immunobiological_product_id: product.id,
             lot_number: "LOT-REJECT",
             expires_on: 1.year.from_now.to_date,
             quantity_on_hand: 100
           }
         }
-      }.not_to change { with_tenant(membership) { ImmunobiologicLot.count } }
+      }.not_to change { with_tenant(membership) { ImmunobiologicalLot.count } }
 
       expect(response).to have_http_status(:unprocessable_entity)
     end
@@ -95,10 +95,10 @@ RSpec.describe "Web stock and campaigns", type: :request do
     it "creates a campaign and runs provisioning" do
       with_tenant(membership) do
         create(
-          :immunobiologic_lot,
+          :immunobiological_lot,
           municipality: municipality,
           health_facility: facility,
-          immunobiologic_product: product,
+          immunobiological_product: product,
           quantity_on_hand: 500
         )
       end
@@ -108,7 +108,7 @@ RSpec.describe "Web stock and campaigns", type: :request do
           vaccination_campaign: {
             name: "Influenza 60+",
             health_facility_id: facility.id,
-            immunobiologic_product_id: product.id,
+            immunobiological_product_id: product.id,
             campaign_kind: "human_immunization",
             starts_on: Date.current,
             ends_on: Date.current + 6.days,
@@ -128,17 +128,17 @@ RSpec.describe "Web stock and campaigns", type: :request do
       campaign = nil
       with_tenant(membership) do
         create(
-          :immunobiologic_lot,
+          :immunobiological_lot,
           municipality: municipality,
           health_facility: facility,
-          immunobiologic_product: product,
+          immunobiological_product: product,
           quantity_on_hand: 500
         )
         campaign = create(
           :vaccination_campaign,
           municipality: municipality,
           health_facility: facility,
-          immunobiologic_product: product,
+          immunobiological_product: product,
           target_doses: 100,
           room_capacity_per_day: 50,
           status: "provisioning_approved"
@@ -201,13 +201,13 @@ RSpec.describe "Web stock and campaigns", type: :request do
       campaign = nil
       route = nil
       with_tenant(membership) do
-        product = create(:immunobiologic_product, municipality: municipality)
+        product = create(:immunobiological_product, municipality: municipality)
         campaign = create(
           :home_visit_campaign,
           municipality: municipality,
           health_facility: facility,
           status: "routes_generated",
-          target_audience_definition: { "immunologic_product_id" => product.id }
+          target_audience_definition: { "immunobiological_product_id" => product.id }
         )
         team = create(:care_team, municipality: municipality, health_facility: facility)
         citizen = create(:citizen, municipality: municipality, health_facility: facility, care_team: team)

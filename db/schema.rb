@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_05_28_160000) do
+ActiveRecord::Schema[8.1].define(version: 2026_05_28_170000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
@@ -322,21 +322,21 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_28_160000) do
     t.index ["municipality_id", "clinical_record_id"], name: "index_households_on_municipality_and_clinical_record", unique: true
   end
 
-  create_table "immunobiologic_lots", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+  create_table "immunobiological_lots", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.datetime "created_at", null: false
     t.date "expires_on", null: false
     t.uuid "health_facility_id", null: false
-    t.uuid "immunobiologic_product_id", null: false
+    t.uuid "immunobiological_product_id", null: false
     t.string "lot_number", null: false
     t.string "manufacturer"
     t.uuid "municipality_id", null: false
     t.decimal "quantity_on_hand", precision: 12, scale: 3, default: "0.0", null: false
     t.datetime "updated_at", null: false
-    t.index ["health_facility_id", "immunobiologic_product_id", "expires_on"], name: "index_immunobiologic_lots_on_facility_product_expires"
-    t.index ["health_facility_id", "immunobiologic_product_id", "lot_number"], name: "index_immunobiologic_lots_on_facility_product_lot", unique: true
+    t.index ["health_facility_id", "immunobiological_product_id", "expires_on"], name: "index_immunobiological_lots_on_facility_product_expires"
+    t.index ["health_facility_id", "immunobiological_product_id", "lot_number"], name: "index_immunobiological_lots_on_facility_product_lot", unique: true
   end
 
-  create_table "immunobiologic_products", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+  create_table "immunobiological_products", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.boolean "active", default: true, null: false
     t.string "code", null: false
     t.datetime "created_at", null: false
@@ -344,7 +344,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_28_160000) do
     t.string "name", null: false
     t.string "target_species", default: "human", null: false
     t.datetime "updated_at", null: false
-    t.index ["municipality_id", "code"], name: "index_immunobiologic_products_on_municipality_code", unique: true
+    t.index ["municipality_id", "code"], name: "index_immunobiological_products_on_municipality_code", unique: true
   end
 
   create_table "indicator_catalog", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -519,19 +519,19 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_28_160000) do
   create_table "stock_balances", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.datetime "created_at", null: false
     t.uuid "health_facility_id", null: false
-    t.uuid "immunobiologic_lot_id"
+    t.uuid "immunobiological_lot_id"
     t.uuid "municipality_id", null: false
     t.decimal "quantity", precision: 12, scale: 3, default: "0.0", null: false
     t.uuid "supply_item_id"
     t.datetime "updated_at", null: false
-    t.index ["health_facility_id", "immunobiologic_lot_id"], name: "index_stock_balances_on_facility_lot", unique: true, where: "(immunobiologic_lot_id IS NOT NULL)"
+    t.index ["health_facility_id", "immunobiological_lot_id"], name: "index_stock_balances_on_facility_lot", unique: true, where: "(immunobiological_lot_id IS NOT NULL)"
     t.index ["health_facility_id", "supply_item_id"], name: "index_stock_balances_on_facility_supply_item", unique: true, where: "(supply_item_id IS NOT NULL)"
   end
 
   create_table "stock_movements", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.datetime "created_at", null: false
     t.uuid "health_facility_id", null: false
-    t.uuid "immunobiologic_lot_id"
+    t.uuid "immunobiological_lot_id"
     t.string "movement_type", null: false
     t.uuid "municipality_id", null: false
     t.text "notes"
@@ -669,7 +669,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_28_160000) do
     t.datetime "created_at", null: false
     t.date "ends_on", null: false
     t.uuid "health_facility_id", null: false
-    t.uuid "immunobiologic_product_id", null: false
+    t.uuid "immunobiological_product_id", null: false
     t.uuid "municipality_id", null: false
     t.string "name", null: false
     t.integer "room_capacity_per_day", default: 0, null: false
@@ -732,16 +732,16 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_28_160000) do
   add_foreign_key "home_visit_campaign_provisionings", "home_visit_campaigns"
   add_foreign_key "home_visit_campaigns", "health_facilities"
   add_foreign_key "household_animals", "households"
-  add_foreign_key "immunobiologic_lots", "health_facilities"
-  add_foreign_key "immunobiologic_lots", "immunobiologic_products"
+  add_foreign_key "immunobiological_lots", "health_facilities"
+  add_foreign_key "immunobiological_lots", "immunobiological_products"
   add_foreign_key "indicator_rules", "indicator_catalog"
   add_foreign_key "micro_areas", "care_teams"
   add_foreign_key "micro_areas", "municipalities"
   add_foreign_key "stock_balances", "health_facilities"
-  add_foreign_key "stock_balances", "immunobiologic_lots"
+  add_foreign_key "stock_balances", "immunobiological_lots"
   add_foreign_key "stock_balances", "supply_items"
   add_foreign_key "stock_movements", "health_facilities"
-  add_foreign_key "stock_movements", "immunobiologic_lots"
+  add_foreign_key "stock_movements", "immunobiological_lots"
   add_foreign_key "stock_movements", "supply_items"
   add_foreign_key "team_indicator_results", "care_teams"
   add_foreign_key "team_indicator_results", "municipalities"
@@ -755,7 +755,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_28_160000) do
   add_foreign_key "user_team_assignments", "users"
   add_foreign_key "vaccination_campaigns", "consultation_rooms"
   add_foreign_key "vaccination_campaigns", "health_facilities"
-  add_foreign_key "vaccination_campaigns", "immunobiologic_products"
+  add_foreign_key "vaccination_campaigns", "immunobiological_products"
   add_foreign_key "visit_route_provisionings", "visit_routes"
   add_foreign_key "visit_route_stops", "visit_routes"
   add_foreign_key "visit_routes", "care_teams"

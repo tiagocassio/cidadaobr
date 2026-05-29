@@ -6,7 +6,7 @@ class VaccinationCampaign < ApplicationRecord
 
   belongs_to :municipality
   belongs_to :health_facility
-  belongs_to :immunobiologic_product
+  belongs_to :immunobiological_product
   belongs_to :consultation_room, optional: true
   has_one :supply_provisioning, as: :provisionable, dependent: :destroy
   has_many :campaign_targets, as: :campaign, dependent: :destroy

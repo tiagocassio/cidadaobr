@@ -78,8 +78,8 @@ pt-BR:
           provisioning_calculated: "Provisionamento calculado e salvo."
   activerecord:
     models:
-      immunobiologic_product: "Imunobiológico"
-      immunobiologic_lot: "Lote"
+      immunobiological_product: "Imunobiológico"
+      immunobiological_lot: "Lote"
       supply_item: "Insumo"
       stock_balance: "Saldo de estoque"
       stock_movement: "Movimentação"
@@ -89,13 +89,13 @@ pt-BR:
       campaign_target: "Alvo de campanha"
       visit_route: "Roteiro de visita"
     attributes:
-      immunobiologic_lot:
+      immunobiological_lot:
         health_facility_id: "UBS"
         lot_number: "Lote"
         expires_on: "Validade"
         manufacturer: "Fabricante"
         quantity_on_hand: "Quantidade"
-      immunobiologic_product:
+      immunobiological_product:
         code: "Código"
         name: "Nome"
         target_species: "Espécie"

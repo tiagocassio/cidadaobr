@@ -36,7 +36,7 @@ Itens 1–8 de [piloto-validacao-tecnica.md](piloto-validacao-tecnica.md) requer
 
 Rotas EPIC-06 adicionadas:
 
-- `/web/stock/immunobiologic_lots`
+- `/web/stock/immunobiological_lots`
 - `/web/campaigns/vaccination_campaigns`
 
 ## Decisão Fase 5

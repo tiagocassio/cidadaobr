@@ -5,7 +5,7 @@ class StockMovement < ApplicationRecord
 
   belongs_to :municipality
   belongs_to :health_facility
-  belongs_to :immunobiologic_lot, optional: true
+  belongs_to :immunobiological_lot, optional: true
   belongs_to :supply_item, optional: true
 
   validates :movement_type, inclusion: { in: MOVEMENT_TYPES }

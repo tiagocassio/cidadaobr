@@ -299,14 +299,14 @@ module Cidadaobr
         connection.execute team_indicator_result_table_policies_for(:team_indicator_results)
       end
 
-      %i[immunobiologic_products supply_items].each do |table_name|
+      %i[immunobiological_products supply_items].each do |table_name|
         next unless connection.table_exists?(table_name)
 
         connection.execute municipality_only_table_policies_for(table_name)
       end
 
       %i[
-        immunobiologic_lots
+        immunobiological_lots
         stock_balances
         stock_movements
         vaccination_campaigns

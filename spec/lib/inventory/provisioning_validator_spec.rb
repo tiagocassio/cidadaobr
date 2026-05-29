@@ -6,13 +6,13 @@ RSpec.describe Inventory::ProvisioningValidator do
   let(:municipality) { create(:municipality) }
   let(:facility) { create(:health_facility, municipality: municipality) }
   let(:membership) { create(:user_municipality_membership, municipality: municipality, scope: "municipality") }
-  let(:product) { create(:immunobiologic_product, municipality: municipality) }
+  let(:product) { create(:immunobiological_product, municipality: municipality) }
 
   def build_campaign(**attrs)
     defaults = {
       municipality: municipality,
       health_facility: facility,
-      immunobiologic_product: product,
+      immunobiological_product: product,
       name: "Campanha demo",
       campaign_kind: "human_immunization",
       starts_on: Date.current,
@@ -27,10 +27,10 @@ RSpec.describe Inventory::ProvisioningValidator do
   it "approves when stock and room capacity cover target doses" do
     with_tenant(membership) do
       create(
-        :immunobiologic_lot,
+        :immunobiological_lot,
         municipality: municipality,
         health_facility: facility,
-        immunobiologic_product: product,
+        immunobiological_product: product,
         quantity_on_hand: 500,
         expires_on: 1.year.from_now.to_date
       )
@@ -69,10 +69,10 @@ RSpec.describe Inventory::ProvisioningValidator do
   it "rejects when another approved campaign already committed doses at the facility" do
     with_tenant(membership) do
       create(
-        :immunobiologic_lot,
+        :immunobiological_lot,
         municipality: municipality,
         health_facility: facility,
-        immunobiologic_product: product,
+        immunobiological_product: product,
         quantity_on_hand: 500,
         expires_on: 1.year.from_now.to_date
       )
@@ -93,10 +93,10 @@ RSpec.describe Inventory::ProvisioningValidator do
   it "persists supply provisioning with approved status" do
     with_tenant(membership) do
       create(
-        :immunobiologic_lot,
+        :immunobiological_lot,
         municipality: municipality,
         health_facility: facility,
-        immunobiologic_product: product,
+        immunobiological_product: product,
         quantity_on_hand: 500,
         expires_on: 1.year.from_now.to_date
       )

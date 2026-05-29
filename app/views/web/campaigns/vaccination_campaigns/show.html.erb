@@ -13,7 +13,7 @@
 
   <div class="mb-6 rounded-lg border border-slate-200 bg-white p-6 text-sm">
     <p><strong><%= VaccinationCampaign.human_attribute_name(:health_facility_id) %>:</strong> <%= @campaign.health_facility.name %></p>
-    <p><strong><%= ImmunobiologicProduct.model_name.human %>:</strong> <%= @campaign.immunobiologic_product.name %></p>
+    <p><strong><%= ImmunobiologicalProduct.model_name.human %>:</strong> <%= @campaign.immunobiological_product.name %></p>
     <p><strong><%= VaccinationCampaign.human_attribute_name(:target_doses) %>:</strong> <%= @campaign.target_doses %></p>
     <p><strong><%= VaccinationCampaign.human_attribute_name(:room_capacity_per_day) %>:</strong> <%= @campaign.room_capacity_per_day %></p>
     <p><strong><%= VaccinationCampaign.human_attribute_name(:status) %>:</strong> <%= @campaign.status %></p>

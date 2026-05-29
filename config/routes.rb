@@ -47,8 +47,8 @@ Rails.application.routes.draw do
     end
 
     namespace :stock do
-      resources :immunobiologic_products, except: :destroy
-      resources :immunobiologic_lots, only: %i[index new create]
+      resources :immunobiological_products, except: :destroy
+      resources :immunobiological_lots, only: %i[index new create]
     end
 
     namespace :campaigns do

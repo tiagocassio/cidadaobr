@@ -12,8 +12,8 @@ module Inventory
         capacity_ok = capacity_ok?(campaign: campaign, room_capacity_per_day: room_capacity_per_day)
 
         dose_line = Line.new(
-          key: "immunobiologic_doses",
-          label: campaign.immunobiologic_product.name,
+          key: "immunobiological_doses",
+          label: campaign.immunobiological_product.name,
           required: required_doses,
           available: doses_available.to_i,
           unit: "dose"
@@ -26,7 +26,7 @@ module Inventory
             municipality_id: campaign.municipality_id,
             health_facility_id: campaign.health_facility_id,
             code_prefix: "SYRINGE",
-            immunobiologic_product_id: campaign.immunobiologic_product_id,
+            immunobiological_product_id: campaign.immunobiological_product_id,
             exclude_vaccination_campaign_id: campaign.id
           )
           lines << Line.new(
@@ -83,17 +83,17 @@ module Inventory
         available_doses_at(
           municipality_id: campaign.municipality_id,
           health_facility_id: campaign.health_facility_id,
-          immunobiologic_product_id: campaign.immunobiologic_product_id,
+          immunobiological_product_id: campaign.immunobiological_product_id,
           exclude_vaccination_campaign_id: campaign.id
         )
       end
 
-      def available_doses_at(municipality_id:, health_facility_id:, immunobiologic_product_id:, exclude_vaccination_campaign_id: nil)
-        on_hand = ImmunobiologicLot
+      def available_doses_at(municipality_id:, health_facility_id:, immunobiological_product_id:, exclude_vaccination_campaign_id: nil)
+        on_hand = ImmunobiologicalLot
           .where(
             municipality_id: municipality_id,
             health_facility_id: health_facility_id,
-            immunobiologic_product_id: immunobiologic_product_id
+            immunobiological_product_id: immunobiological_product_id
           )
           .fefo
           .not_expired
@@ -103,38 +103,38 @@ module Inventory
         committed = committed_doses_elsewhere(
           municipality_id: municipality_id,
           health_facility_id: health_facility_id,
-          immunobiologic_product_id: immunobiologic_product_id,
+          immunobiological_product_id: immunobiological_product_id,
           exclude_vaccination_campaign_id: exclude_vaccination_campaign_id
         )
 
         [ on_hand - committed, 0 ].max
       end
 
-      def available_supply_at(municipality_id:, health_facility_id:, code_prefix:, immunobiologic_product_id: nil, exclude_vaccination_campaign_id: nil, syringes_per_dose: 1)
+      def available_supply_at(municipality_id:, health_facility_id:, code_prefix:, immunobiological_product_id: nil, exclude_vaccination_campaign_id: nil, syringes_per_dose: 1)
         on_hand = supply_quantity_at(
           municipality_id: municipality_id,
           health_facility_id: health_facility_id,
           code_prefix: code_prefix
         )
         return on_hand unless code_prefix.to_s.start_with?("SYRINGE")
-        return on_hand if immunobiologic_product_id.blank?
+        return on_hand if immunobiological_product_id.blank?
 
         committed_syringes = committed_doses_elsewhere(
           municipality_id: municipality_id,
           health_facility_id: health_facility_id,
-          immunobiologic_product_id: immunobiologic_product_id,
+          immunobiological_product_id: immunobiological_product_id,
           exclude_vaccination_campaign_id: exclude_vaccination_campaign_id
         ) * syringes_per_dose.to_i
 
         [ on_hand - committed_syringes, 0 ].max
       end
 
-      def lock_stock_for_facility_product!(municipality_id:, health_facility_id:, immunobiologic_product_id:, exclude_vaccination_campaign_id: nil)
-        ImmunobiologicLot
+      def lock_stock_for_facility_product!(municipality_id:, health_facility_id:, immunobiological_product_id:, exclude_vaccination_campaign_id: nil)
+        ImmunobiologicalLot
           .where(
             municipality_id: municipality_id,
             health_facility_id: health_facility_id,
-            immunobiologic_product_id: immunobiologic_product_id
+            immunobiological_product_id: immunobiological_product_id
           )
           .lock
           .load
@@ -143,7 +143,7 @@ module Inventory
           .where(
             municipality_id: municipality_id,
             health_facility_id: health_facility_id,
-            immunobiologic_product_id: immunobiologic_product_id,
+            immunobiological_product_id: immunobiological_product_id,
             status: %w[provisioning_approved scheduled active]
           )
         scope = scope.where.not(id: exclude_vaccination_campaign_id) if exclude_vaccination_campaign_id.present?
@@ -153,12 +153,12 @@ module Inventory
       end
 
       def lock_stock_for_home_visit!(campaign:)
-        product_id = campaign.target_audience_definition.to_h["immunologic_product_id"]
+        product_id = campaign.target_audience_definition.to_h["immunobiological_product_id"]
         if product_id.present?
           lock_stock_for_facility_product!(
             municipality_id: campaign.municipality_id,
             health_facility_id: campaign.health_facility_id,
-            immunobiologic_product_id: product_id
+            immunobiological_product_id: product_id
           )
         else
           lock_syringe_stock!(
@@ -209,7 +209,7 @@ module Inventory
         lock_stock_for_facility_product!(
           municipality_id: campaign.municipality_id,
           health_facility_id: campaign.health_facility_id,
-          immunobiologic_product_id: campaign.immunobiologic_product_id,
+          immunobiological_product_id: campaign.immunobiological_product_id,
           exclude_vaccination_campaign_id: campaign.id
         )
       end
@@ -270,12 +270,12 @@ module Inventory
         days.positive? ? days : 0
       end
 
-      def committed_doses_elsewhere(municipality_id:, health_facility_id:, immunobiologic_product_id:, exclude_vaccination_campaign_id: nil)
+      def committed_doses_elsewhere(municipality_id:, health_facility_id:, immunobiological_product_id:, exclude_vaccination_campaign_id: nil)
         scope = VaccinationCampaign
           .where(
             municipality_id: municipality_id,
             health_facility_id: health_facility_id,
-            immunobiologic_product_id: immunobiologic_product_id,
+            immunobiological_product_id: immunobiological_product_id,
             status: %w[provisioning_approved scheduled active]
           )
         scope = scope.where.not(id: exclude_vaccination_campaign_id) if exclude_vaccination_campaign_id.present?

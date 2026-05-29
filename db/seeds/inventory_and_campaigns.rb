@@ -8,7 +8,7 @@ unless facility_a
   return
 end
 
-influenza = ImmunobiologicProduct.find_or_initialize_by(municipality: municipality, code: "FLU4V")
+influenza = ImmunobiologicalProduct.find_or_initialize_by(municipality: municipality, code: "FLU4V")
 influenza.assign_attributes(name: "Influenza tetravalente", target_species: "human", active: true)
 influenza.save!
 
@@ -16,10 +16,10 @@ syringe = SupplyItem.find_or_initialize_by(municipality: municipality, code: "SY
 syringe.assign_attributes(name: "Seringa 0,5 ml", unit: "unit", active: true)
 syringe.save!
 
-lot = ImmunobiologicLot.find_or_initialize_by(
+lot = ImmunobiologicalLot.find_or_initialize_by(
   municipality: municipality,
   health_facility: facility_a,
-  immunobiologic_product: influenza,
+  immunobiological_product: influenza,
   lot_number: "DEMO-2026-01"
 )
 lot.assign_attributes(expires_on: 1.year.from_now.to_date, manufacturer: "Demo Lab", quantity_on_hand: 500)
@@ -28,7 +28,7 @@ lot.save!
 StockBalance.find_or_initialize_by(
   municipality: municipality,
   health_facility: facility_a,
-  immunobiologic_lot: lot
+  immunobiological_lot: lot
 ).update!(quantity: lot.quantity_on_hand)
 
 StockBalance.find_or_initialize_by(
@@ -61,4 +61,4 @@ ends_on = starts_on + 6.days
   end
 end
 
-puts "  Inventory seed: #{ImmunobiologicProduct.count} products, #{ImmunobiologicLot.count} lots, #{RoomCapacitySlot.count} capacity slots"
+puts "  Inventory seed: #{ImmunobiologicalProduct.count} products, #{ImmunobiologicalLot.count} lots, #{RoomCapacitySlot.count} capacity slots"

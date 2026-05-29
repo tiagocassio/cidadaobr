@@ -150,7 +150,7 @@ FactoryBot.define do
     quantity { 1 }
   end
 
-  factory :immunobiologic_product do
+  factory :immunobiological_product do
     municipality
     sequence(:code) { |n| "VAC#{n}" }
     sequence(:name) { |n| "Vacina #{n}" }
@@ -160,10 +160,10 @@ FactoryBot.define do
     to_create { |instance| TenantFactoryHelpers.save_with_municipality_tenant!(instance) }
   end
 
-  factory :immunobiologic_lot do
+  factory :immunobiological_lot do
     municipality
     health_facility { association :health_facility, municipality: municipality }
-    immunobiologic_product { association :immunobiologic_product, municipality: municipality }
+    immunobiological_product { association :immunobiological_product, municipality: municipality }
     sequence(:lot_number) { |n| "LOT-#{n}" }
     expires_on { 1.year.from_now.to_date }
     manufacturer { "Lab Demo" }
@@ -175,7 +175,7 @@ FactoryBot.define do
   factory :vaccination_campaign do
     municipality
     health_facility { association :health_facility, municipality: municipality }
-    immunobiologic_product { association :immunobiologic_product, municipality: municipality }
+    immunobiological_product { association :immunobiological_product, municipality: municipality }
     sequence(:name) { |n| "Campanha #{n}" }
     campaign_kind { "human_immunization" }
     status { "draft" }

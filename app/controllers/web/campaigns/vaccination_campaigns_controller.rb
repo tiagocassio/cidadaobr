@@ -10,7 +10,7 @@ module Web
 
       def index
         @pagy, @campaigns = pagy(
-          scoped_campaigns.includes(:health_facility, :immunobiologic_product).order(starts_on: :desc)
+          scoped_campaigns.includes(:health_facility, :immunobiological_product).order(starts_on: :desc)
         )
       end
 
@@ -118,7 +118,7 @@ module Web
 
       def set_form_collections
         @facilities = scoped_health_facilities.order(:name)
-        @products = ImmunobiologicProduct.where(municipality_id: current_municipality.id, active: true).order(:name)
+        @products = ImmunobiologicalProduct.where(municipality_id: current_municipality.id, active: true).order(:name)
         @rooms = ConsultationRoom.where(municipality_id: current_municipality.id, active: true).order(:name)
       end
 
@@ -126,7 +126,7 @@ module Web
         permitted = params.require(:vaccination_campaign).permit(
           :name,
           :health_facility_id,
-          :immunobiologic_product_id,
+          :immunobiological_product_id,
           :consultation_room_id,
           :campaign_kind,
           :starts_on,
