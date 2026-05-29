@@ -1,8 +1,6 @@
 # frozen_string_literal: true
 
 class IndicatorCatalog < ApplicationRecord
-  self.table_name = "indicator_catalog"
-
   PORTARIA_3493_CODES = Indicators::Portaria3493::INDICATOR_CODES.dup.freeze
 
   FUNDING_COMPONENTS = %w[fixed linkage quality implementation zoonoses].freeze

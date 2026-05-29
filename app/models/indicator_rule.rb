@@ -3,7 +3,7 @@
 class IndicatorRule < ApplicationRecord
   RULE_KINDS = %w[numerator denominator good_practice].freeze
 
-  belongs_to :indicator_catalog, class_name: "IndicatorCatalog"
+  belongs_to :indicator_catalog
 
   validates :rule_code, :rule_kind, presence: true
   validates :rule_code, uniqueness: { scope: :indicator_catalog_id }

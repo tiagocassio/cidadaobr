@@ -2,7 +2,7 @@
 
 class CreateIndicatorTables < ActiveRecord::Migration[8.1]
   def change
-    create_table :indicator_catalog, id: :uuid do |t|
+    create_table :indicator_catalogs, id: :uuid do |t|
       t.string :code, null: false
       t.string :name, null: false
       t.string :funding_component, null: false
@@ -13,10 +13,10 @@ class CreateIndicatorTables < ActiveRecord::Migration[8.1]
       t.boolean :active, null: false, default: true
       t.timestamps
     end
-    add_index :indicator_catalog, :code, unique: true
+    add_index :indicator_catalogs, :code, unique: true
 
     create_table :indicator_rules, id: :uuid do |t|
-      t.references :indicator_catalog, type: :uuid, null: false, foreign_key: { to_table: :indicator_catalog }
+      t.references :indicator_catalog, type: :uuid, null: false, foreign_key: true
       t.string :rule_code, null: false
       t.string :rule_kind, null: false, default: "good_practice"
       t.jsonb :expression, null: false, default: {}

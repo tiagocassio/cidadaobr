@@ -2,7 +2,7 @@
 
 class CreateLediCatalog < ActiveRecord::Migration[8.1]
   def change
-    create_table :ledi_field_catalog, id: :uuid do |t|
+    create_table :ledi_field_catalogs, id: :uuid do |t|
       t.string :record_type, null: false
       t.string :field_path, null: false
       t.string :data_type, null: false
@@ -13,7 +13,7 @@ class CreateLediCatalog < ActiveRecord::Migration[8.1]
       t.timestamps
     end
 
-    add_index :ledi_field_catalog, [ :record_type, :field_path, :ledi_version ], unique: true, name: "index_ledi_field_catalog_on_type_path_version"
+    add_index :ledi_field_catalogs, [ :record_type, :field_path, :ledi_version ], unique: true, name: "index_ledi_field_catalogs_on_type_path_version"
 
     create_table :ledi_validation_rules, id: :uuid do |t|
       t.string :record_type, null: false

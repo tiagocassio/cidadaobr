@@ -1,8 +1,6 @@
 # frozen_string_literal: true
 
 class DomainEvent < ApplicationRecord
-  self.table_name = "domain_events"
-
   validates :municipality_id, :aggregate_type, :aggregate_id, :event_type, :occurred_at, :version, presence: true
 
   before_destroy { raise ActiveRecord::ReadOnlyRecord, "DomainEvent records are append-only" }
