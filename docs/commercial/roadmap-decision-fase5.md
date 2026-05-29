@@ -49,3 +49,8 @@ Marque a opção escolhida e atualize o [plano mestre](../padrão_ledi_e-sus_4f0
 **Decisão registrada:** Opção A — iniciar EPIC-06 (estoque + campanhas de vacinação) como trilha padrão pós-gate Fase 4; TASK-05-07 e SIAPS permanecem paralelos opcionais.  
 **Data:** 2026-05-28  
 **Responsável:** PO (default técnico alinhado ao plano mestre)
+
+### Limitações MVP (EPIC-06)
+
+- **Provisionamento de vacina:** aprovação desconta doses já comprometidas por outras campanhas `provisioning_approved`/`scheduled`/`active` no mesmo imunobiológico e unidade, mas **não reserva nem decrementa estoque físico** — reserva dura e baixa no ato da aplicação ficam para pós-MVP.
+- **Campanha domiciliar:** rollup de provisionamento roda na geração/publicação de rotas; publicação exige status `calculated` (rollup recente). Campanhas só vão para `scheduled` quando não restam rotas em rascunho.

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_05_28_150000) do
+ActiveRecord::Schema[8.1].define(version: 2026_05_28_160000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
@@ -332,6 +332,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_28_150000) do
     t.uuid "municipality_id", null: false
     t.decimal "quantity_on_hand", precision: 12, scale: 3, default: "0.0", null: false
     t.datetime "updated_at", null: false
+    t.index ["health_facility_id", "immunobiologic_product_id", "expires_on"], name: "index_immunobiologic_lots_on_facility_product_expires"
     t.index ["health_facility_id", "immunobiologic_product_id", "lot_number"], name: "index_immunobiologic_lots_on_facility_product_lot", unique: true
   end
 

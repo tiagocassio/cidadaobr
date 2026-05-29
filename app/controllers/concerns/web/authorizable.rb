@@ -151,5 +151,48 @@ module Web
 
       scope.where(health_facility_id: facility_id).or(scope.where(care_team_id: team_ids))
     end
+
+    def sanitize_scoped_health_facility_id(facility_id)
+      if facility_scope?
+        current_membership.health_facility_id
+      elsif facility_id.present?
+        scoped_health_facilities.find_by(id: facility_id)&.id
+      end
+    end
+
+    def invalid_scoped_health_facility_param?(facility_id)
+      return false if facility_scope?
+      return true if facility_id.blank?
+
+      !scoped_health_facilities.exists?(id: facility_id)
+    end
+
+    def sanitize_scoped_consultation_room_id(room_id, health_facility_id:)
+      return if room_id.blank?
+
+      scope = scoped_consultation_rooms.where(id: room_id)
+      scope = scope.where(health_facility_id: health_facility_id) if health_facility_id.present?
+      scope.pick(:id)
+    end
+
+    def invalid_scoped_consultation_room_param?(room_id, health_facility_id:)
+      return false if room_id.blank?
+      return true if health_facility_id.blank?
+
+      sanitize_scoped_consultation_room_id(room_id, health_facility_id: health_facility_id).nil?
+    end
+
+    def add_scoped_param_errors(record, raw_facility_id:, raw_room_id: nil, health_facility_id: nil)
+      invalid = false
+      if invalid_scoped_health_facility_param?(raw_facility_id)
+        record.errors.add(:health_facility_id, :invalid)
+        invalid = true
+      end
+      if invalid_scoped_consultation_room_param?(raw_room_id, health_facility_id: health_facility_id)
+        record.errors.add(:consultation_room_id, :invalid)
+        invalid = true
+      end
+      invalid
+    end
   end
 end

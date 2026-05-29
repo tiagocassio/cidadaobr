@@ -63,7 +63,10 @@ Rails.application.routes.draw do
         member do
           post :build_targets
           post :generate_routes
+          post :clear_routes
+          post :publish_routes
           get :preview_provisioning
+          post :calculate_provisioning
         end
       end
     end

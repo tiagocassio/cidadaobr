@@ -6,7 +6,7 @@ module Api
       class CampaignsController < Api::BaseController
         def index
           @campaigns = HomeVisitCampaign
-            .where(municipality_id: current_membership.municipality_id, status: %w[scheduled active routes_generated])
+            .where(municipality_id: current_membership.municipality_id, status: %w[scheduled active])
             .order(starts_on: :desc)
           @campaigns = @campaigns.where(health_facility_id: current_membership.health_facility_id) if current_membership.health_facility_id.present?
         end

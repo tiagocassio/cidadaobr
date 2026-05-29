@@ -22,7 +22,13 @@ module Inventory
         syringe_required = (required_doses * syringes_per_dose.to_i)
         lines = [ dose_line ]
         if supply_syringe_configured?(campaign: campaign)
-          syringe_available = available_supply_quantity(campaign: campaign, code_prefix: "SYRINGE")
+          syringe_available = available_supply_at(
+            municipality_id: campaign.municipality_id,
+            health_facility_id: campaign.health_facility_id,
+            code_prefix: "SYRINGE",
+            immunobiologic_product_id: campaign.immunobiologic_product_id,
+            exclude_vaccination_campaign_id: campaign.id
+          )
           lines << Line.new(
             key: "supply_syringes",
             label: "Seringas",
@@ -42,60 +48,199 @@ module Inventory
         )
       end
 
-      def persist!(campaign:, result:)
-        campaign.supply_provisioning&.destroy
+      def persist!(campaign:)
+        ActiveRecord::Base.transaction do
+          lock_stock_for_campaign!(campaign)
 
-        provisioning = SupplyProvisioning.create!(
-          municipality: campaign.municipality,
-          health_facility: campaign.health_facility,
-          provisionable: campaign,
-          status: result.feasible ? "approved" : "rejected",
-          required_items: result.lines.map(&:to_h),
-          available_items: result.lines.map { |line| line.to_h.merge(available: line.available) },
-          shortages: result.shortages,
-          capacity_ok: result.capacity_ok,
-          rejection_reason: result.feasible ? nil : result.shortages.join("; ")
-        )
+          result = call(
+            campaign: campaign,
+            available_doses: available_doses_for(campaign: campaign),
+            room_capacity_per_day: campaign.room_capacity_per_day
+          )
 
-        emit_rejection_event!(campaign: campaign, provisioning: provisioning) unless result.feasible
+          campaign.supply_provisioning&.destroy
 
-        campaign.update!(status: result.feasible ? "provisioning_approved" : "draft")
-        provisioning
+          provisioning = SupplyProvisioning.create!(
+            municipality: campaign.municipality,
+            health_facility: campaign.health_facility,
+            provisionable: campaign,
+            status: result.feasible ? "approved" : "rejected",
+            required_items: result.lines.map(&:to_h),
+            available_items: result.lines.map { |line| line.to_h.merge(available: line.available) },
+            shortages: result.shortages,
+            capacity_ok: result.capacity_ok,
+            rejection_reason: result.feasible ? nil : result.shortages.join("; ")
+          )
+
+          emit_rejection_event!(campaign: campaign, provisioning: provisioning) unless result.feasible
+
+          campaign.update!(status: result.feasible ? "provisioning_approved" : "draft")
+          result
+        end
       end
 
       def available_doses_for(campaign:)
-        ImmunobiologicLot
+        available_doses_at(
+          municipality_id: campaign.municipality_id,
+          health_facility_id: campaign.health_facility_id,
+          immunobiologic_product_id: campaign.immunobiologic_product_id,
+          exclude_vaccination_campaign_id: campaign.id
+        )
+      end
+
+      def available_doses_at(municipality_id:, health_facility_id:, immunobiologic_product_id:, exclude_vaccination_campaign_id: nil)
+        on_hand = ImmunobiologicLot
           .where(
-            municipality_id: campaign.municipality_id,
-            health_facility_id: campaign.health_facility_id,
-            immunobiologic_product_id: campaign.immunobiologic_product_id
+            municipality_id: municipality_id,
+            health_facility_id: health_facility_id,
+            immunobiologic_product_id: immunobiologic_product_id
           )
           .fefo
           .not_expired
           .sum(:quantity_on_hand)
+          .to_i
+
+        committed = committed_doses_elsewhere(
+          municipality_id: municipality_id,
+          health_facility_id: health_facility_id,
+          immunobiologic_product_id: immunobiologic_product_id,
+          exclude_vaccination_campaign_id: exclude_vaccination_campaign_id
+        )
+
+        [ on_hand - committed, 0 ].max
+      end
+
+      def available_supply_at(municipality_id:, health_facility_id:, code_prefix:, immunobiologic_product_id: nil, exclude_vaccination_campaign_id: nil, syringes_per_dose: 1)
+        on_hand = supply_quantity_at(
+          municipality_id: municipality_id,
+          health_facility_id: health_facility_id,
+          code_prefix: code_prefix
+        )
+        return on_hand unless code_prefix.to_s.start_with?("SYRINGE")
+        return on_hand if immunobiologic_product_id.blank?
+
+        committed_syringes = committed_doses_elsewhere(
+          municipality_id: municipality_id,
+          health_facility_id: health_facility_id,
+          immunobiologic_product_id: immunobiologic_product_id,
+          exclude_vaccination_campaign_id: exclude_vaccination_campaign_id
+        ) * syringes_per_dose.to_i
+
+        [ on_hand - committed_syringes, 0 ].max
+      end
+
+      def lock_stock_for_facility_product!(municipality_id:, health_facility_id:, immunobiologic_product_id:, exclude_vaccination_campaign_id: nil)
+        ImmunobiologicLot
+          .where(
+            municipality_id: municipality_id,
+            health_facility_id: health_facility_id,
+            immunobiologic_product_id: immunobiologic_product_id
+          )
+          .lock
+          .load
+
+        scope = VaccinationCampaign
+          .where(
+            municipality_id: municipality_id,
+            health_facility_id: health_facility_id,
+            immunobiologic_product_id: immunobiologic_product_id,
+            status: %w[provisioning_approved scheduled active]
+          )
+        scope = scope.where.not(id: exclude_vaccination_campaign_id) if exclude_vaccination_campaign_id.present?
+        scope.lock.load
+
+        lock_syringe_stock!(municipality_id: municipality_id, health_facility_id: health_facility_id)
+      end
+
+      def lock_stock_for_home_visit!(campaign:)
+        product_id = campaign.target_audience_definition.to_h["immunologic_product_id"]
+        if product_id.present?
+          lock_stock_for_facility_product!(
+            municipality_id: campaign.municipality_id,
+            health_facility_id: campaign.health_facility_id,
+            immunobiologic_product_id: product_id
+          )
+        else
+          lock_syringe_stock!(
+            municipality_id: campaign.municipality_id,
+            health_facility_id: campaign.health_facility_id
+          )
+        end
+      end
+
+      def lock_syringe_stock!(municipality_id:, health_facility_id:)
+        item_ids = SupplyItem
+          .where(municipality_id: municipality_id)
+          .where("code LIKE ?", "SYRINGE%")
+          .pluck(:id)
+        return if item_ids.empty?
+
+        StockBalance
+          .where(
+            municipality_id: municipality_id,
+            health_facility_id: health_facility_id,
+            supply_item_id: item_ids
+          )
+          .lock
+          .load
+      end
+
+      def emit_rejection_event!(campaign:, provisioning:)
+        RecordPlatformEvent.call(
+          event_type: "supply.provisioning.rejected",
+          aggregate_type: "SupplyProvisioning",
+          aggregate_id: provisioning.id,
+          topic: "supply.provisioning.rejected",
+          payload: {
+            provisionable_type: campaign.class.name,
+            provisionable_id: campaign.id,
+            health_facility_id: campaign.health_facility_id,
+            shortages: provisioning.shortages,
+            rejection_reason: provisioning.rejection_reason
+          }
+        )
       end
 
       private
+
+      def lock_stock_for_campaign!(campaign)
+        campaign.lock! if campaign.persisted?
+
+        lock_stock_for_facility_product!(
+          municipality_id: campaign.municipality_id,
+          health_facility_id: campaign.health_facility_id,
+          immunobiologic_product_id: campaign.immunobiologic_product_id,
+          exclude_vaccination_campaign_id: campaign.id
+        )
+      end
 
       def supply_syringe_configured?(campaign:)
         SupplyItem.where(municipality_id: campaign.municipality_id).where("code LIKE ?", "SYRINGE%").exists?
       end
 
-      def available_supply_quantity(campaign:, code_prefix:)
+      def supply_quantity_at(municipality_id:, health_facility_id:, code_prefix:)
         item_ids = SupplyItem
-          .where(municipality_id: campaign.municipality_id)
+          .where(municipality_id: municipality_id)
           .where("code LIKE ?", "#{code_prefix}%")
           .pluck(:id)
         return 0 if item_ids.empty?
 
         StockBalance
           .where(
-            municipality_id: campaign.municipality_id,
-            health_facility_id: campaign.health_facility_id,
+            municipality_id: municipality_id,
+            health_facility_id: health_facility_id,
             supply_item_id: item_ids
           )
           .sum(:quantity)
           .to_i
+      end
+
+      def available_supply_quantity(campaign:, code_prefix:)
+        supply_quantity_at(
+          municipality_id: campaign.municipality_id,
+          health_facility_id: campaign.health_facility_id,
+          code_prefix: code_prefix
+        )
       end
 
       def capacity_ok?(campaign:, room_capacity_per_day:)
@@ -125,6 +270,18 @@ module Inventory
         days.positive? ? days : 0
       end
 
+      def committed_doses_elsewhere(municipality_id:, health_facility_id:, immunobiologic_product_id:, exclude_vaccination_campaign_id: nil)
+        scope = VaccinationCampaign
+          .where(
+            municipality_id: municipality_id,
+            health_facility_id: health_facility_id,
+            immunobiologic_product_id: immunobiologic_product_id,
+            status: %w[provisioning_approved scheduled active]
+          )
+        scope = scope.where.not(id: exclude_vaccination_campaign_id) if exclude_vaccination_campaign_id.present?
+        scope.sum(:target_doses).to_i
+      end
+
       def build_shortages(line)
         return [] if line.available >= line.required
 
@@ -140,22 +297,6 @@ module Inventory
           capacity = campaign.room_capacity_per_day * days
           "Room capacity: required #{campaign.target_doses} doses, capacity #{capacity} (#{campaign.room_capacity_per_day}/day × #{days} days)"
         end
-      end
-
-      def emit_rejection_event!(campaign:, provisioning:)
-        RecordPlatformEvent.new(
-          event_type: "supply.provisioning.rejected",
-          aggregate_type: "SupplyProvisioning",
-          aggregate_id: provisioning.id,
-          topic: "supply.provisioning.rejected",
-          payload: {
-            provisionable_type: campaign.class.name,
-            provisionable_id: campaign.id,
-            health_facility_id: campaign.health_facility_id,
-            shortages: provisioning.shortages,
-            rejection_reason: provisioning.rejection_reason
-          }
-        ).call
       end
     end
   end

@@ -20,7 +20,7 @@ module Campaigns
           skipped = 0
 
           scope.find_each do |citizen|
-            household = citizen.households.first
+            household = household_for(citizen)
             target = CampaignTarget.find_or_initialize_by(
               campaign: campaign,
               citizen: citizen
@@ -69,10 +69,19 @@ module Campaigns
           end
 
           if definition["micro_area_codes"].present?
-            scope = scope.joins(:households).where(households: { micro_area_code: definition["micro_area_codes"] })
+            scope = scope.where(
+              id: HouseholdMember
+                .joins(:household)
+                .where(households: { micro_area_code: definition["micro_area_codes"] })
+                .select(:citizen_id)
+            )
           end
 
-          scope.distinct
+          scope
+        end
+
+        def household_for(citizen)
+          citizen.household_members.order(:created_at).first&.household
         end
 
         def priority_for(citizen)

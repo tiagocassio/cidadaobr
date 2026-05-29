@@ -32,13 +32,42 @@ RSpec.describe "Api field campaigns and routes", type: :request do
     expect(response.parsed_body.size).to eq(1)
   end
 
-  it "shows visit route with ordered stops" do
+  it "does not list campaigns still in routes_generated" do
+    with_tenant(membership) do
+      create(:home_visit_campaign, municipality: municipality, health_facility: facility, status: "routes_generated")
+    end
+
+    get api_v1_field_campaigns_path, headers: headers
+
+    expect(response).to have_http_status(:ok)
+    expect(response.parsed_body).to be_empty
+  end
+
+  it "lists scheduled campaigns after routes are published" do
+    with_tenant(membership) do
+      create(:home_visit_campaign, municipality: municipality, health_facility: facility, status: "scheduled")
+    end
+
+    get api_v1_field_campaigns_path, headers: headers
+
+    expect(response).to have_http_status(:ok)
+    expect(response.parsed_body.size).to eq(1)
+  end
+
+  it "shows published visit route with ordered stops" do
     campaign = nil
     route = nil
     with_tenant(membership) do
-      campaign = create(:home_visit_campaign, municipality: municipality, health_facility: facility, status: "routes_generated")
+      campaign = create(:home_visit_campaign, municipality: municipality, health_facility: facility, status: "scheduled")
       citizen = create(:citizen, municipality: municipality, health_facility: facility, care_team: team)
-      route = create(:visit_route, municipality: municipality, health_facility: facility, home_visit_campaign: campaign, care_team: team)
+      route = create(
+        :visit_route,
+        municipality: municipality,
+        health_facility: facility,
+        home_visit_campaign: campaign,
+        care_team: team,
+        status: "published"
+      )
       create(:visit_route_stop, municipality: municipality, visit_route: route, citizen: citizen, stop_order: 1)
     end
 
@@ -46,5 +75,24 @@ RSpec.describe "Api field campaigns and routes", type: :request do
 
     expect(response).to have_http_status(:ok)
     expect(response.parsed_body["stops"].size).to eq(1)
+  end
+
+  it "does not expose draft visit routes" do
+    route = nil
+    with_tenant(membership) do
+      campaign = create(:home_visit_campaign, municipality: municipality, health_facility: facility, status: "routes_generated")
+      route = create(
+        :visit_route,
+        municipality: municipality,
+        health_facility: facility,
+        home_visit_campaign: campaign,
+        care_team: team,
+        status: "draft"
+      )
+    end
+
+    get api_v1_field_visit_route_path(route), headers: headers
+
+    expect(response).to have_http_status(:not_found)
   end
 end

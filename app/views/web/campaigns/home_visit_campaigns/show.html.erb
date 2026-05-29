@@ -2,9 +2,30 @@
   <%= link_to t("cidadaobr.campaigns.home_visit.back"), web_campaigns_home_visit_campaigns_path, class: "text-sm text-slate-600 underline" %>
   <h2 class="mt-2 mb-6 text-2xl font-bold"><%= @campaign.name %></h2>
 
+  <% selectable_dates = (@route_dates + [ @route_date ]).uniq.sort %>
+  <form method="get" class="mb-4 flex flex-wrap items-end gap-3 text-sm">
+    <label class="flex flex-col gap-1">
+      <span class="font-medium"><%= t("cidadaobr.campaigns.home_visit.route_date") %></span>
+      <select name="route_date" class="rounded border border-slate-300 px-3 py-2">
+        <% selectable_dates.each do |date| %>
+          <option value="<%= date.iso8601 %>" <%= "selected" if date == @route_date %>><%= l(date) %></option>
+        <% end %>
+      </select>
+    </label>
+    <button type="submit" class="rounded border border-slate-300 px-3 py-2"><%= t("cidadaobr.campaigns.home_visit.apply_route_date") %></button>
+  </form>
+
+  <% route_date_param = { route_date: @route_date.iso8601 } %>
   <div class="mb-6 flex flex-wrap gap-2">
     <%= button_to t("cidadaobr.campaigns.build_targets_link"), build_targets_web_campaigns_home_visit_campaign_path(@campaign), method: :post, class: "rounded bg-slate-800 px-3 py-2 text-sm font-semibold text-white" %>
-    <%= button_to t("cidadaobr.campaigns.home_visit.generate_routes"), generate_routes_web_campaigns_home_visit_campaign_path(@campaign), method: :post, class: "rounded bg-emerald-700 px-3 py-2 text-sm font-semibold text-white" %>
+    <%= button_to t("cidadaobr.campaigns.home_visit.generate_routes"), generate_routes_web_campaigns_home_visit_campaign_path(@campaign, **route_date_param), method: :post, class: "rounded bg-emerald-700 px-3 py-2 text-sm font-semibold text-white" %>
+    <% if @routes_for_date.any? %>
+      <%= button_to t("cidadaobr.campaigns.home_visit.regenerate_routes"), generate_routes_web_campaigns_home_visit_campaign_path(@campaign, **route_date_param, regenerate: true), method: :post, class: "rounded bg-emerald-900 px-3 py-2 text-sm font-semibold text-white" %>
+      <%= button_to t("cidadaobr.campaigns.home_visit.clear_routes"), clear_routes_web_campaigns_home_visit_campaign_path(@campaign, **route_date_param), method: :post, form: { data: { turbo_confirm: t("cidadaobr.campaigns.home_visit.confirm_clear_routes") } }, class: "rounded border border-red-300 px-3 py-2 text-sm text-red-700" %>
+      <% if @routes_for_date.any? { |route| route.status == "draft" } %>
+        <%= button_to t("cidadaobr.campaigns.home_visit.publish_routes"), publish_routes_web_campaigns_home_visit_campaign_path(@campaign, **route_date_param), method: :post, class: "rounded bg-indigo-700 px-3 py-2 text-sm font-semibold text-white" %>
+      <% end %>
+    <% end %>
     <%= link_to t("cidadaobr.campaigns.home_visit.preview_provisioning"), preview_provisioning_web_campaigns_home_visit_campaign_path(@campaign), class: "rounded border border-slate-300 px-3 py-2 text-sm" %>
   </div>
 
@@ -13,12 +34,12 @@
     <p><strong><%= HomeVisitCampaign.human_attribute_name(:status) %>:</strong> <%= @campaign.status %></p>
   </div>
 
-  <% if @routes.any? %>
+  <% if @routes_for_date.any? %>
     <div class="rounded-lg border border-slate-200 bg-white p-6">
       <h3 class="mb-4 font-semibold"><%= t("cidadaobr.campaigns.home_visit.routes_title") %></h3>
       <ul class="divide-y text-sm">
-        <% @routes.each do |route| %>
-          <li class="py-2"><%= route.route_date %> · <%= route.care_team.name %> · <%= route.visit_route_stops.count %> paradas</li>
+        <% @routes_for_date.each do |route| %>
+          <li class="py-2"><%= route.route_date %> · <%= route.care_team.name %> · <%= route.visit_route_stops.count %> paradas · <%= route.status %></li>
         <% end %>
       </ul>
     </div>

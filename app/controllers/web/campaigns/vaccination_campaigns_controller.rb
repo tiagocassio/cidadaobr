@@ -38,6 +38,16 @@ module Web
         @campaign.municipality = current_municipality
         @campaign.status = "draft"
 
+        if add_scoped_param_errors(
+          @campaign,
+          raw_facility_id: params.dig(:vaccination_campaign, :health_facility_id),
+          raw_room_id: params.dig(:vaccination_campaign, :consultation_room_id),
+          health_facility_id: sanitize_scoped_health_facility_id(params.dig(:vaccination_campaign, :health_facility_id))
+        )
+          render :new, status: :unprocessable_entity
+          return
+        end
+
         if @campaign.save
           run_provisioning!
           redirect_to web_campaigns_vaccination_campaign_path(@campaign),
@@ -50,6 +60,16 @@ module Web
       def edit; end
 
       def update
+        if add_scoped_param_errors(
+          @campaign,
+          raw_facility_id: params.dig(:vaccination_campaign, :health_facility_id),
+          raw_room_id: params.dig(:vaccination_campaign, :consultation_room_id),
+          health_facility_id: sanitize_scoped_health_facility_id(params.dig(:vaccination_campaign, :health_facility_id))
+        )
+          render :edit, status: :unprocessable_entity
+          return
+        end
+
         if @campaign.update(campaign_params)
           run_provisioning!
           redirect_to web_campaigns_vaccination_campaign_path(@campaign),
@@ -69,6 +89,12 @@ module Web
         unless @campaign.supply_provisioning&.status == "approved"
           redirect_to web_campaigns_vaccination_campaign_path(@campaign),
                       alert: t("cidadaobr.campaigns.flash.publish_blocked")
+          return
+        end
+
+        unless @campaign.campaign_targets.exists?
+          redirect_to web_campaigns_vaccination_campaign_path(@campaign),
+                      alert: t("cidadaobr.campaigns.flash.publish_no_targets")
           return
         end
 
@@ -97,7 +123,7 @@ module Web
       end
 
       def campaign_params
-        params.require(:vaccination_campaign).permit(
+        permitted = params.require(:vaccination_campaign).permit(
           :name,
           :health_facility_id,
           :immunobiologic_product_id,
@@ -109,16 +135,16 @@ module Web
           :room_capacity_per_day,
           target_audience_definition: {}
         )
+        permitted[:health_facility_id] = sanitize_scoped_health_facility_id(permitted[:health_facility_id])
+        permitted[:consultation_room_id] = sanitize_scoped_consultation_room_id(
+          permitted[:consultation_room_id],
+          health_facility_id: permitted[:health_facility_id]
+        )
+        permitted
       end
 
       def run_provisioning!
-        available = Inventory::ProvisioningValidator.available_doses_for(campaign: @campaign)
-        @last_provisioning_result = Inventory::ProvisioningValidator.call(
-          campaign: @campaign,
-          available_doses: available,
-          room_capacity_per_day: @campaign.room_capacity_per_day
-        )
-        Inventory::ProvisioningValidator.persist!(campaign: @campaign, result: @last_provisioning_result)
+        @last_provisioning_result = Inventory::ProvisioningValidator.persist!(campaign: @campaign)
       end
 
       def provisioning_notice(result)

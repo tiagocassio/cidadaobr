@@ -66,16 +66,49 @@ RSpec.describe Inventory::ProvisioningValidator do
     expect(result.shortages.join).to include("Room capacity")
   end
 
+  it "rejects when another approved campaign already committed doses at the facility" do
+    with_tenant(membership) do
+      create(
+        :immunobiologic_lot,
+        municipality: municipality,
+        health_facility: facility,
+        immunobiologic_product: product,
+        quantity_on_hand: 500,
+        expires_on: 1.year.from_now.to_date
+      )
+      existing = build_campaign(target_doses: 400, status: "provisioning_approved")
+      existing.save!
+      campaign = build_campaign(target_doses: 200)
+
+      result = described_class.call(
+        campaign: campaign,
+        available_doses: described_class.available_doses_for(campaign: campaign)
+      )
+
+      expect(result.feasible).to be(false)
+      expect(result.shortages.first).to include("required 200")
+    end
+  end
+
   it "persists supply provisioning with approved status" do
     with_tenant(membership) do
+      create(
+        :immunobiologic_lot,
+        municipality: municipality,
+        health_facility: facility,
+        immunobiologic_product: product,
+        quantity_on_hand: 500,
+        expires_on: 1.year.from_now.to_date
+      )
       campaign = build_campaign
       campaign.save!
-      result = described_class.call(campaign: campaign, available_doses: 500)
 
+      result = nil
       expect {
-        described_class.persist!(campaign: campaign, result: result)
+        result = described_class.persist!(campaign: campaign)
       }.to change(SupplyProvisioning, :count).by(1)
 
+      expect(result.feasible).to be(true)
       expect(campaign.reload.supply_provisioning.status).to eq("approved")
     end
   end
@@ -84,10 +117,9 @@ RSpec.describe Inventory::ProvisioningValidator do
     with_tenant(membership) do
       campaign = build_campaign(target_doses: 500)
       campaign.save!
-      result = described_class.call(campaign: campaign, available_doses: 10)
 
       expect {
-        described_class.persist!(campaign: campaign, result: result)
+        described_class.persist!(campaign: campaign)
       }.to change(OutboxMessage, :count).by(1)
 
       message = OutboxMessage.last

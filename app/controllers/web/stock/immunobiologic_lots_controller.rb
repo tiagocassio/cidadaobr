@@ -21,14 +21,13 @@ module Web
         @lot = scoped_lots.build(lot_params)
         @lot.municipality = current_municipality
 
+        if add_scoped_param_errors(@lot, raw_facility_id: params.dig(:immunobiologic_lot, :health_facility_id))
+          render :new, status: :unprocessable_entity
+          return
+        end
+
         ActiveRecord::Base.transaction do
           if @lot.save
-            StockBalance.find_or_initialize_by(
-              municipality: @lot.municipality,
-              health_facility: @lot.health_facility,
-              immunobiologic_lot: @lot
-            ).update!(quantity: @lot.quantity_on_hand)
-
             StockMovement.create!(
               municipality: @lot.municipality,
               health_facility: @lot.health_facility,
@@ -62,7 +61,7 @@ module Web
       end
 
       def lot_params
-        params.require(:immunobiologic_lot).permit(
+        permitted = params.require(:immunobiologic_lot).permit(
           :health_facility_id,
           :immunobiologic_product_id,
           :lot_number,
@@ -70,6 +69,8 @@ module Web
           :manufacturer,
           :quantity_on_hand
         )
+        permitted[:health_facility_id] = sanitize_scoped_health_facility_id(permitted[:health_facility_id])
+        permitted
       end
     end
   end

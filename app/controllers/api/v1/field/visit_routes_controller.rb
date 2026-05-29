@@ -7,19 +7,25 @@ module Api
         def index
           @routes = scoped_routes
             .includes(:care_team, visit_route_stops: :citizen)
-            .where(status: %w[published in_progress draft])
+            .where(status: %w[published in_progress])
             .order(:route_date, :sequence_number)
         end
 
         def show
-          @route = scoped_routes.includes(visit_route_stops: :citizen).find(params[:id])
+          @route = scoped_routes
+            .where(status: %w[published in_progress])
+            .includes(visit_route_stops: :citizen)
+            .find(params[:id])
           @provisioning = @route.visit_route_provisioning
         end
 
         private
 
         def scoped_routes
-          scope = VisitRoute.where(municipality_id: current_membership.municipality_id)
+          scope = VisitRoute
+            .where(municipality_id: current_membership.municipality_id)
+            .joins(:home_visit_campaign)
+            .where(home_visit_campaigns: { status: %w[scheduled active] })
           if current_membership.scope == "team"
             scope = scope.where(care_team_id: current_membership.user.team_ids_for(current_membership.municipality_id))
           elsif current_membership.health_facility_id.present?
