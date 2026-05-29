@@ -299,7 +299,7 @@ Cada indicador de qualidade desdobra em **boas práticas (BP A, B, C…)** em `i
 
 São indicadores **pactuados** com códigos oficiais SAPS em `indicator_catalog.code` (`C1`–`C7`, `B1`–`B6`, `M1`, `M2`). O score costuma ser **% de boas práticas** (ou ratio, no caso de B3) sobre o denominador → classificação do **componente qualidade** da equipe.
 
-**Notas Metodológicas no site SAPS:** **C1–C7** têm PDFs nomeados **Nota Metodológica C1…C7** na [página eSF/eAP](https://www.gov.br/saude/pt-br/composicao/saps/publicacoes/fichas-tecnicas/equipe-de-atencao-primaria-e-saude-da-familia). Os indicadores de **saúde bucal** usam códigos **B1–B6** na [página eSB](https://www.gov.br/saude/pt-br/composicao/saps/publicacoes/fichas-tecnicas/equipe-de-saude-bucal); **eMulti** usa **M1–M2** na [página eMulti](https://www.gov.br/saude/pt-br/composicao/saps/publicacoes/fichas-tecnicas/equipes-multiprofissionais-emulti). Em `indicator_rules.expression` (ou pack em `db/methodology/3493-2024/`), usar o mesmo código da nota e `source_ref` com URL do PDF SAPS.
+**Notas Metodológicas no site SAPS:** **C1–C7** têm PDFs nomeados **Nota Metodológica C1…C7** na [página eSF/eAP](https://www.gov.br/saude/pt-br/composicao/saps/publicacoes/fichas-tecnicas/equipe-de-atencao-primaria-e-saude-da-familia). Os indicadores de **saúde bucal** usam códigos **B1–B6** na [página eSB](https://www.gov.br/saude/pt-br/composicao/saps/publicacoes/fichas-tecnicas/equipe-de-saude-bucal); **eMulti** usa **M1–M2** na [página eMulti](https://www.gov.br/saude/pt-br/composicao/saps/publicacoes/fichas-tecnicas/equipes-multiprofissionais-emulti). Em `indicator_rules.expression` (ou pack em `lib/indicators/methodology/3493-2024/`), usar o mesmo código da nota e `source_ref` com URL do PDF SAPS.
 
 | Código | Nome completo | Equipe | BPs (qtd.) | Denominador (resumo) | Fichas LEDI |
 |--------|---------------|--------|------------|----------------------|-------------|
@@ -510,7 +510,7 @@ Atualizar ao fechar cada sprint do [roteiro imediato](#roteiro-de-execução-ime
 | S6 | Concluído (MVP) | DSL C1–C7 + V_* + CVAT; Kafka `appointment.noshow` |
 | S7 | Concluído (MVP) | Painel X/N, ranking equipes, gaps por indicador, projeção ilustrativa |
 
-**Gate Fase 5:** `phase-4-indicators` concluído com DSL **B1–B6** / **M1–M2** e pack `db/methodology/3493-2024/`; repasse permanece ilustrativo até Portaria — ver [ADR-0003](docs/adr/0003-epic05-mvp-scope.md).
+**Gate Fase 5:** `phase-4-indicators` concluído com DSL **B1–B6** / **M1–M2** e pack `lib/indicators/methodology/3493-2024/`; repasse permanece ilustrativo até Portaria — ver [ADR-0003](docs/adr/0003-epic05-mvp-scope.md).
 
 **Kafka dev:** `bin/kafka_create_topics` (inclui `appointment.noshow`).
 

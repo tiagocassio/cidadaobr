@@ -2,7 +2,7 @@
 
 module Indicators
   module MethodologyLoader
-    PACK_DIR = Rails.root.join("db/methodology/3493-2024").freeze
+    PACK_DIR = Rails.root.join("lib/indicators/methodology/3493-2024").freeze
 
     module_function
 

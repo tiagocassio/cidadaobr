@@ -12,7 +12,7 @@ O roteiro imediato S1–S7 exige entregar motor de indicadores e painel gestor n
 
 Fechar **Sprints 6–7 no `cidadaobr`** e marcar **`phase-4-indicators: completed`** com:
 
-1. **DSL `dsl_v1` para B1–B6 (eSB) e M1–M2 (eMulti)** em `indicator_rules.expression`, com `source_ref` no pack [`db/methodology/3493-2024/`](../db/methodology/3493-2024/) e merge via `Indicators::MethodologyLoader`.
+1. **DSL `dsl_v1` para B1–B6 (eSB) e M1–M2 (eMulti)** em `indicator_rules.expression`, com `source_ref` no pack [`lib/indicators/methodology/3493-2024/`](../../lib/indicators/methodology/3493-2024/) e merge via `Indicators::MethodologyLoader`.
 2. **`care_teams.team_kind`** (`esf`, `eap`, `esb`, `emulti`, `municipality`) para filtrar regras em `RuleCatalog` sem depender só do fallback MVP.
 3. **Repasse federal** permanece **ilustrativo** (`Indicators::Scoring::COMPONENT_BASE_BRL` + disclaimer na UI) até publicação de coeficientes oficiais da Portaria GM/MS 3.493/2024 — isso **não bloqueia** o gate Fase 4 após esta revisão.
 4. Validação de regras clínicas contra LEDI/PEC em produção (ex.: V_SAT além de proxy `encounter_in_window`) continua como melhoria pós-MVP.
