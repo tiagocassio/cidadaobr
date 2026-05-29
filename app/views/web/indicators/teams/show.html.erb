@@ -22,19 +22,41 @@
   </div>
 
   <div class="rounded-lg border border-slate-200 bg-white p-6">
-    <h3 class="mb-4 font-semibold"><%= t("cidadaobr.indicators.teams.open_gaps") %></h3>
-    <% if @open_gaps.any? %>
-      <ul class="divide-y divide-slate-100 text-sm">
-        <% @open_gaps.each do |gap| %>
-          <li class="py-2">
-            <strong><%= indicator_catalog_name(gap.indicator_code) %></strong>
-            <% if gap.good_practice_code.present? %>
-              — <%= t("cidadaobr.indicators.teams.good_practice") %> <%= good_practice_label(gap.good_practice_code) %>
+    <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
+      <h3 class="font-semibold"><%= t("cidadaobr.indicators.teams.open_gaps") %></h3>
+      <%= form_with url: web_indicators_team_path(@team), method: :get, class: "flex items-end gap-2" do %>
+        <%= hidden_field_tag :quadrimester, @quadrimester %>
+        <div>
+          <label class="mb-1 block text-xs text-slate-600" for="indicator_code"><%= t("cidadaobr.indicators.teams.filter_indicator") %></label>
+          <select id="indicator_code" name="indicator_code" class="rounded border border-slate-300 px-2 py-1 text-sm">
+            <option value=""><%= t("cidadaobr.indicators.teams.all_indicators") %></option>
+            <% @catalog_codes.each do |code| %>
+              <option value="<%= code %>" <%= "selected" if params[:indicator_code] == code %>><%= indicator_catalog_name(code) %></option>
             <% end %>
-            <span class="text-slate-500">— <%= gap.citizen.full_name %></span>
-          </li>
-        <% end %>
-      </ul>
+          </select>
+        </div>
+        <button type="submit" class="rounded bg-slate-900 px-3 py-1 text-sm text-white"><%= t("cidadaobr.indicators.dashboard.filter") %></button>
+      <% end %>
+    </div>
+    <% if @open_gaps.any? %>
+      <% @gaps_by_indicator.each do |indicator_code, gaps| %>
+        <div class="mb-4">
+          <p class="mb-2 text-sm font-medium text-slate-700">
+            <%= indicator_catalog_name(indicator_code) %>
+            <span class="text-slate-500">(<%= gaps.size %>)</span>
+          </p>
+          <ul class="divide-y divide-slate-100 text-sm">
+            <% gaps.each do |gap| %>
+              <li class="py-2">
+                <% if gap.good_practice_code.present? %>
+                  <%= t("cidadaobr.indicators.teams.good_practice") %> <%= good_practice_label(gap.good_practice_code) %> —
+                <% end %>
+                <span class="text-slate-600"><%= gap.citizen.full_name %></span>
+              </li>
+            <% end %>
+          </ul>
+        </div>
+      <% end %>
     <% else %>
       <p class="text-sm text-slate-500"><%= t("cidadaobr.indicators.teams.no_open_gaps") %></p>
     <% end %>

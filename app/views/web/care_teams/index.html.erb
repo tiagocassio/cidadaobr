@@ -21,7 +21,7 @@
           <tr class="border-t border-slate-100">
             <td class="px-4 py-3"><%= team.name %></td>
             <td class="px-4 py-3"><%= team.ine %></td>
-            <td class="px-4 py-3"><%= team.health_facility.name %></td>
+            <td class="px-4 py-3"><%= health_facility_name_for(team) %></td>
             <td class="px-4 py-3 text-right">
               <%= link_to t("cidadaobr.common.view"), web_care_team_path(team), class: "text-emerald-700 hover:underline" %>
             </td>

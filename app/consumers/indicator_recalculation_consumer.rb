@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+# Recalculates indicators referenced by appointment_in_quadrimester (see RuleCatalog.appointment_dependent_codes).
 class IndicatorRecalculationConsumer < ApplicationConsumer
   APPOINTMENT_TOPICS = %w[
     appointment.booked
@@ -7,6 +8,7 @@ class IndicatorRecalculationConsumer < ApplicationConsumer
     appointment.rescheduled
     appointment.completed
     appointment.cancelled
+    appointment.noshow
   ].freeze
 
   def consume

@@ -52,7 +52,18 @@ upsert_indicator!(
   code: "CVAT",
   funding_component: "linkage",
   team_kind: "esf",
-  display_order: 0
+  display_order: 0,
+  expression: dsl_v1_expression(
+    indicator_code: "CVAT",
+    good_practice_code: "VAC",
+    denominator: { "type" => "citizens_on_team" },
+    numerator: {
+      "type" => "clinical_predicate",
+      "record_types" => %w[FV],
+      "within_months" => 12,
+      "predicate" => { "type" => "present", "field_path" => "immunizations" }
+    }
+  )
 )
 
 upsert_indicator!(
@@ -85,7 +96,13 @@ upsert_indicator!(
   code: "V_SAT",
   funding_component: "linkage",
   team_kind: "esf",
-  display_order: 3
+  display_order: 3,
+  expression: dsl_v1_expression(
+    indicator_code: "V_SAT",
+    good_practice_code: "SAT",
+    denominator: { "type" => "citizens_on_team" },
+    numerator: { "type" => "encounter_in_window", "within_months" => 6 }
+  )
 )
 
 upsert_indicator!(
@@ -105,7 +122,18 @@ upsert_indicator!(
   code: "C2",
   funding_component: "quality",
   team_kind: "esf",
-  display_order: 11
+  display_order: 11,
+  expression: dsl_v1_expression(
+    indicator_code: "C2",
+    good_practice_code: "A",
+    denominator: { "type" => "citizens_age_lte", "max_age" => 2 },
+    numerator: {
+      "type" => "clinical_predicate",
+      "record_types" => %w[FAI],
+      "within_months" => 12,
+      "predicate" => { "type" => "present", "field_path" => "child_development" }
+    }
+  )
 )
 
 upsert_indicator!(

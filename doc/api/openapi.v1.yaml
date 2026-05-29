@@ -1,0 +1,357 @@
+openapi: 3.1.0
+info:
+  title: CidadãoBR Saúde API
+  version: 1.0.0
+  description: |
+    Contrato HTTP para apps mobile e integrações externas.
+    SSOT no repositório `cidadaobr`; tag git `openapi-1.0.0` alinha releases do client Dart.
+servers:
+  - url: https://api.example.com
+    description: Produção (substituir pelo host municipal)
+  - url: http://localhost:3000
+    description: Desenvolvimento local
+tags:
+  - name: citizen-health
+  - name: citizen-auth
+  - name: citizen-appointments
+  - name: citizen-immunization
+  - name: field-health
+  - name: field-auth
+paths:
+  /api/v1/citizen/health:
+    get:
+      tags: [citizen-health]
+      summary: Health check do canal cidadão
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthResponse"
+  /api/v1/citizen/auth:
+    post:
+      tags: [citizen-auth]
+      summary: Autenticação cidadão (CPF + senha)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CitizenAuthRequest"
+      responses:
+        "200":
+          description: Token JWT
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CitizenAuthResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+  /api/v1/citizen/appointments:
+    get:
+      tags: [citizen-appointments]
+      security:
+        - citizenBearer: []
+      summary: Lista consultas do cidadão autenticado
+      responses:
+        "200":
+          description: Lista de consultas
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Appointment"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    post:
+      tags: [citizen-appointments]
+      security:
+        - citizenBearer: []
+      summary: Agendar consulta
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BookAppointmentRequest"
+      responses:
+        "201":
+          description: Consulta criada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Appointment"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+  /api/v1/citizen/appointments/slots:
+    get:
+      tags: [citizen-appointments]
+      security:
+        - citizenBearer: []
+      summary: Vagas disponíveis na UBS do cidadão
+      parameters:
+        - name: health_facility_id
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: date
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+      responses:
+        "200":
+          description: Slots com capacidade
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AppointmentSlot"
+        "409":
+          $ref: "#/components/responses/Conflict"
+  /api/v1/citizen/appointments/{id}/cancel:
+    post:
+      tags: [citizen-appointments]
+      security:
+        - citizenBearer: []
+      summary: Cancelar consulta
+      parameters:
+        - $ref: "#/components/parameters/AppointmentId"
+      responses:
+        "200":
+          description: Consulta cancelada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Appointment"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+  /api/v1/citizen/appointments/{id}/reschedule:
+    post:
+      tags: [citizen-appointments]
+      security:
+        - citizenBearer: []
+      summary: Reagendar consulta
+      parameters:
+        - $ref: "#/components/parameters/AppointmentId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RescheduleAppointmentRequest"
+      responses:
+        "200":
+          description: Consulta reagendada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Appointment"
+        "409":
+          $ref: "#/components/responses/Conflict"
+  /api/v1/citizen/immunization_records:
+    get:
+      tags: [citizen-immunization]
+      security:
+        - citizenBearer: []
+      summary: Carteira vacinal do cidadão
+      responses:
+        "200":
+          description: Registros de imunização
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ImmunizationRecord"
+  /api/v1/field/health:
+    get:
+      tags: [field-health]
+      summary: Health check do canal campo
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthResponse"
+  /api/v1/field/auth:
+    post:
+      tags: [field-auth]
+      summary: Autenticação profissional (stub Fase 6)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+                  format: password
+      responses:
+        "200":
+          description: Token JWT
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+components:
+  securitySchemes:
+    citizenBearer:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  parameters:
+    AppointmentId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+  responses:
+    Unauthorized:
+      description: Credenciais inválidas ou token ausente
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    ValidationError:
+      description: Parâmetros inválidos
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    Conflict:
+      description: Conflito de negócio (vaga, vínculo UBS)
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    RateLimited:
+      description: Muitas tentativas
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+  schemas:
+    HealthResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: ok
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+    CitizenAuthRequest:
+      type: object
+      required: [municipality_id, cpf, password]
+      properties:
+        municipality_id:
+          type: string
+          format: uuid
+        cpf:
+          type: string
+          description: CPF somente dígitos
+        password:
+          type: string
+          format: password
+    CitizenAuthResponse:
+      type: object
+      properties:
+        token:
+          type: string
+        citizen_account_id:
+          type: string
+          format: uuid
+    BookAppointmentRequest:
+      type: object
+      required:
+        - appointment_service_type_id
+        - consultation_room_id
+        - room_capacity_slot_id
+        - scheduled_at
+      properties:
+        appointment_service_type_id:
+          type: string
+          format: uuid
+        consultation_room_id:
+          type: string
+          format: uuid
+        room_capacity_slot_id:
+          type: string
+          format: uuid
+        scheduled_at:
+          type: string
+          format: date-time
+    RescheduleAppointmentRequest:
+      type: object
+      required: [room_capacity_slot_id, scheduled_at]
+      properties:
+        room_capacity_slot_id:
+          type: string
+          format: uuid
+        scheduled_at:
+          type: string
+          format: date-time
+    Appointment:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [scheduled, confirmed, checked_in, in_progress, completed, cancelled, no_show]
+        scheduled_at:
+          type: string
+          format: date-time
+        service_type_name:
+          type: string
+    AppointmentSlot:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        consultation_room_id:
+          type: string
+          format: uuid
+        starts_at:
+          type: string
+        ends_at:
+          type: string
+        slot_date:
+          type: string
+          format: date
+    ImmunizationRecord:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        vaccine_name:
+          type: string
+        administered_at:
+          type: string
+          format: date
+        dose_label:
+          type: string

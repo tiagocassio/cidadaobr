@@ -31,6 +31,162 @@ RSpec.describe ApplicationConsumer do
     expect(KafkaProcessedEvent.count).to eq(0)
   end
 
+  it "marks skippable recalculation errors as consumed without idempotency side effects" do
+    skippable_consumer_class = Class.new(described_class) do
+      def consume
+        messages.each do |message|
+          process_with_idempotency(message) do |_payload|
+            raise Indicators::Errors::AppointmentOutsideTenantError, "outside tenant"
+          end
+        end
+      end
+    end
+
+    municipality = create(:municipality)
+    facility = create(:health_facility, municipality: municipality)
+    membership = create(
+      :user_municipality_membership,
+      municipality: municipality,
+      health_facility: facility,
+      scope: "facility"
+    )
+    envelope = {
+      "event_id" => SecureRandom.uuid,
+      "municipality_id" => municipality.id,
+      "health_facility_id" => facility.id,
+      "payload" => { "appointment_id" => 1 }
+    }
+
+    consumer = skippable_consumer_class.new
+    message = instance_double("Karafka message", payload: envelope.to_json)
+    marked_messages = []
+    consumer.define_singleton_method(:mark_as_consumed) { |msg| marked_messages << msg }
+    allow(consumer).to receive(:messages).and_return([ message ])
+    allow(consumer).to receive(:topic).and_return(instance_double("Karafka topic", name: "test.topic"))
+    allow(Rails.logger).to receive(:error)
+
+    with_tenant(membership) { consumer.consume }
+
+    expect(marked_messages).to eq([ message ])
+    expect(KafkaProcessedEvent.count).to eq(0)
+  end
+
+  it "marks missing Appointment as consumed without idempotency side effects" do
+    missing_appointment_consumer_class = Class.new(described_class) do
+      def consume
+        messages.each do |message|
+          process_with_idempotency(message) do |_payload|
+            Appointment.find(-1)
+          end
+        end
+      end
+    end
+
+    municipality = create(:municipality)
+    facility = create(:health_facility, municipality: municipality)
+    membership = create(
+      :user_municipality_membership,
+      municipality: municipality,
+      health_facility: facility,
+      scope: "facility"
+    )
+    envelope = {
+      "event_id" => SecureRandom.uuid,
+      "municipality_id" => municipality.id,
+      "health_facility_id" => facility.id,
+      "payload" => { "appointment_id" => -1 }
+    }
+
+    consumer = missing_appointment_consumer_class.new
+    message = instance_double("Karafka message", payload: envelope.to_json)
+    marked_messages = []
+    consumer.define_singleton_method(:mark_as_consumed) { |msg| marked_messages << msg }
+    allow(consumer).to receive(:messages).and_return([ message ])
+    allow(consumer).to receive(:topic).and_return(instance_double("Karafka topic", name: "test.topic"))
+    allow(Rails.logger).to receive(:error)
+
+    with_tenant(membership) { consumer.consume }
+
+    expect(marked_messages).to eq([ message ])
+    expect(KafkaProcessedEvent.count).to eq(0)
+  end
+
+  it "re-raises RecordNotFound for non-Appointment models" do
+    other_record_consumer_class = Class.new(described_class) do
+      def consume
+        messages.each do |message|
+          process_with_idempotency(message) do |_payload|
+            Citizen.find(-1)
+          end
+        end
+      end
+    end
+
+    municipality = create(:municipality)
+    facility = create(:health_facility, municipality: municipality)
+    membership = create(
+      :user_municipality_membership,
+      municipality: municipality,
+      health_facility: facility,
+      scope: "facility"
+    )
+    envelope = {
+      "event_id" => SecureRandom.uuid,
+      "municipality_id" => municipality.id,
+      "health_facility_id" => facility.id,
+      "payload" => { "citizen_id" => -1 }
+    }
+
+    consumer = other_record_consumer_class.new
+    message = instance_double("Karafka message", payload: envelope.to_json)
+    allow(consumer).to receive(:messages).and_return([ message ])
+    allow(consumer).to receive(:topic).and_return(instance_double("Karafka topic", name: "test.topic"))
+
+    expect do
+      with_tenant(membership) { consumer.consume }
+    end.to raise_error(ActiveRecord::RecordNotFound)
+
+    expect(KafkaProcessedEvent.count).to eq(0)
+  end
+
+  it "re-raises RecordNotFound when model is not set on the exception" do
+    unscoped_consumer_class = Class.new(described_class) do
+      def consume
+        messages.each do |message|
+          process_with_idempotency(message) do |_payload|
+            raise ActiveRecord::RecordNotFound, "missing aggregate"
+          end
+        end
+      end
+    end
+
+    municipality = create(:municipality)
+    facility = create(:health_facility, municipality: municipality)
+    membership = create(
+      :user_municipality_membership,
+      municipality: municipality,
+      health_facility: facility,
+      scope: "facility"
+    )
+    envelope = {
+      "event_id" => SecureRandom.uuid,
+      "municipality_id" => municipality.id,
+      "health_facility_id" => facility.id,
+      "payload" => {}
+    }
+
+    consumer = unscoped_consumer_class.new
+    message = instance_double("Karafka message", payload: envelope.to_json)
+    allow(consumer).to receive(:messages).and_return([ message ])
+    allow(consumer).to receive(:topic).and_return(instance_double("Karafka topic", name: "test.topic"))
+
+    expect do
+      with_tenant(membership) { consumer.consume }
+    end.to raise_error(ActiveRecord::RecordNotFound, "missing aggregate")
+
+    expect(KafkaProcessedEvent.count).to eq(0)
+  end
+
   it "marks poison envelopes as consumed without idempotency side effects" do
     consumer = test_consumer_class.new
     message = instance_double("Karafka message", payload: "not-json")

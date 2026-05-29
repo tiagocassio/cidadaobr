@@ -10,6 +10,7 @@
       <%= link_to t("cidadaobr.appointments.next_day"), web_appointments_path(facility_scope_params.merge(date: @schedule[:date] + 1.day)), class: "rounded border border-slate-300 px-3 py-2 text-sm" %>
       <%= link_to t("cidadaobr.appointments.new_booking"), new_web_appointment_path(facility_scope_params), class: "rounded bg-emerald-700 px-4 py-2 text-sm font-semibold text-white" %>
       <%= link_to t("cidadaobr.appointments.reception_queue"), reception_web_appointments_path(facility_scope_params), class: "rounded border border-slate-300 px-4 py-2 text-sm" %>
+      <%= link_to t("cidadaobr.appointments.utilization_report"), utilization_web_appointments_path(facility_scope_params), class: "rounded border border-slate-300 px-4 py-2 text-sm" %>
     </div>
   </div>
 

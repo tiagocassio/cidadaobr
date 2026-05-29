@@ -14,6 +14,13 @@ RSpec.describe Indicators::DslV1::LediPayloadPaths do
     end
   end
 
+  describe ".payload_field_aliases" do
+    it "returns multiple LEDI keys for immunizations and child development" do
+      expect(described_class.payload_field_aliases("immunizations")).to include("vacina", "vacinacoes")
+      expect(described_class.payload_field_aliases("child_development")).to include("desenvolvimento_infantil")
+    end
+  end
+
   describe ".fci_condition_field_aliases" do
     it "returns LEDI aliases for known condition flags" do
       expect(described_class.fci_condition_field_aliases("hypertension")).to include("hipertensao")

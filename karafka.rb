@@ -29,6 +29,7 @@ class KarafkaApp < Karafka::App
       appointment.rescheduled
       appointment.completed
       appointment.cancelled
+      appointment.noshow
     ].each do |topic_name|
       topic topic_name do
         consumer IndicatorRecalculationConsumer

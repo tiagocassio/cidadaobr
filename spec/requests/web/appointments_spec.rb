@@ -34,6 +34,13 @@ RSpec.describe "Web appointments", type: :request do
       expect(response.body).not_to include("Selecione a UBS")
     end
 
+    it "loads the utilization report" do
+      get utilization_web_appointments_path(health_facility_id: facility_a.id)
+
+      expect(response).to have_http_status(:ok)
+      expect(response.body).to include(I18n.t("cidadaobr.appointments.utilization_title"))
+    end
+
     it "preserves health_facility_id on the new appointment form" do
       get new_web_appointment_path(health_facility_id: facility_a.id)
 
@@ -122,6 +129,25 @@ RSpec.describe "Web appointments", type: :request do
 
       expect(response).to redirect_to(reception_web_appointments_path(health_facility_id: facility.id))
       expect(with_tenant(team_membership) { appointment.reload.status }).to eq("checked_in")
+    end
+
+    it "marks no-show from reception and releases the slot" do
+      post no_show_web_appointment_path(appointment, health_facility_id: facility.id)
+
+      expect(response).to redirect_to(reception_web_appointments_path(health_facility_id: facility.id))
+      with_tenant(team_membership) do
+        expect(appointment.reload.status).to eq("no_show")
+        expect(capacity_slot.reload.booked_count).to eq(0)
+      end
+    end
+
+    it "marks no-show from in_progress at reception" do
+      with_tenant(team_membership) { appointment.update!(status: "in_progress") }
+
+      post no_show_web_appointment_path(appointment, health_facility_id: facility.id)
+
+      expect(response).to redirect_to(reception_web_appointments_path(health_facility_id: facility.id))
+      expect(with_tenant(team_membership) { appointment.reload.status }).to eq("no_show")
     end
 
     it "loads reception without health_facility_id when team has a single facility" do

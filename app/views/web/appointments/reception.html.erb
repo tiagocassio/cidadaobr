@@ -25,8 +25,12 @@
             <td class="px-4 py-3 text-right space-x-2">
               <% if appointment.status.in?(%w[scheduled confirmed]) %>
                 <%= button_to t("cidadaobr.appointments.check_in"), check_in_web_appointment_path(appointment), class: "text-emerald-700 hover:underline" %>
-              <% elsif appointment.status == "checked_in" %>
+                <%= button_to t("cidadaobr.appointments.cancel"), cancel_web_appointment_path(appointment), class: "text-red-700 hover:underline", form: { data: { turbo_confirm: t("cidadaobr.appointments.confirm_cancel") } } %>
+              <% elsif appointment.status.in?(%w[checked_in in_progress]) %>
                 <%= button_to t("cidadaobr.appointments.complete"), complete_web_appointment_path(appointment), class: "text-emerald-700 hover:underline" %>
+              <% end %>
+              <% if appointment.status.in?(%w[scheduled confirmed checked_in in_progress]) %>
+                <%= button_to t("cidadaobr.appointments.no_show"), no_show_web_appointment_path(appointment), class: "text-amber-700 hover:underline", form: { data: { turbo_confirm: t("cidadaobr.appointments.confirm_no_show") } } %>
               <% end %>
             </td>
           </tr>

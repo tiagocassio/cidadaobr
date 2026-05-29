@@ -30,7 +30,7 @@ todos:
     content: "Serviço de scoring de perfis (Python ou Rails job) consumindo feature snapshots"
     status: pending
   - id: api-clients
-    content: "APIs v1: /field (LEDI offline) e /citizen (agenda, vacinas, meds, pânico, telehealth)"
+    content: "APIs v1: /field (LEDI) e /citizen (agenda, vacinas) — MVP; meds/pânico/tele = Fase 6"
     status: completed
   - id: flutter-field-app
     content: "Flutter Field: multirão, visita acamados, 13 fichas LEDI, offline-first"
@@ -39,20 +39,20 @@ todos:
     content: "Flutter Citizen: agenda consultas/vacinas, carteira vacinal, medicamentos contínuos, pânico, teleconsulta"
     status: pending
   - id: schema-citizen-portal
-    content: "en-US: citizen_accounts, immunization_wallet, panic_alerts, teleconsultation_sessions, medication_reminders"
-    status: completed
+    content: "en-US: citizen_accounts + citizen_immunization_records (MVP); panic/tele/meds = EPIC-10 Fase 6"
+    status: partial
   - id: api-citizen-v1
-    content: "API /api/v1/citizen: slots, BookAppointment, vaccination card, meds, panic, telehealth join"
-    status: completed
+    content: "API /api/v1/citizen: auth, slots, appointments, immunization — MVP; meds/panic/tele = EPIC-10"
+    status: partial
   - id: indicadores-portaria
     content: "Seed indicator_catalog: CVAT + V-* + C1–C15 (Portaria 3.493, SAPS 161/2024, Notas MS)"
     status: completed
   - id: indicador-engine
     content: "Motor de gaps por cidadão/equipe/INE e snapshots quadrimestrais de desempenho"
-    status: pending
+    status: partial
   - id: painel-gestor
     content: "Painel municipal projeção de repasse, ranking equipes e fila de pendências por indicador"
-    status: pending
+    status: partial
   - id: code-conventions-en
     content: "Lint/naming en-US: models, tables, columns, events, Kafka topics, services, Stimulus controllers"
     status: completed
@@ -75,8 +75,8 @@ todos:
     content: "visit_route_provisionings, supply_items, team_supply_dispatches, consumo por parada"
     status: pending
   - id: web-admin-modules
-    content: "Módulos web Hotwire: indicadores, relatórios, CRUD gestão, dashboards estoque/salas/campanhas"
-    status: completed
+    content: "Módulos web Hotwire: indicadores, CRUD gestão, agenda — ok; estoque/campanhas = Fase 5"
+    status: partial
   - id: schema-appointments
     content: "Agendamentos UBS: appointments, service_types, slots; CQRS calendar projection; vínculo encounters"
     status: completed
@@ -93,11 +93,11 @@ todos:
     content: "Fase 2: EPIC-02 (TASK-02-01..07)"
     status: completed
   - id: phase-3-scheduling-citizen-mvp
-    content: "Fase 3: EPIC-03 + EPIC-04"
-    status: completed
+    content: "Fase 3: EPIC-03 + EPIC-04 — backend/API ok; Flutter em cidadaobr-citizen pendente"
+    status: partial
   - id: phase-4-indicators
-    content: "Fase 4: EPIC-05 (TASK-05-01..08)"
-    status: in_progress
+    content: "Fase 4: EPIC-05 (TASK-05-01..08) — MVP aceito; C8–C15 stub (ADR-0003)"
+    status: partial
   - id: phase-5-field-campaigns
     content: "Fase 5: EPIC-06 + EPIC-07 + EPIC-08"
     status: pending
@@ -109,6 +109,9 @@ todos:
     status: pending
   - id: epic-backlog-export
     content: "Manter backlog EPIC/STORY/TASK/SUB sincronizado; export CSV para Jira/Linear"
+    status: completed
+  - id: repo-layout-option-a
+    content: "Polyrepo Opção A — cidadaobr + cidadaobr-citizen/field/mobile-shared (sem apps/ no Rails)"
     status: completed
 ---
 
@@ -131,8 +134,8 @@ todos:
 | Canal | Nome do produto (UI / lojas) | Slogan / subtítulo (pt-BR) | Pacote técnico (repo, en-US) |
 |-------|------------------------------|----------------------------|------------------------------|
 | **Web gestão** | **CidadãoBR Saúde Gestão** | Gestão municipal e UBS | `web` / host `gestao.saude.cidadaobr` (exemplo) |
-| **App profissional** | **CidadãoBR Saúde Campo** | Equipes APS, visitas e fichas no território | `apps/field_app` |
-| **App cidadão** | **CidadãoBR Saúde** | Minha UBS no celular | `apps/citizen_app` |
+| **App profissional** | **CidadãoBR Saúde Campo** | Equipes APS, visitas e fichas no território | repo **`cidadaobr-field`** (`field_app` no código) |
+| **App cidadão** | **CidadãoBR Saúde** | Minha UBS no celular | repo **`cidadaobr-citizen`** (`citizen_app` no código) |
 
 **Por que estes nomes:** distinguem os três binários nas lojas e no desktop (Gestão ≠ Campo ≠ app cidadão), mantêm **Saúde** na vertente e evitam três apps idênticos chamados só “CidadãoBR Saúde”. O app do cidadão pode usar o nome curto **CidadãoBR Saúde** por ser o face da vertente para o público.
 
@@ -430,9 +433,104 @@ INE/CNES    →  QUEM (equipe / UBS) recebe ou perde repasse
 | [Modelo de banco A–L](#modelo-de-banco-recomendado-operacional--ledi) | Tabelas en-US por grupo (incl. roteiro domiciliar L) |
 | [Financiamento / indicadores](#financiamento-aps-e-metas-municipais-portaria-gmms-nº-34932024) | Co-relação ficha ↔ BP ↔ repasse |
 | [Stack + 3 canais](#stack-técnica-rails-8--postgresql-18) | Rails, Kafka, Web, Flutter Field, Flutter Citizen |
+| [Repositórios Git](#repositórios-git-decisão-opção-a) | Polyrepo: `cidadaobr`, `cidadaobr-citizen`, `cidadaobr-field`, `cidadaobr-mobile-shared` |
+| [Roteiro imediato S1–S7](#roteiro-de-execução-imediato-sprints-17) | Ordem de trabalho para iniciar agora |
 | [Referências LEDI](#referências-rápidas-por-ficha-ledi) | Links dicionários UFSC |
 
-**Regra para agentes:** não implementar feature de fase N+1 sem concluir dependências da fase N (ver coluna `depends_on` no roteiro).
+**Regra para agentes:** não implementar feature de fase N+1 sem concluir dependências da fase N (ver coluna `depends_on` no roteiro). **Não** criar `apps/citizen_app` ou `apps/field_app` dentro do repo `cidadaobr` — apps Flutter vivem em repositórios irmãos (ver seção Repositórios Git).
+
+---
+
+## Repositórios Git (decisão: Opção A)
+
+**Decisão:** polyrepo — cada artefato deployável no seu próprio repositório Git. O backend Rails **não** hospeda código Flutter.
+
+Slugs de repositório **sem** o termo `saude` (a vertente continua no produto **CidadãoBR Saúde**, em labels e Bundle ID).
+
+| Repositório | Conteúdo | Quando |
+|-------------|----------|--------|
+| **`cidadaobr`** | API Rails 8, web gestão (Hotwire), Karafka, LEDI, indicadores; contrato em `doc/api/openapi.v1.yaml` | Atual |
+| **`cidadaobr-citizen`** | App Flutter cidadão (TASK-04-06/07) | Fase 3 |
+| **`cidadaobr-field`** | App Flutter profissional (EPIC-08) | Fase 5–6 |
+| **`cidadaobr-mobile-shared`** | Pacotes Dart (`api_client` gerado do OpenAPI, UI tokens futuro) | Antes ou com `cidadaobr-citizen` |
+
+**Layout local típico** (vários clones, mesmo diretório pai):
+
+```text
+~/Development/Projects/
+  cidadaobr/
+  cidadaobr-citizen/
+  cidadaobr-field/
+  cidadaobr-mobile-shared/
+```
+
+**Versionamento:** OpenAPI no repo `cidadaobr` com tags `openapi-x.y.z`; apps mobile pinam versão do client em `cidadaobr-mobile-shared`. Breaking na API → `/api/v2/` + changelog.
+
+**ADR:** [docs/adr/0002-multi-repo-mobile-and-api-contracts.md](docs/adr/0002-multi-repo-mobile-and-api-contracts.md).
+
+**Descartado:** monorepo Flutter dentro de `cidadaobr` (`apps/field_app`, `apps/citizen_app`); renomear API para `cidadaobr-saude-api`.
+
+---
+
+## Roteiro de execução imediato (Sprints 1–7)
+
+Ponto de partida para o time. Detalhe tarefa a tarefa no plano de execução do Cursor; aqui o mapa resumido.
+
+| Sprint | O quê | Onde |
+|--------|-------|------|
+| **1** | Plano = verdade (YAML, checklist, status EPIC/TASK-05) | `cidadaobr` / `docs/` |
+| **2** | Specs RLS + cross-UBS (F0/F2) | `cidadaobr` / `spec/` |
+| **3** | `MarkAppointmentNoShow` + UI recepção | `cidadaobr` |
+| **4** | ADR-0002 + `doc/api/openapi.v1.yaml` | `cidadaobr` |
+| **5** | `cidadaobr-mobile-shared` + `cidadaobr-citizen` MVP | repos novos |
+| **6** | Motor indicadores (C2, CVAT, V_SAT, recálculo) | `cidadaobr` |
+| **7** | Painel X/17, gaps, projeção repasse | `cidadaobr` |
+
+**Regra:** Sprint 1 obrigatório antes de feature nova. **Gate Fase 5:** Sprints 1–7 + `phase-4-indicators` completed.
+
+**Paralelo (2 pessoas):** após Sprint 2 — A: 3→4→5 (agenda + mobile); B: 6→7 (indicadores).
+
+---
+
+## Status do repositório (2026-05-29)
+
+Atualizar ao fechar cada sprint do [roteiro imediato](#roteiro-de-execução-imediato-sprints-17).
+
+### Roteiro imediato S1–S7
+
+| Sprint | Status | Nota |
+|--------|--------|------|
+| S1 | Concluído | Plano + checklist + ADR-0003 |
+| S2 | Concluído | Specs cross-UBS + consumer tenant |
+| S3 | Concluído | `MarkAppointmentNoShow`, recepção, relatório `utilization` |
+| S4 | Concluído | ADR-0002 + `doc/api/openapi.v1.yaml` |
+| S5 | Parcial | `doc/mobile/bootstrap_sibling_repos.sh`; repos Flutter manuais |
+| S6 | Concluído (MVP) | DSL C1–C7 + V_* + CVAT; Kafka `appointment.noshow` |
+| S7 | Concluído (MVP) | Painel X/N, ranking equipes, gaps por indicador, projeção ilustrativa |
+
+**Gate Fase 5:** aguarda `phase-4-indicators: completed` (C8–C15 + repasse oficial) ou revisão do gate — ver [ADR-0003](docs/adr/0003-epic05-mvp-scope.md).
+
+**Kafka dev:** `bin/kafka_create_topics` (inclui `appointment.noshow`).
+
+| Épico | Status | Nota |
+|-------|--------|------|
+| EPIC-00 | Concluído | RLS, CQRS, Kafka, auth |
+| EPIC-01 | Concluído | LEDI 7.4.0; PEC stub → Fase 6 |
+| EPIC-02 | Concluído | Ops web; cross-UBS reforçado em specs |
+| EPIC-03 | Concluído | No-show + relatório ocupação/absenteísmo |
+| EPIC-04 | Parcial | API + OpenAPI; app em repos irmãos |
+| EPIC-05 | Parcial (MVP) | ADR-0003; C8–C15 stub |
+
+| Task | Status |
+|------|--------|
+| TASK-05-01 Schema H | Done |
+| TASK-05-02 Seed 17 | Partial — C1–C7 + V_* + CVAT DSL; C8–C15 stub |
+| TASK-05-03 Motor DSL | Partial — `citizens_age_lte`; V_SAT proxy |
+| TASK-05-04 Recálculo Kafka | Done — `appointment.no_show` → `appointment.noshow` |
+| TASK-05-05 WEB-IND-01 | Done (MVP) — score X/N |
+| TASK-05-06 WEB-IND-02 | Done (MVP) — drill-down, ranking, filtro gaps |
+| TASK-05-07 Projeção repasse | Partial — pesos ilustrativos + disclaimer |
+| TASK-05-08 Regras eSF | Partial — C1–C7; C8–C15 stub |
 
 ---
 
@@ -1060,7 +1158,7 @@ flowchart LR
 |-------|-----|
 | `appointment.booked` | Atualiza calendário, notifica recepção |
 | `appointment.completed` | Motor C1, prepara registro clínico |
-| `appointment.no_show` | Relatório absenteísmo; libera slot |
+| `appointment.no_show` (tópico Kafka: `appointment.noshow`) | Relatório absenteísmo; libera slot |
 
 ### Vacinação animal — mesmo padrão UBS / Ministério da Saúde (não silo paralelo)
 
@@ -1987,7 +2085,7 @@ RabbitMQ fica dispensável no desenho inicial: **Solid Queue** cobre filas de ta
 | `panic.alert.triggered` | `TriggerPanicAlert` | Equipe SAMU/UBS, auditoria LGPD |
 | `teleconsultation.session.started` | `JoinTeleconsultationSession` | Sala WebRTC |
 | `appointment.completed` | `CompleteAppointment` | C1 indicator engine, clinical record prep |
-| `appointment.no_show` | `MarkAppointmentNoShow` | Utilization report, slot release |
+| `appointment.no_show` → `appointment.noshow` | `MarkAppointmentNoShow` | Utilization report, slot release |
 | `household.location.updated` | Territory command | Map projection, visit routes |
 | `ledi.batch.ready` | LEDI command | Thrift serializer + PEC submit |
 | `ledi.batch.status_changed` | PEC integration | `transport_records.status` |
@@ -2009,7 +2107,7 @@ Particionar por `ibge_code` (ou `citizen_id` hash). **Transactional outbox** na 
 | **CidadãoBR Saúde** | `citizen_app` | Cidadão | Consultas, vacinas, medicamentos, pânico, teleconsulta |
 | **CidadãoBR Saúde Gestão** | Rails Hotwire `web` | Gestor/recepção/secretaria | Indicadores, campanhas, agenda UBS, LEDI ops |
 
-Monorepo Flutter: `apps/field_app` (nome loja: **CidadãoBR Saúde Campo**), `apps/citizen_app` (**CidadãoBR Saúde**), `packages/shared_api`. Marca mãe **CidadãoBR** no splash/onboarding futuro hub multivertente.
+**Repositórios Flutter (Opção A):** `cidadaobr-field` (loja **CidadãoBR Saúde Campo**, código `field_app`), `cidadaobr-citizen` (**CidadãoBR Saúde**, `citizen_app`), pacotes compartilhados em **`cidadaobr-mobile-shared`** (`api_client` a partir do OpenAPI publicado por **`cidadaobr`**). Marca mãe **CidadãoBR** no splash/onboarding futuro hub multivertente.
 
 A web **planeja**; o **Field** **executa** no território (LEDI); o **Citizen** **autogere** serviços da UBS vinculada (CNES/equipe do cadastro FCI).
 
@@ -2465,7 +2563,7 @@ Cada história agrupa uma ou mais **Tasks**. Na exportação CSV, `parent_id` da
 | STORY-04-03 | **TASK-04-07** | [Cidadão] CidadãoBR Saúde — Carteira vacinal e agendar vacina | TASK-04-04 | F3-12 |
 
 **TASK-04-06** — [Cidadão] CidadãoBR Saúde — App shell Minha UBS — consultas
-- **SUB-04-06-01** — [Cidadão] CidadãoBR Saúde — Monorepo citizen_app + shared_api
+- **SUB-04-06-01** — [Cidadão] CidadãoBR Saúde — Scaffold repo `cidadaobr-citizen` + dependência `cidadaobr-mobile-shared`
 - **SUB-04-06-02** — [Cidadão] CidadãoBR Saúde — Login CPF e home Minha UBS
 - **SUB-04-06-03** — [Cidadão] CidadãoBR Saúde — E2E agendar consulta
 
@@ -2717,12 +2815,12 @@ Cada história agrupa uma ou mais **Tasks**. Na exportação CSV, `parent_id` da
 
 ### Checklist por épico (executivo)
 
-- [ ] **EPIC-00** CidadãoBR Saúde — Core Plataforma  
-- [x] **EPIC-01** CidadãoBR Saúde — Core LEDI  
+- [x] **EPIC-00** CidadãoBR Saúde — Core Plataforma  
+- [x] **EPIC-01** CidadãoBR Saúde — Core LEDI (PEC produção = Fase 6)  
 - [x] **EPIC-02** CidadãoBR Saúde Gestão — Admin Municipal  
 - [x] **EPIC-03** CidadãoBR Saúde Gestão — Agendamentos UBS  
-- [x] **EPIC-04** CidadãoBR Saúde — MVP Cidadão (API; app Flutter TASK-04-06/07 pendente)  
-- [ ] **EPIC-05** CidadãoBR Saúde Gestão — Indicadores 3.493  
+- [~] **EPIC-04** CidadãoBR Saúde — MVP Cidadão (API ok; Flutter em `cidadaobr-citizen` pendente)  
+- [~] **EPIC-05** CidadãoBR Saúde Gestão — Indicadores 3.493 (em andamento)  
 - [ ] **EPIC-06** CidadãoBR Saúde Gestão — Estoque e Campanhas  
 - [ ] **EPIC-07** CidadãoBR Saúde Gestão — Rotas e Provisionamento  
 - [ ] **EPIC-08** CidadãoBR Saúde Campo — App Profissional  

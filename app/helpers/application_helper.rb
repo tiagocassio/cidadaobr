@@ -15,6 +15,12 @@ module ApplicationHelper
     enum_label("cidadaobr.health_facilities.service_kinds", kind)
   end
 
+  def health_facility_name_for(team, names_by_id: @health_facility_names_by_id)
+    return t("cidadaobr.common.empty") if team.health_facility_id.blank?
+
+    names_by_id&.[](team.health_facility_id) || t("cidadaobr.common.empty")
+  end
+
   def citizen_sex_label(sex)
     return t("cidadaobr.common.empty") if sex.blank?
 

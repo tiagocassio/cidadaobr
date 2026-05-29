@@ -4,9 +4,9 @@ module Web
   class AppointmentsController < BaseController
     before_action :require_facility_or_municipality!
     before_action :require_facility_or_municipality_write!, only: %i[new create reschedule]
-    before_action :require_reception_operations!, only: %i[check_in complete cancel reschedule]
-    before_action :ensure_health_facility_selected!, only: %i[index reception new create]
-    before_action :set_appointment, only: %i[show check_in complete cancel reschedule]
+    before_action :require_reception_operations!, only: %i[check_in complete cancel no_show reschedule]
+    before_action :ensure_health_facility_selected!, only: %i[index reception utilization new create]
+    before_action :set_appointment, only: %i[show check_in complete cancel no_show reschedule]
     before_action :set_form_collections, only: %i[new create]
 
     helper_method :facility_scope_params
@@ -77,18 +77,27 @@ module Web
         .order(:scheduled_at)
     end
 
+    def utilization
+      @from_date, @to_date = utilization_date_range
+      @report = Scheduling::FacilityUtilizationReport.new(
+        health_facility_id: selected_facility_id,
+        from_date: @from_date,
+        to_date: @to_date
+      ).call
+    end
+
     def check_in
       Scheduling::CheckInAppointment.call(appointment: @appointment)
-      redirect_to reception_web_appointments_path(facility_scope_params(@appointment.health_facility_id)), notice: t("cidadaobr.appointments.flash.check_in")
+      redirect_to_reception_for(@appointment, notice: t("cidadaobr.appointments.flash.check_in"))
     rescue Scheduling::Errors::InvalidTransitionError
-      redirect_to reception_web_appointments_path(facility_scope_params(@appointment.health_facility_id)), alert: t("cidadaobr.appointments.flash.check_in_failed")
+      redirect_to_reception_for(@appointment, alert: t("cidadaobr.appointments.flash.check_in_failed"))
     end
 
     def complete
       Scheduling::CompleteAppointment.call(appointment: @appointment)
-      redirect_to reception_web_appointments_path(facility_scope_params(@appointment.health_facility_id)), notice: t("cidadaobr.appointments.flash.completed")
+      redirect_to_reception_for(@appointment, notice: t("cidadaobr.appointments.flash.completed"))
     rescue Scheduling::Errors::InvalidTransitionError
-      redirect_to reception_web_appointments_path(facility_scope_params(@appointment.health_facility_id)), alert: t("cidadaobr.appointments.flash.complete_failed")
+      redirect_to_reception_for(@appointment, alert: t("cidadaobr.appointments.flash.complete_failed"))
     end
 
     def cancel
@@ -98,6 +107,15 @@ module Web
       redirect_to web_appointment_path(@appointment), alert: t("cidadaobr.appointments.flash.cancel_failed")
     rescue Scheduling::Errors::SlotUnavailableError => e
       redirect_to web_appointment_path(@appointment), alert: Scheduling::ErrorMessages.slot_unavailable_message(e)
+    end
+
+    def no_show
+      Scheduling::MarkAppointmentNoShow.call(appointment: @appointment)
+      redirect_to_reception_for(@appointment, notice: t("cidadaobr.appointments.flash.no_show"))
+    rescue Scheduling::Errors::InvalidTransitionError
+      redirect_to_reception_for(@appointment, alert: t("cidadaobr.appointments.flash.no_show_failed"))
+    rescue Scheduling::Errors::SlotUnavailableError => e
+      redirect_to_reception_for(@appointment, alert: Scheduling::ErrorMessages.slot_unavailable_message(e))
     end
 
     def reschedule
@@ -148,6 +166,21 @@ module Web
       Date.iso8601(params[:date])
     rescue Date::Error, ArgumentError
       Date.current
+    end
+
+    def utilization_date_range
+      from = parse_date_param(params[:from_date], default: Date.current.beginning_of_month)
+      to = parse_date_param(params[:to_date], default: Date.current)
+      to = from if to < from
+      [from, to]
+    end
+
+    def parse_date_param(value, default:)
+      return default if value.blank?
+
+      Date.iso8601(value)
+    rescue Date::Error, ArgumentError
+      default
     end
 
     def ensure_health_facility_selected!
@@ -204,6 +237,10 @@ module Web
       @selected_room_capacity_slot_id = attrs[:room_capacity_slot_id]
       set_form_collections
       render :new, status: :unprocessable_entity
+    end
+
+    def redirect_to_reception_for(appointment, notice: nil, alert: nil)
+      redirect_to reception_web_appointments_path(facility_scope_params(appointment.health_facility_id)), notice: notice, alert: alert
     end
   end
 end

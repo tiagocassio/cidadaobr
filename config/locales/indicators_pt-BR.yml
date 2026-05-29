@@ -7,10 +7,12 @@ pt-BR:
         subtitle: "Desempenho municipal — Portaria GM/MS 3.493/2024"
         quadrimester_label: "Quadrimestre"
         filter: "Filtrar"
-        municipal_score: "Score municipal (≥85)"
-        scoped_score: "Score das equipes visíveis (≥85)"
+        municipal_score: "Na meta (≥85) — entre avaliados"
+        scoped_score: "Na meta (≥85) — avaliados no escopo"
+        score_card_hint: "Numerador: indicadores com média ≥85. Denominador: indicadores com score de equipes no quadrimestre (não é o total do catálogo)."
         open_gaps: "Gaps abertos"
         monitored_teams: "Equipes monitoradas"
+        catalog_total: "%{count} indicadores no catálogo"
         municipal_average: "Indicadores — média municipal"
         scoped_average: "Indicadores — média das equipes visíveis"
         no_score: "Sem score"
@@ -18,18 +20,22 @@ pt-BR:
         transfer_projection: "Projeção de repasse"
         details: "Detalhes"
         ine: "INE"
+        team_average: "média"
       teams:
         back: "← Indicadores"
         scores_by_indicator: "Scores por indicador"
         no_scores: "Nenhum score calculado para este quadrimestre."
         open_gaps: "Gaps abertos"
+        filter_indicator: "Indicador"
+        all_indicators: "Todos"
         good_practice: "BP"
         no_open_gaps: "Nenhum gap aberto para esta equipe."
       projections:
         back: "← Indicadores"
         title: "Projeção de repasse"
         subtitle: "Estimativa interna — %{quadrimester}"
-        total_stub: "Total projetado (stub)"
+        total_stub: "Total estimado (MVP — não oficial Portaria)"
+        disclaimer: "Valores ilustrativos por componente de financiamento. Não substituem cálculo oficial do MS."
         by_team: "Por equipe"
       tiers:
         excellent: "Excelente"
@@ -49,7 +55,7 @@ pt-BR:
         V_ACOMP:
           name: "Vínculo e acompanhamento — acompanhamento"
         V_SAT:
-          name: "Vínculo e acompanhamento — satisfação"
+          name: "Vínculo — satisfação (proxy consulta 6m, MVP)"
         C1:
           name: "Mais acesso à APS"
         C2:

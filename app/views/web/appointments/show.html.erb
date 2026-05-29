@@ -10,8 +10,11 @@
   </div>
 
   <div class="mt-4 flex flex-wrap gap-2">
-    <% unless @appointment.status.in?(%w[completed cancelled no_show]) %>
-      <%= button_to t("cidadaobr.appointments.cancel"), cancel_web_appointment_path(@appointment), class: "rounded border border-red-300 px-4 py-2 text-sm text-red-700" %>
+    <% if @appointment.status.in?(%w[scheduled confirmed]) %>
+      <%= button_to t("cidadaobr.appointments.cancel"), cancel_web_appointment_path(@appointment), class: "rounded border border-red-300 px-4 py-2 text-sm text-red-700", form: { data: { turbo_confirm: t("cidadaobr.appointments.confirm_cancel") } } %>
+      <%= button_to t("cidadaobr.appointments.no_show"), no_show_web_appointment_path(@appointment), class: "rounded border border-amber-300 px-4 py-2 text-sm text-amber-800", form: { data: { turbo_confirm: t("cidadaobr.appointments.confirm_no_show") } } %>
+    <% elsif @appointment.status.in?(%w[checked_in in_progress]) %>
+      <%= button_to t("cidadaobr.appointments.no_show"), no_show_web_appointment_path(@appointment), class: "rounded border border-amber-300 px-4 py-2 text-sm text-amber-800", form: { data: { turbo_confirm: t("cidadaobr.appointments.confirm_no_show") } } %>
     <% end %>
   </div>
 

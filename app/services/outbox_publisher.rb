@@ -21,6 +21,7 @@ class OutboxPublisher
     "appointment.checked_in" => "appointment.checkedin",
     "appointment.completed" => "appointment.completed",
     "appointment.cancelled" => "appointment.cancelled",
+    "appointment.no_show" => "appointment.noshow",
     "indicator.gap.detected" => "indicator.gap.detected",
     "indicator.team_score.updated" => "indicator.team.score.updated"
   }.freeze

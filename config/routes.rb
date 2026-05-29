@@ -29,10 +29,12 @@ Rails.application.routes.draw do
         post :check_in
         post :complete
         post :cancel
+        post :no_show
         post :reschedule
       end
       collection do
         get :reception
+        get :utilization
         get :select_facility
       end
     end

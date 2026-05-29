@@ -8,7 +8,14 @@ module Indicators
     end
 
     def call
+      tenant = Cidadaobr::TenantContext.current_or_raise!
+      # Wrong envelope municipality usually yields RecordNotFound under RLS before this guard runs.
       appointment = Appointment.find(@appointment_id)
+      unless appointment.municipality_id == tenant.municipality_id
+        raise Indicators::Errors::AppointmentOutsideTenantError,
+              "Appointment #{@appointment_id} outside tenant municipality"
+      end
+
       citizen = appointment.citizen
       return { skipped: true } unless citizen
 

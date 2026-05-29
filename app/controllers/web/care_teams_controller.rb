@@ -8,10 +8,12 @@ module Web
     before_action :set_health_facilities, only: %i[new create edit update]
 
     def index
-      @pagy, @care_teams = pagy(scoped_care_teams.includes(:health_facility).order(:name))
+      @pagy, @care_teams = pagy(scoped_care_teams.order(:name))
+      assign_health_facility_names(@care_teams)
     end
 
     def show
+      assign_health_facility_names([ @care_team ])
     end
 
     def new
@@ -58,6 +60,16 @@ module Web
         permitted[:health_facility_id] = scoped_health_facilities.find_by(id: permitted[:health_facility_id])&.id
       end
       permitted
+    end
+
+    def assign_health_facility_names(teams)
+      facility_ids = teams.map(&:health_facility_id).compact.uniq
+      @health_facility_names_by_id =
+        if facility_ids.empty?
+          {}
+        else
+          scoped_health_facilities.where(id: facility_ids).pluck(:id, :name).to_h
+        end
     end
   end
 end

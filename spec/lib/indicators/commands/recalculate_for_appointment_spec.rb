@@ -55,4 +55,46 @@ RSpec.describe Indicators::RecalculateForAppointment do
       hash_including(citizen_id: citizen.id, indicator_codes: include("C1"))
     )
   end
+
+  it "raises AppointmentOutsideTenantError when appointment municipality does not match tenant" do
+    other_municipality = create(:municipality)
+    service_type = with_tenant(membership) do
+      AppointmentServiceType.create!(municipality: municipality, code: "medical_consultation", name: "Consulta")
+    end
+    room = with_tenant(membership) do
+      ConsultationRoom.create!(municipality: municipality, health_facility: facility, name: "Sala", room_kind: "general")
+    end
+    slot = with_tenant(membership) do
+      RoomCapacitySlot.create!(
+        municipality: municipality,
+        health_facility: facility,
+        consultation_room: room,
+        slot_date: Date.current,
+        starts_at: "09:00",
+        ends_at: "09:20",
+        capacity: 1,
+        booked_count: 0
+      )
+    end
+    citizen = with_tenant(membership) do
+      create(:citizen, municipality: municipality, health_facility: facility, care_team: team)
+    end
+    appointment = with_tenant(membership) do
+      Scheduling::BookAppointment.call(
+        citizen_id: citizen.id,
+        appointment_service_type_id: service_type.id,
+        consultation_room_id: room.id,
+        room_capacity_slot_id: slot.id,
+        scheduled_at: slot.slot_date.in_time_zone.change(hour: 9)
+      )
+    end
+
+    mismatched = with_tenant(membership) { Appointment.find(appointment.id) }
+    allow(mismatched).to receive(:municipality_id).and_return(other_municipality.id)
+    allow(Appointment).to receive(:find).with(appointment.id).and_return(mismatched)
+
+    expect do
+      with_tenant(membership) { described_class.call(appointment_id: appointment.id) }
+    end.to raise_error(Indicators::Errors::AppointmentOutsideTenantError)
+  end
 end

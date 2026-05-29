@@ -53,4 +53,47 @@ RSpec.describe "Web cross-UBS authorization", type: :request do
     get web_users_path
     expect(response).to redirect_to(web_root_path)
   end
+
+  it "hides appointments from another facility" do
+    appointment_b = with_tenant(municipal_scope) do
+      service_type = AppointmentServiceType.create!(
+        municipality: municipality,
+        code: "medical_consultation",
+        name: "Consulta"
+      )
+      room = ConsultationRoom.create!(
+        municipality: municipality,
+        health_facility: facility_b,
+        name: "Sala B",
+        room_kind: "general"
+      )
+      slot = RoomCapacitySlot.create!(
+        municipality: municipality,
+        health_facility: facility_b,
+        consultation_room: room,
+        slot_date: Date.current,
+        starts_at: "10:00",
+        ends_at: "10:20",
+        capacity: 1,
+        booked_count: 0
+      )
+      Scheduling::BookAppointment.call(
+        citizen_id: citizen_b.id,
+        appointment_service_type_id: service_type.id,
+        consultation_room_id: room.id,
+        scheduled_at: Time.zone.parse("#{Date.current} 10:00"),
+        room_capacity_slot_id: slot.id,
+        care_team_id: team_b.id
+      )
+    end
+
+    get web_appointment_path(appointment_b)
+    expect(response).to have_http_status(:not_found)
+
+    post check_in_web_appointment_path(appointment_b)
+    expect(response).to have_http_status(:not_found)
+
+    post no_show_web_appointment_path(appointment_b)
+    expect(response).to have_http_status(:not_found)
+  end
 end

@@ -1,0 +1,38 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+BOOTSTRAP="${KAFKA_BOOTSTRAP_SERVERS:-localhost:9092}"
+PARTITIONS="${KAFKA_TOPIC_PARTITIONS:-1}"
+REPLICATION="${KAFKA_TOPIC_REPLICATION:-1}"
+
+TOPICS=(
+  clinical.record.persisted
+  ledi.batch.ready
+  ledi.batch.statuschanged
+  appointment.booked
+  appointment.checkedin
+  appointment.rescheduled
+  appointment.completed
+  appointment.cancelled
+  appointment.noshow
+  indicator.gap.detected
+  indicator.team.score.updated
+  citizen.registered
+  domain.outbox
+)
+
+if command -v docker >/dev/null 2>&1 && docker compose ps kafka 2>/dev/null | grep -q "running\|Up"; then
+  KAFKA_BIN="docker compose exec -T kafka /opt/kafka/bin/kafka-topics.sh --bootstrap-server localhost:9092"
+else
+  KAFKA_BIN="kafka-topics.sh --bootstrap-server ${BOOTSTRAP}"
+fi
+
+echo "Creating Kafka topics (bootstrap=${BOOTSTRAP})..."
+for topic in "${TOPICS[@]}"; do
+  echo "  - ${topic}"
+  ${KAFKA_BIN} --create --if-not-exists --topic "${topic}" \
+    --partitions "${PARTITIONS}" \
+    --replication-factor "${REPLICATION}" 2>/dev/null || true
+done
+
+echo "Done."

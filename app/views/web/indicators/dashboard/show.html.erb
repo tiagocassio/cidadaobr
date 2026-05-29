@@ -17,7 +17,9 @@
   <div class="mb-8 grid gap-4 sm:grid-cols-3">
     <div class="rounded-lg border border-slate-200 bg-white p-4">
       <p class="text-sm text-slate-500"><%= t("cidadaobr.indicators.dashboard.#{indicators_score_title_key}") %></p>
-      <p class="text-2xl font-bold"><%= @scored_count %>/<%= @catalog.count { |entry| @scores_by_indicator.key?(entry.code) } %></p>
+      <p class="text-2xl font-bold"><%= @scored_count %>/<%= @evaluated_indicator_count %></p>
+      <p class="text-xs text-slate-500"><%= t("cidadaobr.indicators.dashboard.score_card_hint") %></p>
+      <p class="text-xs text-slate-500"><%= t("cidadaobr.indicators.dashboard.catalog_total", count: @catalog_total) %></p>
     </div>
     <div class="rounded-lg border border-slate-200 bg-white p-4">
       <p class="text-sm text-slate-500"><%= t("cidadaobr.indicators.dashboard.open_gaps") %></p>
@@ -51,9 +53,18 @@
       <% end %>
     </div>
     <ul class="divide-y divide-slate-100">
-      <% @teams.each do |team| %>
+      <% @ranked_teams.each_with_index do |team, index| %>
+        <% avg = @team_average_scores[team.id] %>
         <li class="flex items-center justify-between py-2 text-sm">
-          <span><%= team.name %> (<%= t("cidadaobr.indicators.dashboard.ine") %> <%= team.ine %>)</span>
+          <span>
+            <span class="text-slate-400"><%= index + 1 %>.</span>
+            <%= team.name %> (<%= t("cidadaobr.indicators.dashboard.ine") %> <%= team.ine %>)
+            <% if avg %>
+              — <span class="font-medium"><%= avg %>%</span> <%= t("cidadaobr.indicators.dashboard.team_average") %>
+            <% else %>
+              — <span class="text-slate-500"><%= t("cidadaobr.indicators.dashboard.no_score") %></span>
+            <% end %>
+          </span>
           <%= link_to t("cidadaobr.indicators.dashboard.details"), web_indicators_team_path(team, quadrimester: @quadrimester), class: "text-slate-700 underline" %>
         </li>
       <% end %>

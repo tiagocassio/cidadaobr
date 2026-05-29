@@ -27,6 +27,7 @@ RSpec.describe "Web care teams", type: :request do
 
     get web_care_teams_path
     expect(response.body).to include(team_b.ine)
+    expect(response.body).to include(facility_b.name)
   end
 
   it "blocks team-scoped users from creating teams" do

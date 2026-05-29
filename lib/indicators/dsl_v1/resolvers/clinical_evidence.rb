@@ -68,10 +68,10 @@ module Indicators
           encounter_record_ids = Encounter
             .where(municipality_id: citizen.municipality_id, citizen_id: citizen.id)
             .where.not(clinical_record_id: nil)
-            .select(:clinical_record_id)
+            .pluck(:clinical_record_id)
 
           direct_ids = citizen.clinical_record_id.present? ? [ citizen.clinical_record_id ] : []
-          record_ids = (direct_ids + encounter_record_ids.to_a).uniq
+          record_ids = (direct_ids + encounter_record_ids).uniq
           return ClinicalRecord.none if record_ids.empty?
 
           ClinicalRecord
@@ -83,8 +83,9 @@ module Indicators
           when "procedure_present"
             procedure_present?(payload, predicate.fetch("code"))
           when "present"
-            field_path = LediPayloadPaths.payload_field(predicate.fetch("field_path"))
-            dig(payload, field_path).present?
+            LediPayloadPaths.payload_field_aliases(predicate.fetch("field_path")).any? do |field_path|
+              dig(payload, field_path).present?
+            end
           else
             false
           end

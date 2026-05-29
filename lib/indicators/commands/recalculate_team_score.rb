@@ -27,7 +27,7 @@ module Indicators
           reference_date: @reference_date
         )
         tier = Scoring.tier_for(score)
-        projected_transfer = Scoring.projected_transfer_stub(score, team_kind: rule.indicator_catalog.team_kind)
+        projected_transfer = Scoring.projected_transfer(score, catalog_entry: rule.indicator_catalog)
 
         result = TeamIndicatorResult.find_or_initialize_by(
           municipality_id: tenant.municipality_id,

@@ -14,6 +14,8 @@ module Indicators
             citizen_with_condition?(context, clause)
           when "citizens_age_gte"
             citizens_age_gte?(context, clause)
+          when "citizens_age_lte"
+            citizens_age_lte?(context, clause)
           when "citizens_sex_female"
             citizens_sex_female?(context)
           else
@@ -39,13 +41,26 @@ module Indicators
         end
 
         def citizens_age_gte?(context, clause)
-          min_age = clause.fetch("min_age", 60).to_i
+          age = citizen_age(context)
+          return false if age.nil?
+
+          age >= clause.fetch("min_age", 60).to_i
+        end
+
+        def citizens_age_lte?(context, clause)
+          age = citizen_age(context)
+          return false if age.nil?
+
+          age <= clause.fetch("max_age", 2).to_i
+        end
+
+        def citizen_age(context)
           birth_date = context.citizen.birth_date
-          return false unless birth_date
+          return nil unless birth_date
 
           age = context.reference_date.year - birth_date.year
           age -= 1 if context.reference_date < birth_date + age.years
-          age >= min_age
+          age
         end
 
         def citizens_sex_female?(context)

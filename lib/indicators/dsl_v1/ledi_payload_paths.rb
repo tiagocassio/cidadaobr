@@ -7,7 +7,14 @@ module Indicators
     module LediPayloadPaths
       PAYLOAD_FIELD_KEYS = {
         "individual_attendances" => "atendimentos_individuais",
-        "measurements" => "medicoes"
+        "measurements" => "medicoes",
+        "immunizations" => "vacina",
+        "child_development" => "desenvolvimento_infantil"
+      }.freeze
+
+      PAYLOAD_FIELD_ALIASES = {
+        "immunizations" => %w[vacina vacinas vacinacoes imunizacoes],
+        "child_development" => %w[desenvolvimento_infantil marcadores_desenvolvimento avaliacao_desenvolvimento]
       }.freeze
 
       FCI_HEALTH_CONDITION_SECTIONS = %w[
@@ -31,6 +38,10 @@ module Indicators
 
       def payload_field(key)
         PAYLOAD_FIELD_KEYS.fetch(key.to_s, key.to_s)
+      end
+
+      def payload_field_aliases(key)
+        PAYLOAD_FIELD_ALIASES.fetch(key.to_s, [ payload_field(key) ])
       end
 
       def fci_condition_field_aliases(flag)

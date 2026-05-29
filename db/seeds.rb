@@ -6,31 +6,58 @@ municipality = Municipality.find_or_create_by!(ibge_code: "3550308") do |record|
   record.state_code = "SP"
 end
 
-facility_a = Cidadaobr::TenantContext.with(
-  Cidadaobr::TenantScope.new(
-    municipality_id: municipality.id,
-    scope: "municipality",
-    health_facility_id: nil,
-    team_ids: [],
-    citizen_id: nil
-  )
-) do
-  HealthFacility.find_or_create_by!(municipality: municipality, cnes: "2000001") do |record|
-    record.name = "UBS Centro"
-  end
-end
+municipality_tenant = Cidadaobr::TenantScope.new(
+  municipality_id: municipality.id,
+  scope: "municipality",
+  health_facility_id: nil,
+  team_ids: [],
+  citizen_id: nil
+)
 
-facility_b = Cidadaobr::TenantContext.with(
-  Cidadaobr::TenantScope.new(
-    municipality_id: municipality.id,
-    scope: "municipality",
-    health_facility_id: nil,
-    team_ids: [],
-    citizen_id: nil
-  )
-) do
-  HealthFacility.find_or_create_by!(municipality: municipality, cnes: "2000002") do |record|
+facility_a = nil
+facility_b = nil
+team_centro = nil
+team_norte = nil
+
+Cidadaobr::TenantContext.with(municipality_tenant) do
+  facility_a = HealthFacility.find_or_create_by!(municipality: municipality, cnes: "2000001") do |record|
+    record.name = "UBS Centro"
+    record.facility_service_kind = "primary_care"
+  end
+
+  facility_b = HealthFacility.find_or_create_by!(municipality: municipality, cnes: "2000002") do |record|
     record.name = "UBS Norte"
+    record.facility_service_kind = "primary_care"
+  end
+
+  team_centro = CareTeam.find_or_initialize_by(municipality: municipality, ine: "0000000001")
+  team_centro.assign_attributes(name: "Equipe Centro 01", health_facility: facility_a)
+  team_centro.save!
+
+  team_norte = CareTeam.find_or_initialize_by(municipality: municipality, ine: "0000000002")
+  team_norte.assign_attributes(name: "Equipe Norte 01", health_facility: facility_b)
+  team_norte.save!
+
+  micro_area = MicroArea.find_or_create_by!(municipality: municipality, code: "01") do |record|
+    record.name = "Microárea Centro"
+    record.care_team = team_centro
+    factory = Cidadaobr::GeoPoint.factory
+    ring = factory.linear_ring([
+      factory.point(-46.65, -23.58),
+      factory.point(-46.61, -23.58),
+      factory.point(-46.61, -23.52),
+      factory.point(-46.65, -23.52),
+      factory.point(-46.65, -23.58)
+    ])
+    record.coverage = factory.polygon(ring)
+  end
+
+  FacilityMicroAreaCoverage.find_or_create_by!(health_facility: facility_a, micro_area: micro_area)
+
+  Installation.find_or_create_by!(municipality: municipality, counter_key: "dev") do |record|
+    record.installation_uuid = Rails.application.config.ledi.fetch(:dev_installation_uuid)
+    record.tax_id = "39053344705"
+    record.legal_name = "CidadãoBR Dev"
   end
 end
 
@@ -65,38 +92,13 @@ puts "  Municipality ID: #{municipality.id}"
 puts "  Admin login: admin@cidadaobr.local / password123"
 puts "  UBS Centro login: ubs.centro@cidadaobr.local / password123"
 
-team_centro = CareTeam.find_or_create_by!(municipality: municipality, health_facility: facility_a, ine: "0000000001") do |record|
-  record.name = "Equipe Centro 01"
+Cidadaobr::TenantContext.with(municipality_tenant) do
+  micro_area = MicroArea.find_by!(municipality: municipality, code: "01")
+  puts "  Care teams: #{team_centro.name}, #{team_norte.name}"
+  puts "  Microárea demo: #{micro_area.code} - #{micro_area.name}"
 end
 
-team_norte = CareTeam.find_or_create_by!(municipality: municipality, health_facility: facility_b, ine: "0000000002") do |record|
-  record.name = "Equipe Norte 01"
+Cidadaobr::TenantContext.with(municipality_tenant) do
+  load Rails.root.join("db/seeds/ledi_catalog.rb")
+  load Rails.root.join("db/seeds/indicator_catalog.rb")
 end
-
-micro_area = MicroArea.find_or_create_by!(municipality: municipality, code: "01") do |record|
-  record.name = "Microárea Centro"
-  record.care_team = team_centro
-  factory = Cidadaobr::GeoPoint.factory
-  ring = factory.linear_ring([
-    factory.point(-46.65, -23.58),
-    factory.point(-46.61, -23.58),
-    factory.point(-46.61, -23.52),
-    factory.point(-46.65, -23.52),
-    factory.point(-46.65, -23.58)
-  ])
-  record.coverage = factory.polygon(ring)
-end
-
-FacilityMicroAreaCoverage.find_or_create_by!(health_facility: facility_a, micro_area: micro_area)
-
-puts "  Care teams: #{team_centro.name}, #{team_norte.name}"
-puts "  Microárea demo: #{micro_area.code} - #{micro_area.name}"
-
-Installation.find_or_create_by!(municipality: municipality, counter_key: "dev") do |record|
-  record.installation_uuid = Rails.application.config.ledi.fetch(:dev_installation_uuid)
-  record.tax_id = "39053344705"
-  record.legal_name = "CidadãoBR Dev"
-end
-
-load Rails.root.join("db/seeds/ledi_catalog.rb")
-load Rails.root.join("db/seeds/indicator_catalog.rb")

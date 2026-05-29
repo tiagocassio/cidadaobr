@@ -32,6 +32,16 @@ class ApplicationConsumer < Karafka::BaseConsumer
     Rails.logger.error("[Kafka] poison envelope skipped: #{e.message}")
     mark_as_consumed(message)
     :invalid
+  rescue Indicators::Errors::SkippableRecalculationError => e
+    Rails.logger.error("[Kafka] skippable recalculation: #{e.message}")
+    mark_as_consumed(message)
+    :skipped
+  rescue ActiveRecord::RecordNotFound => e
+    raise unless e.model == "Appointment"
+
+    Rails.logger.error("[Kafka] appointment not found skipped: #{e.message}")
+    mark_as_consumed(message)
+    :not_found
   rescue ActiveRecord::RecordNotUnique => e
     raise unless duplicate_idempotency_violation?(e)
 
