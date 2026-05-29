@@ -10,7 +10,7 @@ module Indicators
       "FAO" => %w[B1 B2 B3 B4 B5 B6 M1],
       "FAC" => %w[B4 M1 M2],
       "FCC" => %w[M2],
-      "FV" => %w[CVAT C6]
+      "FV" => %w[C6]
     }.freeze
 
     module_function

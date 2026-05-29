@@ -2,26 +2,21 @@
 
 METHODOLOGY_VERSION = "3493/2024" unless defined?(METHODOLOGY_VERSION)
 
-def stub_expression(code)
-  {
-    "version" => "dsl_v1_stub",
-    "indicator_code" => code,
-    "methodology_version" => METHODOLOGY_VERSION,
-    "status" => "seed_placeholder"
-  }
-end
-
-def dsl_v1_expression(indicator_code:, good_practice_code:, denominator:, numerator:, team_score_mode: nil, skip_citizen_gaps: false)
+def dsl_v1_expression(indicator_code:, denominator:, numerator:, good_practice_code: nil, team_score_mode: nil, skip_citizen_gaps: false, linkage_components: nil)
   expression = {
     "version" => "dsl_v1",
     "indicator_code" => indicator_code,
-    "good_practice_code" => good_practice_code,
     "methodology_version" => METHODOLOGY_VERSION,
     "denominator" => denominator,
     "numerator" => numerator
   }
+  expression["good_practice_code"] = good_practice_code if good_practice_code.present?
   expression["team_score_mode"] = team_score_mode if team_score_mode.present?
   expression["skip_citizen_gaps"] = true if skip_citizen_gaps
+  if linkage_components.present?
+    expression["team_score_mode"] = "linkage_aggregate"
+    expression["linkage_components"] = linkage_components
+  end
   Indicators::MethodologyLoader.merge_into_expression(expression, code: indicator_code)
 end
 
@@ -29,7 +24,7 @@ def indicator_display_name(code)
   I18n.t!("cidadaobr.indicators.catalog.#{code}.name")
 end
 
-def upsert_indicator!(code:, funding_component:, team_kind:, display_order:, rule_code: "default", expression: nil)
+def upsert_indicator!(code:, funding_component:, team_kind:, display_order:, expression:, rule_code: "default")
   catalog = IndicatorCatalog.find_or_initialize_by(code: code)
   catalog.assign_attributes(
     name: indicator_display_name(code),
@@ -44,7 +39,7 @@ def upsert_indicator!(code:, funding_component:, team_kind:, display_order:, rul
 
   IndicatorRule.find_or_initialize_by(indicator_catalog: catalog, rule_code: rule_code).tap do |rule|
     rule.rule_kind = "good_practice"
-    rule.expression = expression || stub_expression(code)
+    rule.expression = expression
     rule.save!
   end
 
@@ -58,14 +53,14 @@ upsert_indicator!(
   display_order: 0,
   expression: dsl_v1_expression(
     indicator_code: "CVAT",
-    good_practice_code: "VAC",
     denominator: { "type" => "citizens_on_team" },
-    numerator: {
-      "type" => "clinical_predicate",
-      "record_types" => %w[FV],
-      "within_months" => 12,
-      "predicate" => { "type" => "present", "field_path" => "immunizations" }
-    }
+    numerator: { "type" => "citizens_on_team" },
+    skip_citizen_gaps: true,
+    # MVP: V_CAD + V_ACOMP only. Official CVAT also includes V_SAT — add when satisfaction DSL ships (EPIC-05).
+    linkage_components: [
+      { "code" => "V_CAD", "weight" => 0.3 },
+      { "code" => "V_ACOMP", "weight" => 0.7 }
+    ]
   )
 )
 
@@ -76,7 +71,7 @@ upsert_indicator!(
   display_order: 1,
   expression: dsl_v1_expression(
     indicator_code: "V_CAD",
-    good_practice_code: "CAD",
+    good_practice_code: "V_CAD_COM",
     denominator: { "type" => "citizens_on_team" },
     numerator: { "type" => "registration_complete" }
   )
@@ -89,12 +84,13 @@ upsert_indicator!(
   display_order: 2,
   expression: dsl_v1_expression(
     indicator_code: "V_ACOMP",
-    good_practice_code: "ACOMP",
+    good_practice_code: "V_ACOMP_12M",
     denominator: { "type" => "citizens_on_team" },
     numerator: { "type" => "encounter_in_window", "within_months" => 12 }
   )
 )
 
+# Standalone linkage score on dashboard (encounter proxy MVP). Not in CVAT linkage_components until EPIC-05.
 upsert_indicator!(
   code: "V_SAT",
   funding_component: "linkage",
@@ -102,7 +98,7 @@ upsert_indicator!(
   display_order: 3,
   expression: dsl_v1_expression(
     indicator_code: "V_SAT",
-    good_practice_code: "SAT",
+    good_practice_code: "V_SAT",
     denominator: { "type" => "citizens_on_team" },
     numerator: { "type" => "encounter_in_window", "within_months" => 6 }
   )
@@ -365,4 +361,11 @@ upsert_indicator!(
   )
 )
 
-puts "  Indicator catalog: #{IndicatorCatalog.count} entries, #{IndicatorRule.count} rules"
+deactivated_count = IndicatorCatalog.where.not(code: IndicatorCatalog::PORTARIA_3493_CODES).where(active: true).update_all(
+  active: false,
+  updated_at: Time.current
+)
+
+portaria_rule_count = IndicatorRule.joins(:indicator_catalog).merge(IndicatorCatalog.active_portaria).count
+puts "  Indicator catalog: #{IndicatorCatalog.active_portaria.count} entries, #{portaria_rule_count} rules"
+puts "  Deactivated #{deactivated_count} non-Portaria catalog entries" if deactivated_count.positive?

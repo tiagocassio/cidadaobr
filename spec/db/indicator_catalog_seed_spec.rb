@@ -5,12 +5,47 @@ require "rails_helper"
 RSpec.describe "Indicator catalog seed" do
   before { load Rails.root.join("db/seeds/indicator_catalog.rb") }
 
-  it "loads CVAT, C1–C7, B1–B6 and M1–M2 indicators" do
+  it "loads only Portaria 3.493/2024 indicator codes" do
     expect(IndicatorCatalog.find_by!(code: "CVAT").name).to include("Avaliação Territorial")
-    expect(IndicatorCatalog.where(code: (1..7).map { |n| "C#{n}" }).count).to eq(7)
-    expect(IndicatorCatalog.where(code: %w[B1 B2 B3 B4 B5 B6]).count).to eq(6)
-    expect(IndicatorCatalog.where(code: %w[M1 M2]).count).to eq(2)
-    expect(IndicatorRule.count).to eq(IndicatorCatalog.count)
+    expect(IndicatorCatalog.portaria.pluck(:code)).to match_array(IndicatorCatalog::PORTARIA_3493_CODES)
+    expect(IndicatorCatalog.active_portaria.count).to eq(IndicatorCatalog::PORTARIA_3493_CODES.size)
+
+    portaria_rule_count = IndicatorRule.joins(:indicator_catalog).merge(IndicatorCatalog.active_portaria).count
+    expect(portaria_rule_count).to eq(IndicatorCatalog.active_portaria.count)
+  end
+
+  it "seeds only official Portaria good_practice_code values in dsl_v1 expressions" do
+    portaria_rules = IndicatorRule.joins(:indicator_catalog).merge(IndicatorCatalog.active_portaria)
+    codes = portaria_rules.pluck(:expression).filter_map { |expression| expression["good_practice_code"] }.uniq
+    expect(codes).to all(satisfy { |code| Indicators::Portaria3493.known_good_practice_code?(code) })
+    expect(codes).not_to include("CAD", "ACOMP", "SAT", "VAC")
+  end
+
+  it "deactivates legacy catalog codes outside Portaria 3.493/2024" do
+    legacy = IndicatorCatalog.new(
+      code: "C8",
+      name: "Legacy indicator",
+      funding_component: "quality",
+      methodology_version: "3493/2024",
+      periodicity: "quarterly",
+      active: true
+    )
+    legacy.save(validate: false)
+
+    load Rails.root.join("db/seeds/indicator_catalog.rb")
+
+    expect(IndicatorCatalog.find_by!(code: "C8").active).to be(false)
+  end
+
+  it "skips citizen gaps for aggregate CVAT" do
+    cvat = IndicatorRule.joins(:indicator_catalog).find_by!(indicator_catalog: { code: "CVAT" }).expression
+    expect(cvat["skip_citizen_gaps"]).to be(true)
+    expect(cvat["good_practice_code"]).to be_nil
+    expect(cvat["team_score_mode"]).to eq("linkage_aggregate")
+    expect(cvat["linkage_components"]).to contain_exactly(
+      { "code" => "V_CAD", "weight" => 0.3 },
+      { "code" => "V_ACOMP", "weight" => 0.7 }
+    )
   end
 
   it "tags quality indicators with funding_component quality" do

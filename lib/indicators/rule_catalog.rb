@@ -35,7 +35,7 @@ module Indicators
     end
 
     def dsl_v1_rules(indicator_codes: nil, team_kinds: nil)
-      scope = IndicatorRule.includes(:indicator_catalog).joins(:indicator_catalog).where(indicator_catalog: { active: true })
+      scope = IndicatorRule.includes(:indicator_catalog).joins(:indicator_catalog).merge(IndicatorCatalog.active_portaria)
       scope = scope.where(indicator_catalog: { code: Array(indicator_codes) }) if indicator_codes.present?
       scope = scope.where(indicator_catalog: { team_kind: team_kinds }) if team_kinds
 

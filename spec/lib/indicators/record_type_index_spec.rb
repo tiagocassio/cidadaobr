@@ -10,4 +10,8 @@ RSpec.describe Indicators::RecordTypeIndex do
   it "maps FAC to collective and eMulti indicators" do
     expect(described_class.indicator_codes_for("FAC")).to match_array(%w[B4 M1 M2])
   end
+
+  it "maps FV to C6 only (CVAT is derived, not FV-driven)" do
+    expect(described_class.indicator_codes_for("FV")).to eq(%w[C6])
+  end
 end

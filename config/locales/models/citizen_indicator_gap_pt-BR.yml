@@ -1,0 +1,16 @@
+pt-BR:
+  activerecord:
+    attributes:
+      citizen_indicator_gap:
+        indicator_code: "Indicador"
+        good_practice_code: "Boas práticas"
+        status: "Status"
+        due_on: "Prazo"
+    errors:
+      models:
+        citizen_indicator_gap:
+          attributes:
+            indicator_code:
+              invalid: "não consta no catálogo Portaria 3.493/2024"
+            good_practice_code:
+              invalid: "não consta nos códigos oficiais de boas práticas"

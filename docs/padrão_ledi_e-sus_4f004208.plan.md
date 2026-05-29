@@ -284,6 +284,8 @@ Cada indicador de qualidade desdobra em **boas práticas (BP A, B, C…)** em `i
 | Pessoa **acompanhada** | V-ACOMP-12M | **Mais de 1 contato** com profissional (eSF, eAP, eSB, eMulti) em **12 meses**, sendo ≥1 **atendimento** (individual, coletivo ou domiciliar) | **V-ACOMP** |
 | Teto de cadastro | V-LIM-CAD | Se cadastros acima do parâmetro da Portaria 3.493, classificação máxima **“bom”** (não “ótimo”) | **CVAT** |
 
+**MVP — agregação CVAT no motor (`team_score_mode: linkage_aggregate`):** seed usa apenas **V_CAD (0,3)** + **V_ACOMP (0,7)**; **V_SAT** fica fora até EPIC-05. O evaluator renormaliza pela soma dos pesos presentes (`weighted_sum / weight_total`) para manter escala 0–100. Ao incluir **V_SAT**, substituir renormalização por pesos fixos oficiais MS (0,3 / 0,7 + bônus satisfação) em `db/seeds/indicator_catalog.rb` e travar fórmula neste plano.
+
 **Siglas do cadastro no MS (não são fichas LEDI, mas aparecem nas notas):**
 
 | Sigla | Significado |
@@ -1589,8 +1591,8 @@ Quando `numerador_query` falha para um `citizen_id` → insere `citizen_indicato
 
 Além dos grupos A–G já definidos (projeções CQRS, **en-US**):
 
-- `indicator_catalog` — code (**CVAT**, **V-CAD**, **V-ACOMP**, **V-SAT**, **C1…C7, B1…B6, M1…M2**), `funding_component`, methodology version, `team_kind`, periodicity
-- `indicator_rules` — numerator/denominator DSL, allowed ICD/CIAP, time window
+- `indicator_catalog` — code (**CVAT**, **V_CAD**, **V_ACOMP**, **V_SAT**, **C1…C7, B1…B6, M1…M2**); constante `Indicators::Portaria3493::INDICATOR_CODES`; validação no model
+- `indicator_rules` — numerator/denominator DSL, allowed ICD/CIAP, time window; `good_practice_code` com códigos oficiais (`V_CAD_COM`, `V_ACOMP_12M`, BP **A–K**, etc.) — ver `Indicators::Portaria3493::GOOD_PRACTICE_CODES`
 - `care_teams` — INE, CNES, kind, `municipality_id`
 - `team_indicator_results` — quadrimestre snapshot: score, tier, projected transfer
 - `citizen_indicator_gaps` — `citizen_id`, `indicator_code`, `good_practice_code`, `due_on`, `status`
@@ -1906,6 +1908,20 @@ CREATE POLICY stock_facility ON stock_balances
 | Mensagens de validação (models, forms, API errors) | **pt-BR via I18n** | Lookup Rails (`validates` sem `message:` + YAML) ou `errors.add(:attr, :symbol)`; **proibido** string literal |
 
 **Proibido no código:** nomes de model/tabela/coluna em português (`cidadao`, `domicilio`, `equipe`). O plano histórico pode citar termos MS em português; na implementação usar o [mapa en-US](#mapa-de-nomes-legado-do-plano--implementação-en-us) abaixo.
+
+**Indicadores (Portaria 3.493 / SAPS):** usar **somente** códigos oficiais em `indicator_catalog.code` e em `good_practice_code` — ver [Componente II — Vínculo](#componente-ii--vínculo-e-acompanhamento-territorial-códigos-cvat-v-) (`CVAT`, `V_CAD`, `V_ACOMP`, `V_SAT`, `C1`–`C7`, `B1`–`B6`, `M1`, `M2`) e regras de vínculo (`V_CAD_ATU`, `V_CAD_COM`, `V_ACOMP_12M`, `V_LIM_CAD`). **Proibido:** códigos inventados (`C8`–`C15`), abreviações em português (`CAD`, `ACOMP`, `SAT`, `VAC`) e contornos como listas “canônicas” que desativam linhas legadas no seed — a fonte de verdade é `Indicators::Portaria3493` + validação nos models.
+
+### Desenvolvimento (pré-produção) — migrations e dados
+
+Enquanto o produto estiver em **desenvolvimento local/piloto** (sem base de produção a preservar):
+
+| Fazer | Não fazer |
+|-------|-----------|
+| Migrations **estruturais** (tabelas, colunas, índices, RLS, constraints) | Migrations de **dados** que renomeiam códigos, corrigem textos/JSONB ou “limpam” seed antigo |
+| Corrigir nomenclatura no **código**, **seed** e **validações** | `update_all` / `delete_all` em migrations para alinhar `indicator_catalog`, `citizen_indicator_gaps`, `indicator_rules.expression` |
+| Resetar ambiente com `bin/rails db:drop db:prepare db:seed` quando o schema ou catálogo mudar | Scripts one-off permanentes no repo só para consertar dev |
+
+**Regra:** se a correção é de conteúdo de referência (catálogo de indicadores, rótulos I18n, expressões DSL), **não** persistir via migration — recriar o banco. Migrations de backfill de dados entram **apenas** quando houver ambiente de produção/staging com dados a migrar (pós-MVP).
 
 ### Internacionalização (I18n) — padrão do projeto
 

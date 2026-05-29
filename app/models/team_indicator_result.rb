@@ -12,9 +12,10 @@ class TeamIndicatorResult < ApplicationRecord
 
   private
 
+  # Historical quadrimester rows may reference codes later deactivated in the catalog.
   def indicator_code_must_exist_in_catalog
     return if indicator_code.blank?
-    return if IndicatorCatalog.exists?(code: indicator_code)
+    return if IndicatorCatalog.known_portaria_code?(indicator_code)
 
     errors.add(:indicator_code, :invalid)
   end

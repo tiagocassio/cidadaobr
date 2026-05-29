@@ -68,6 +68,40 @@ RSpec.describe "Indicator models" do
     end
 
     expect(result).not_to be_valid
-    expect(result.errors[:indicator_code]).to be_present
+    expect(result.errors.full_messages_for(:indicator_code).join).to include("Portaria 3.493/2024")
+  end
+
+  it "allows team results for known Portaria codes when catalog row is inactive" do
+    IndicatorCatalog.find_by!(code: "C1").update!(active: false)
+
+    result = with_tenant(membership) do
+      TeamIndicatorResult.new(
+        municipality: municipality,
+        care_team: team,
+        indicator_code: "C1",
+        quadrimester: "2026-Q1"
+      )
+    end
+
+    expect(result).to be_valid
+  end
+
+  it "rejects gaps when catalog row is inactive" do
+    IndicatorCatalog.find_by!(code: "C1").update!(active: false)
+    citizen = with_tenant(membership) { create(:citizen, municipality: municipality, health_facility: facility, care_team: team) }
+
+    gap = with_tenant(membership) do
+      CitizenIndicatorGap.new(
+        municipality: municipality,
+        citizen: citizen,
+        care_team: team,
+        indicator_code: "C1",
+        status: "open",
+        due_on: Date.current
+      )
+    end
+
+    expect(gap).not_to be_valid
+    expect(gap.errors[:indicator_code]).to be_present
   end
 end

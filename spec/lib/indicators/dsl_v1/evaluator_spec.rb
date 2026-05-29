@@ -104,36 +104,68 @@ RSpec.describe Indicators::DslV1::Evaluator do
     expect(score).to eq(50.0)
   end
 
-  it "scores CVAT when FV payload has immunizations" do
-    citizen = with_tenant(membership) do
-      create(
-        :citizen,
-        municipality: municipality,
-        health_facility: facility,
-        care_team: team,
-        birth_date: Date.new(2020, 6, 1),
-        full_name: "Vacina Test"
-      )
+  it "computes CVAT team score as weighted linkage aggregate" do
+    citizens = with_tenant(membership) do
+      [
+        create(:citizen, municipality: municipality, health_facility: facility, care_team: team, birth_date: Date.new(1980, 1, 1), full_name: "Complete"),
+        create(:citizen, municipality: municipality, health_facility: facility, care_team: team, birth_date: nil, full_name: "Incomplete", cpf: "39053344705")
+      ]
     end
 
-    with_tenant(membership) do
-      persist_clinical_record!(
-        citizen: citizen,
-        record_type: "FV",
-        payload_json: { "vacina" => { "codigo" => "BCG" } },
-        encounter_at: 2.months.ago
-      )
-    end
-
-    result = with_tenant(membership) do
-      described_class.evaluate(
+    score = with_tenant(membership) do
+      described_class.team_score(
         expression: expression_for("CVAT"),
-        context: Indicators::DslV1::Context.new(citizen: citizen, reference_date: Date.current)
+        citizens: Citizen.where(id: citizens.map(&:id)),
+        quadrimester: "2026-Q1"
       )
     end
 
-    expect(result.in_denominator).to be(true)
-    expect(result.meets_numerator).to be(true)
+    expect(score).to eq(15.0)
+  end
+
+  it "raises when linkage aggregate references a missing child rule" do
+    citizen = with_tenant(membership) do
+      create(:citizen, municipality: municipality, health_facility: facility, care_team: team, birth_date: Date.new(1980, 1, 1))
+    end
+    expression = {
+      "version" => "dsl_v1",
+      "team_score_mode" => "linkage_aggregate",
+      "linkage_components" => [ { "code" => "NO_SUCH_INDICATOR", "weight" => 1.0 } ]
+    }
+
+    expect do
+      with_tenant(membership) do
+        described_class.team_score(
+          expression: expression,
+          citizens: Citizen.where(id: citizen.id),
+          quadrimester: "2026-Q1"
+        )
+      end
+    end.to raise_error(ArgumentError, /missing dsl_v1 rule/)
+  end
+
+  it "renormalizes linkage aggregate when configured weights sum below 1.0" do
+    citizens = with_tenant(membership) do
+      [
+        create(:citizen, municipality: municipality, health_facility: facility, care_team: team, birth_date: Date.new(1980, 1, 1), full_name: "Complete")
+      ]
+    end
+
+    expression = {
+      "version" => "dsl_v1",
+      "team_score_mode" => "linkage_aggregate",
+      "linkage_components" => [ { "code" => "V_CAD", "weight" => 0.5 } ]
+    }
+
+    score = with_tenant(membership) do
+      described_class.team_score(
+        expression: expression,
+        citizens: Citizen.where(id: citizens.map(&:id)),
+        quadrimester: "2026-Q1"
+      )
+    end
+
+    expect(score).to eq(100.0)
   end
 
   it "excludes citizens over max age from C2 denominator" do

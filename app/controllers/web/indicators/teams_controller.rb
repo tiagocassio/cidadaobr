@@ -16,7 +16,7 @@ module Web
         @open_gaps = gaps_scope.includes(:citizen).order(:indicator_code, :due_on)
         @gaps_by_indicator = @open_gaps.group_by(&:indicator_code)
         @gap_indicator_codes = @gaps_by_indicator.keys.sort
-        @catalog_codes = IndicatorCatalog.where(active: true).order(:display_order).pluck(:code)
+        @catalog_codes = IndicatorCatalog.active_portaria.order(:display_order).pluck(:code)
       end
 
       private

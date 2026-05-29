@@ -7,7 +7,7 @@ module Web
 
       def show
         @quadrimester = resolve_quadrimester_param
-        @catalog = IndicatorCatalog.where(active: true).order(:display_order)
+        @catalog = IndicatorCatalog.active_portaria.order(:display_order)
         @team_results = scoped_team_indicator_results.where(quadrimester: @quadrimester).includes(:care_team)
         @scores_by_indicator = average_scores(@team_results)
         @open_gaps_count = scoped_citizen_indicator_gaps.where(status: "open").count
