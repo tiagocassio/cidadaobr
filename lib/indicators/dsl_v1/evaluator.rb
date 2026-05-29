@@ -19,8 +19,22 @@ module Indicators
           )
         end
 
-        def team_score(expression:, citizens:, quadrimester:, reference_date: Date.current)
+        def team_score(expression:, citizens:, quadrimester:, reference_date: Date.current, care_team_id: nil)
           return 0.0 if citizens.blank?
+
+          if expression["team_score_mode"] == "procedure_ratio"
+            team_id = care_team_id || citizens.limit(1).pick(:care_team_id)
+            municipality_id = citizens.limit(1).pick(:municipality_id)
+            return 0.0 if team_id.blank?
+
+            return Resolvers::TeamProcedureRatio.score(
+              care_team_id: team_id,
+              municipality_id: municipality_id,
+              quadrimester: quadrimester,
+              numerator_prefixes: expression.dig("numerator", "extraction_prefixes") ||
+                LediPayloadPaths::EXTRACTION_PROCEDURE_CODE_PREFIXES
+            )
+          end
 
           denominator_count = 0
           numerator_count = 0

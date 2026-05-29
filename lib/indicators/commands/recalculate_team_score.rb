@@ -24,7 +24,8 @@ module Indicators
           expression: expression,
           citizens: citizens,
           quadrimester: @quadrimester,
-          reference_date: @reference_date
+          reference_date: @reference_date,
+          care_team_id: care_team.id
         )
         tier = Scoring.tier_for(score)
         projected_transfer = Scoring.projected_transfer(score, catalog_entry: rule.indicator_catalog)

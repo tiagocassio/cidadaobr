@@ -57,8 +57,17 @@ FactoryBot.define do
   factory :care_team do
     municipality
     health_facility
+    team_kind { "esf" }
     sequence(:ine) { |n| format("%010d", 3000000000 + n) }
     sequence(:name) { |n| "Equipe #{n}" }
+
+    trait :esb do
+      team_kind { "esb" }
+    end
+
+    trait :emulti do
+      team_kind { "emulti" }
+    end
 
     to_create { |instance| TenantFactoryHelpers.save_with_municipality_tenant!(instance) }
   end

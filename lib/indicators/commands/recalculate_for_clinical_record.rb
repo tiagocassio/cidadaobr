@@ -11,7 +11,7 @@ module Indicators
       return { skipped: true } unless citizen
 
       candidate_codes = RecordTypeIndex.indicator_codes_for(@clinical_record.record_type)
-      indicator_codes = RuleCatalog.evaluable_indicator_codes(candidate_codes)
+      indicator_codes = RuleCatalog.evaluable_indicator_codes(candidate_codes, care_team: citizen.care_team)
       return { skipped: true } if indicator_codes.empty?
 
       DetectCitizenGaps.call(

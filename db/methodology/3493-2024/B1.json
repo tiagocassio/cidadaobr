@@ -1,0 +1,9 @@
+{
+  "code": "B1",
+  "methodology_version": "3493/2024",
+  "team_kind": "esb",
+  "record_types": ["FAO"],
+  "numerator_summary": "Cidadão com 1ª consulta odontológica programática registrada em FAO (tiposConsultaOdonto).",
+  "denominator_summary": "Usuários vinculados à equipe de Saúde Bucal no quadrimestre.",
+  "source_ref": "https://www.gov.br/saude/pt-br/composicao/saps/publicacoes/fichas-tecnicas/equipe-de-saude-bucal"
+}

@@ -49,6 +49,8 @@ module Indicators
 
     def process_rule!(citizen:, rule:, quadrimester:, results:)
       expression = rule.expression
+      return if expression["skip_citizen_gaps"]
+
       context = DslV1::Context.new(
         citizen: citizen,
         quadrimester: quadrimester,

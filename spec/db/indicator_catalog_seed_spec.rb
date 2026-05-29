@@ -25,12 +25,14 @@ RSpec.describe "Indicator catalog seed" do
     expect(IndicatorRule.joins(:indicator_catalog).find_by!(indicator_catalog: { code: "V_CAD" }).expression["numerator"]["type"]).to eq("registration_complete")
   end
 
-  it "seeds dsl_v1_stub for B1 and M2 (notas MS eSB/eMulti)" do
-    expect(IndicatorRule.joins(:indicator_catalog).find_by!(indicator_catalog: { code: "B1" }).expression).to include(
-      "version" => "dsl_v1_stub",
-      "indicator_code" => "B1"
-    )
-    expect(IndicatorRule.joins(:indicator_catalog).find_by!(indicator_catalog: { code: "M2" }).expression["indicator_code"]).to eq("M2")
+  it "seeds dsl_v1 for B1 and M2 with SAPS source_ref" do
+    b1 = IndicatorRule.joins(:indicator_catalog).find_by!(indicator_catalog: { code: "B1" }).expression
+    m2 = IndicatorRule.joins(:indicator_catalog).find_by!(indicator_catalog: { code: "M2" }).expression
+
+    expect(b1["version"]).to eq("dsl_v1")
+    expect(b1["source_ref"]).to include("equipe-de-saude-bucal")
+    expect(m2["version"]).to eq("dsl_v1")
+    expect(m2["source_ref"]).to include("equipes-multiprofissionais-emulti")
   end
 
   it "stores English field_path aliases in dsl_v1 expressions" do

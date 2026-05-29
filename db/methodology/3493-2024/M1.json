@@ -1,0 +1,9 @@
+{
+  "code": "M1",
+  "methodology_version": "3493/2024",
+  "team_kind": "emulti",
+  "record_types": ["FAC", "FAI", "FAO"],
+  "numerator_summary": "Média de atendimentos com profissional eMulti por pessoa no quadrimestre (proxy: cidadãos com ≥1 atendimento eMulti).",
+  "denominator_summary": "População adscrita à equipe eMulti.",
+  "source_ref": "https://www.gov.br/saude/pt-br/composicao/saps/publicacoes/fichas-tecnicas/equipes-multiprofissionais-emulti"
+}

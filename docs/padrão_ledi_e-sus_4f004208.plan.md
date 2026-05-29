@@ -49,7 +49,7 @@ todos:
     status: completed
   - id: indicador-engine
     content: "Motor de gaps por cidadão/equipe/INE e snapshots quadrimestrais de desempenho"
-    status: partial
+    status: completed
   - id: painel-gestor
     content: "Painel municipal projeção de repasse, ranking equipes e fila de pendências por indicador"
     status: partial
@@ -96,8 +96,8 @@ todos:
     content: "Fase 3: EPIC-03 + EPIC-04 — backend/API ok; Flutter em cidadaobr-citizen pendente"
     status: partial
   - id: phase-4-indicators
-    content: "Fase 4: EPIC-05 (TASK-05-01..08) — MVP aceito; B1–B6/M1–M2 dsl_v1_stub até DSL completo (ADR-0003)"
-    status: partial
+    content: "Fase 4: EPIC-05 (TASK-05-01..08) — DSL B1–B6/M1–M2 + metodologia 3493; repasse ilustrativo (ADR-0003)"
+    status: completed
   - id: phase-5-field-campaigns
     content: "Fase 5: EPIC-06 + EPIC-07 + EPIC-08"
     status: pending
@@ -510,7 +510,7 @@ Atualizar ao fechar cada sprint do [roteiro imediato](#roteiro-de-execução-ime
 | S6 | Concluído (MVP) | DSL C1–C7 + V_* + CVAT; Kafka `appointment.noshow` |
 | S7 | Concluído (MVP) | Painel X/N, ranking equipes, gaps por indicador, projeção ilustrativa |
 
-**Gate Fase 5:** aguarda `phase-4-indicators: completed` (DSL **B1–B6** / **M1–M2** + repasse oficial) ou revisão do gate — ver [ADR-0003](docs/adr/0003-epic05-mvp-scope.md).
+**Gate Fase 5:** `phase-4-indicators` concluído com DSL **B1–B6** / **M1–M2** e pack `db/methodology/3493-2024/`; repasse permanece ilustrativo até Portaria — ver [ADR-0003](docs/adr/0003-epic05-mvp-scope.md).
 
 **Kafka dev:** `bin/kafka_create_topics` (inclui `appointment.noshow`).
 
@@ -521,18 +521,18 @@ Atualizar ao fechar cada sprint do [roteiro imediato](#roteiro-de-execução-ime
 | EPIC-02 | Concluído | Ops web; cross-UBS reforçado em specs |
 | EPIC-03 | Concluído | No-show + relatório ocupação/absenteísmo |
 | EPIC-04 | Parcial | API + OpenAPI; app em repos irmãos |
-| EPIC-05 | Parcial (MVP) | ADR-0003; B1–B6/M1–M2 `dsl_v1_stub` |
+| EPIC-05 | MVP entregue (Fase 4) | ADR-0003; DSL B1–B6/M1–M2; repasse ilustrativo |
 
 | Task | Status |
 |------|--------|
 | TASK-05-01 Schema H | Done |
-| TASK-05-02 Seed 17 | Partial — C1–C7 + V_* + CVAT DSL; B1–B6/M1–M2 `dsl_v1_stub` |
+| TASK-05-02 Seed 17 | Done — CVAT + V_* + C1–C7 + B1–B6/M1–M2 `dsl_v1` + `source_ref` |
 | TASK-05-03 Motor DSL | Partial — `citizens_age_lte`; V_SAT proxy |
 | TASK-05-04 Recálculo Kafka | Done — `appointment.no_show` → `appointment.noshow` |
 | TASK-05-05 WEB-IND-01 | Done (MVP) — score X/N |
 | TASK-05-06 WEB-IND-02 | Done (MVP) — drill-down, ranking, filtro gaps |
 | TASK-05-07 Projeção repasse | Partial — pesos ilustrativos + disclaimer |
-| TASK-05-08 Regras eSF | Partial — C1–C7; B1–B6/M1–M2 pendente |
+| TASK-05-08 Regras eSF | Done — C1–C7; B1–B6/M1–M2 via DSL v1 |
 
 ---
 

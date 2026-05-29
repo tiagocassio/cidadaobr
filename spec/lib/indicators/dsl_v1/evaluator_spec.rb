@@ -14,7 +14,7 @@ RSpec.describe Indicators::DslV1::Evaluator do
     IndicatorCatalog.find_by!(code: code).indicator_rules.first.expression
   end
 
-  def persist_clinical_record!(citizen:, record_type:, payload_json:, encounter_at: Time.zone.now)
+  def persist_clinical_record!(citizen:, record_type:, payload_json:, encounter_at: Time.zone.now, care_team: team)
     transport = TransportRecord.create!(
       municipality: municipality,
       health_facility: facility,
@@ -29,7 +29,7 @@ RSpec.describe Indicators::DslV1::Evaluator do
     record = ClinicalRecord.create!(
       municipality: municipality,
       health_facility: facility,
-      care_team: team,
+      care_team: care_team,
       transport_record: transport,
       record_type: record_type,
       record_uuid: SecureRandom.uuid,
@@ -42,7 +42,7 @@ RSpec.describe Indicators::DslV1::Evaluator do
     Encounter.create!(
       municipality: municipality,
       health_facility: facility,
-      care_team: team,
+      care_team: care_team,
       citizen: citizen,
       clinical_record: record,
       record_type: record_type,
@@ -214,6 +214,124 @@ RSpec.describe Indicators::DslV1::Evaluator do
     result = with_tenant(membership) do
       described_class.evaluate(
         expression: expression_for("V_SAT"),
+        context: Indicators::DslV1::Context.new(citizen: citizen, reference_date: Date.current)
+      )
+    end
+
+    expect(result.in_denominator).to be(true)
+    expect(result.meets_numerator).to be(true)
+  end
+
+  it "scores B1 when FAO has first programmed dental consult type" do
+    citizen = with_tenant(membership) do
+      create(
+        :citizen,
+        municipality: municipality,
+        health_facility: facility,
+        care_team: team,
+        birth_date: Date.new(1990, 4, 1),
+        full_name: "Odonto Test"
+      )
+    end
+
+    with_tenant(membership) do
+      persist_clinical_record!(
+        citizen: citizen,
+        record_type: "FAO",
+        payload_json: {
+          "atendimentos_odontologicos" => [
+            { "tipos_consulta_odonto" => [ 1 ], "cpfCidadao" => citizen.cpf }
+          ]
+        },
+        encounter_at: 2.months.ago
+      )
+    end
+
+    result = with_tenant(membership) do
+      described_class.evaluate(
+        expression: expression_for("B1"),
+        context: Indicators::DslV1::Context.new(citizen: citizen, reference_date: Date.current)
+      )
+    end
+
+    expect(result.in_denominator).to be(true)
+    expect(result.meets_numerator).to be(true)
+  end
+
+  it "computes B3 team score from extraction procedure ratio" do
+    esb_team = with_tenant(membership) do
+      create(:care_team, :esb, municipality: municipality, health_facility: facility)
+    end
+    citizens = with_tenant(membership) do
+      create_list(:citizen, 2, municipality: municipality, health_facility: facility, care_team: esb_team)
+    end
+
+    with_tenant(membership) do
+      citizens.each do |citizen|
+        persist_clinical_record!(
+          citizen: citizen,
+          record_type: "FAO",
+          care_team: esb_team,
+          payload_json: {
+            "atendimentos_odontologicos" => [
+              {
+                "procedimentos_realizados" => [
+                  { "co_ms_procedimento" => "0414020070", "quantidade" => 1 },
+                  { "co_ms_procedimento" => "0301010066", "quantidade" => 1 }
+                ]
+              }
+            ]
+          },
+          encounter_at: 1.month.ago
+        )
+      end
+    end
+
+    score = with_tenant(membership) do
+      described_class.team_score(
+        expression: expression_for("B3"),
+        citizens: Citizen.where(id: citizens.map(&:id)),
+        quadrimester: "2026-Q1",
+        care_team_id: esb_team.id
+      )
+    end
+
+    expect(score).to eq(50.0)
+  end
+
+  it "scores M2 when FAC has interprofessional activity" do
+    emulti_team = with_tenant(membership) do
+      create(:care_team, :emulti, municipality: municipality, health_facility: facility)
+    end
+    citizen = with_tenant(membership) do
+      create(
+        :citizen,
+        municipality: municipality,
+        health_facility: facility,
+        care_team: emulti_team,
+        birth_date: Date.new(1985, 8, 2),
+        full_name: "eMulti Test"
+      )
+    end
+
+    with_tenant(membership) do
+      persist_clinical_record!(
+        citizen: citizen,
+        record_type: "FAC",
+        payload_json: {
+          "profissionais" => [
+            { "codigo_cbo2002" => "223505" },
+            { "codigo_cbo2002" => "251510" }
+          ],
+          "atividade_tipo" => 4
+        },
+        encounter_at: 1.month.ago
+      )
+    end
+
+    result = with_tenant(membership) do
+      described_class.evaluate(
+        expression: expression_for("M2"),
         context: Indicators::DslV1::Context.new(citizen: citizen, reference_date: Date.current)
       )
     end

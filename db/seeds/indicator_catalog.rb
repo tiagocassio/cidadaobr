@@ -11,8 +11,8 @@ def stub_expression(code)
   }
 end
 
-def dsl_v1_expression(indicator_code:, good_practice_code:, denominator:, numerator:)
-  {
+def dsl_v1_expression(indicator_code:, good_practice_code:, denominator:, numerator:, team_score_mode: nil, skip_citizen_gaps: false)
+  expression = {
     "version" => "dsl_v1",
     "indicator_code" => indicator_code,
     "good_practice_code" => good_practice_code,
@@ -20,6 +20,9 @@ def dsl_v1_expression(indicator_code:, good_practice_code:, denominator:, numera
     "denominator" => denominator,
     "numerator" => numerator
   }
+  expression["team_score_mode"] = team_score_mode if team_score_mode.present?
+  expression["skip_citizen_gaps"] = true if skip_citizen_gaps
+  Indicators::MethodologyLoader.merge_into_expression(expression, code: indicator_code)
 end
 
 def indicator_display_name(code)
@@ -221,17 +224,145 @@ upsert_indicator!(
   )
 )
 
-[
-  [ "B1", "quality", "esb", 17 ],
-  [ "B2", "quality", "esb", 18 ],
-  [ "B3", "quality", "esb", 19 ],
-  [ "B4", "quality", "esb", 20 ],
-  [ "B5", "quality", "esb", 21 ],
-  [ "B6", "quality", "esb", 22 ],
-  [ "M1", "quality", "emulti", 23 ],
-  [ "M2", "quality", "emulti", 24 ]
-].each do |code, component, team_kind, order|
-  upsert_indicator!(code: code, funding_component: component, team_kind: team_kind, display_order: order)
-end
+upsert_indicator!(
+  code: "B1",
+  funding_component: "quality",
+  team_kind: "esb",
+  display_order: 17,
+  expression: dsl_v1_expression(
+    indicator_code: "B1",
+    good_practice_code: "B1",
+    denominator: { "type" => "citizens_on_team" },
+    numerator: {
+      "type" => "clinical_predicate",
+      "record_types" => %w[FAO],
+      "within_months" => 12,
+      "predicate" => { "type" => "dental_first_consult" }
+    }
+  )
+)
+
+upsert_indicator!(
+  code: "B2",
+  funding_component: "quality",
+  team_kind: "esb",
+  display_order: 18,
+  expression: dsl_v1_expression(
+    indicator_code: "B2",
+    good_practice_code: "B2",
+    denominator: { "type" => "citizens_on_team" },
+    numerator: {
+      "type" => "clinical_predicate",
+      "record_types" => %w[FAO],
+      "within_months" => 12,
+      "predicate" => { "type" => "dental_treatment_completed" }
+    }
+  )
+)
+
+upsert_indicator!(
+  code: "B3",
+  funding_component: "quality",
+  team_kind: "esb",
+  display_order: 19,
+  expression: dsl_v1_expression(
+    indicator_code: "B3",
+    good_practice_code: "B3",
+    denominator: { "type" => "citizens_on_team" },
+    numerator: { "type" => "encounter_in_window", "within_months" => 3 },
+    team_score_mode: "procedure_ratio",
+    skip_citizen_gaps: true
+  )
+)
+
+upsert_indicator!(
+  code: "B4",
+  funding_component: "quality",
+  team_kind: "esb",
+  display_order: 20,
+  expression: dsl_v1_expression(
+    indicator_code: "B4",
+    good_practice_code: "B4",
+    denominator: { "type" => "citizens_on_team" },
+    numerator: {
+      "type" => "clinical_predicate",
+      "record_types" => %w[FAC FAO],
+      "within_months" => 12,
+      "predicate" => { "type" => "supervised_brushing" }
+    }
+  )
+)
+
+upsert_indicator!(
+  code: "B5",
+  funding_component: "quality",
+  team_kind: "esb",
+  display_order: 21,
+  expression: dsl_v1_expression(
+    indicator_code: "B5",
+    good_practice_code: "B5",
+    denominator: { "type" => "citizens_on_team" },
+    numerator: {
+      "type" => "clinical_predicate",
+      "record_types" => %w[FAO],
+      "within_months" => 12,
+      "predicate" => { "type" => "preventive_procedure" }
+    }
+  )
+)
+
+upsert_indicator!(
+  code: "B6",
+  funding_component: "quality",
+  team_kind: "esb",
+  display_order: 22,
+  expression: dsl_v1_expression(
+    indicator_code: "B6",
+    good_practice_code: "B6",
+    denominator: { "type" => "citizens_on_team" },
+    numerator: {
+      "type" => "clinical_predicate",
+      "record_types" => %w[FAO],
+      "within_months" => 12,
+      "predicate" => { "type" => "tra_procedure" }
+    }
+  )
+)
+
+upsert_indicator!(
+  code: "M1",
+  funding_component: "quality",
+  team_kind: "emulti",
+  display_order: 23,
+  expression: dsl_v1_expression(
+    indicator_code: "M1",
+    good_practice_code: "M1",
+    denominator: { "type" => "citizens_on_team" },
+    numerator: {
+      "type" => "emulti_encounter_count",
+      "record_types" => %w[FAC FAI FAO],
+      "within_months" => 3,
+      "minimum_count" => 1
+    }
+  )
+)
+
+upsert_indicator!(
+  code: "M2",
+  funding_component: "quality",
+  team_kind: "emulti",
+  display_order: 24,
+  expression: dsl_v1_expression(
+    indicator_code: "M2",
+    good_practice_code: "M2",
+    denominator: { "type" => "citizens_on_team" },
+    numerator: {
+      "type" => "clinical_predicate",
+      "record_types" => %w[FAC FCC],
+      "within_months" => 12,
+      "predicate" => { "type" => "interprofessional_action" }
+    }
+  )
+)
 
 puts "  Indicator catalog: #{IndicatorCatalog.count} entries, #{IndicatorRule.count} rules"

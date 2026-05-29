@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_05_27_150100) do
+ActiveRecord::Schema[8.1].define(version: 2026_05_28_140000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
@@ -76,10 +76,12 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_27_150100) do
     t.string "ine", null: false
     t.uuid "municipality_id", null: false
     t.string "name", null: false
+    t.string "team_kind"
     t.datetime "updated_at", null: false
     t.index ["health_facility_id"], name: "index_care_teams_on_health_facility_id"
     t.index ["municipality_id", "ine"], name: "index_care_teams_on_municipality_id_and_ine", unique: true
     t.index ["municipality_id"], name: "index_care_teams_on_municipality_id"
+    t.index ["team_kind"], name: "index_care_teams_on_team_kind"
   end
 
   create_table "citizen_accounts", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|

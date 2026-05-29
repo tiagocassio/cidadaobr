@@ -62,17 +62,19 @@ RSpec.describe Indicators::RuleCatalog do
       esb_team = double(team_kind: "esb")
       codes = described_class.rules_for_care_team(esb_team).map { |rule| rule.indicator_catalog.code }
 
-      expect(codes).not_to include("C1", "V_CAD")
+      expect(codes).to include("B1", "B3")
+      expect(codes).not_to include("C1", "V_CAD", "M1")
     end
   end
 
   describe ".evaluable_indicator_codes" do
-    it "returns only codes with dsl_v1 rules" do
-      expect(described_class.evaluable_indicator_codes(%w[B1 C1 M2])).to match_array(%w[C1])
+    it "returns dsl_v1 codes from the candidate list" do
+      expect(described_class.evaluable_indicator_codes(%w[B1 C1 M2])).to match_array(%w[B1 C1 M2])
     end
 
-    it "returns empty when every candidate is dsl_v1_stub" do
-      expect(described_class.evaluable_indicator_codes(%w[B1 B2 M1 M2])).to eq([])
+    it "filters by care team when provided" do
+      esf_team = double(team_kind: "esf")
+      expect(described_class.evaluable_indicator_codes(%w[C1 M1], care_team: esf_team)).to eq(%w[C1])
     end
   end
 

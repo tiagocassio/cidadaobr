@@ -26,10 +26,12 @@ module Indicators
       end
     end
 
-    def evaluable_indicator_codes(codes)
+    def evaluable_indicator_codes(codes, care_team: nil)
       return [] if codes.blank?
 
-      dsl_v1_rules(indicator_codes: codes).filter_map { |rule| rule.expression["indicator_code"] }.uniq
+      rules = dsl_v1_rules(indicator_codes: codes)
+      rules = rules.select { |rule| rule_applies_to_care_team?(rule, care_team) } if care_team.present?
+      rules.filter_map { |rule| rule.expression["indicator_code"] }.uniq
     end
 
     def dsl_v1_rules(indicator_codes: nil, team_kinds: nil)
