@@ -3,8 +3,34 @@
 module Indicators
   module RuleCatalog
     APPOINTMENT_CLAUSE_TYPE = "appointment_in_quadrimester"
+    # When CareTeam has no team_kind, only catalog rules for these kinds are evaluated.
+    FALLBACK_TEAM_KINDS_FOR_UNKNOWN_CARE_TEAM = %w[esf municipality].freeze
 
     module_function
+
+    def rule_applies_to_care_team?(rule, care_team)
+      required = rule.indicator_catalog.team_kind
+      return true if required.blank?
+
+      inferred = care_team.try(:team_kind)
+      if inferred.present?
+        return inferred == required
+      end
+
+      FALLBACK_TEAM_KINDS_FOR_UNKNOWN_CARE_TEAM.include?(required)
+    end
+
+    def rules_for_care_team(care_team, indicator_codes: nil)
+      dsl_v1_rules(indicator_codes: indicator_codes).select do |rule|
+        rule_applies_to_care_team?(rule, care_team)
+      end
+    end
+
+    def evaluable_indicator_codes(codes)
+      return [] if codes.blank?
+
+      dsl_v1_rules(indicator_codes: codes).filter_map { |rule| rule.expression["indicator_code"] }.uniq
+    end
 
     def dsl_v1_rules(indicator_codes: nil, team_kinds: nil)
       scope = IndicatorRule.includes(:indicator_catalog).joins(:indicator_catalog).where(indicator_catalog: { active: true })

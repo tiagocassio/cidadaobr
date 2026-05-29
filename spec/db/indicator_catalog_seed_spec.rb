@@ -5,14 +5,17 @@ require "rails_helper"
 RSpec.describe "Indicator catalog seed" do
   before { load Rails.root.join("db/seeds/indicator_catalog.rb") }
 
-  it "loads CVAT and C1–C15 indicators" do
+  it "loads CVAT, C1–C7, B1–B6 and M1–M2 indicators" do
     expect(IndicatorCatalog.find_by!(code: "CVAT").name).to include("Avaliação Territorial")
-    expect(IndicatorCatalog.where(code: (1..15).map { |n| "C#{n}" }).count).to eq(15)
+    expect(IndicatorCatalog.where(code: (1..7).map { |n| "C#{n}" }).count).to eq(7)
+    expect(IndicatorCatalog.where(code: %w[B1 B2 B3 B4 B5 B6]).count).to eq(6)
+    expect(IndicatorCatalog.where(code: %w[M1 M2]).count).to eq(2)
     expect(IndicatorRule.count).to eq(IndicatorCatalog.count)
   end
 
   it "tags quality indicators with funding_component quality" do
     expect(IndicatorCatalog.find_by!(code: "C4").funding_component).to eq("quality")
+    expect(IndicatorCatalog.find_by!(code: "B1").funding_component).to eq("quality")
     expect(IndicatorCatalog.find_by!(code: "V_CAD").funding_component).to eq("linkage")
   end
 
@@ -20,6 +23,14 @@ RSpec.describe "Indicator catalog seed" do
     expect(IndicatorRule.joins(:indicator_catalog).find_by!(indicator_catalog: { code: "C4" }).expression["version"]).to eq("dsl_v1")
     expect(IndicatorRule.joins(:indicator_catalog).find_by!(indicator_catalog: { code: "C5" }).expression["denominator"]["flag"]).to eq("hypertension")
     expect(IndicatorRule.joins(:indicator_catalog).find_by!(indicator_catalog: { code: "V_CAD" }).expression["numerator"]["type"]).to eq("registration_complete")
+  end
+
+  it "seeds dsl_v1_stub for B1 and M2 (notas MS eSB/eMulti)" do
+    expect(IndicatorRule.joins(:indicator_catalog).find_by!(indicator_catalog: { code: "B1" }).expression).to include(
+      "version" => "dsl_v1_stub",
+      "indicator_code" => "B1"
+    )
+    expect(IndicatorRule.joins(:indicator_catalog).find_by!(indicator_catalog: { code: "M2" }).expression["indicator_code"]).to eq("M2")
   end
 
   it "stores English field_path aliases in dsl_v1 expressions" do

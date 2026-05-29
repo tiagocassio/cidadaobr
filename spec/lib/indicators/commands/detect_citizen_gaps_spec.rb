@@ -25,6 +25,18 @@ RSpec.describe Indicators::DetectCitizenGaps do
     expect(Indicators::RuleCatalog).to have_received(:dsl_v1_rules).once
   end
 
+  it "skips citizens without a care team" do
+    citizen = with_tenant(membership) do
+      create(:citizen, municipality: municipality, health_facility: facility, care_team: nil, cpf: "39053344705")
+    end
+
+    with_tenant(membership) do
+      result = described_class.call(citizen_id: citizen.id, indicator_codes: %w[V_CAD])
+      expect(result[:gaps_opened]).to eq(0)
+      expect(CitizenIndicatorGap.where(citizen: citizen).count).to eq(0)
+    end
+  end
+
   it "opens and resolves V_CAD gaps" do
     citizen = with_tenant(membership) do
       create(:citizen, municipality: municipality, health_facility: facility, care_team: team, birth_date: nil, full_name: "Incomplete")

@@ -17,7 +17,7 @@ module Indicators
       citizens = Citizen.where(municipality_id: tenant.municipality_id, care_team_id: care_team.id)
       results = []
 
-      rules_for_team(care_team).each do |rule|
+      RuleCatalog.rules_for_care_team(care_team, indicator_codes: @indicator_codes).each do |rule|
         expression = rule.expression
         indicator_code = expression.fetch("indicator_code")
         score = DslV1::Evaluator.team_score(
@@ -50,13 +50,6 @@ module Indicators
     end
 
     private
-
-    def rules_for_team(_care_team)
-      RuleCatalog.dsl_v1_rules(
-        indicator_codes: @indicator_codes,
-        team_kinds: [ "esf", "municipality", nil ]
-      )
-    end
 
     def emit_team_score_updated!(result)
       RecordPlatformEvent.call(

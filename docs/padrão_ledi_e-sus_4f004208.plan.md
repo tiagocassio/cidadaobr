@@ -45,7 +45,7 @@ todos:
     content: "API /api/v1/citizen: auth, slots, appointments, immunization — MVP; meds/panic/tele = EPIC-10"
     status: partial
   - id: indicadores-portaria
-    content: "Seed indicator_catalog: CVAT + V-* + C1–C15 (Portaria 3.493, SAPS 161/2024, Notas MS)"
+    content: "Seed indicator_catalog: CVAT + V-* + C1–C7 + B1–B6 + M1–M2 (Portaria 3.493, SAPS 161/2024, Notas MS)"
     status: completed
   - id: indicador-engine
     content: "Motor de gaps por cidadão/equipe/INE e snapshots quadrimestrais de desempenho"
@@ -96,7 +96,7 @@ todos:
     content: "Fase 3: EPIC-03 + EPIC-04 — backend/API ok; Flutter em cidadaobr-citizen pendente"
     status: partial
   - id: phase-4-indicators
-    content: "Fase 4: EPIC-05 (TASK-05-01..08) — MVP aceito; C8–C15 stub (ADR-0003)"
+    content: "Fase 4: EPIC-05 (TASK-05-01..08) — MVP aceito; B1–B6/M1–M2 dsl_v1_stub até DSL completo (ADR-0003)"
     status: partial
   - id: phase-5-field-campaigns
     content: "Fase 5: EPIC-06 + EPIC-07 + EPIC-08"
@@ -180,7 +180,7 @@ todos:
 
 ## Glossário de siglas e termos
 
-Referência rápida para leitura do plano. **Indicadores de desempenho** = **CVAT** + **V-*** (componente Vínculo) + **C1–C15** (componente Qualidade) — **17 itens** no catálogo municipal. Siglas **FCI–MCA** são **fichas LEDI**, não indicadores.
+Referência rápida para leitura do plano. **Indicadores de desempenho** = **CVAT** + **V-*** (componente Vínculo) + **C1–C7, B1–B6 e M1–M2** (componente Qualidade) — **17 itens** no catálogo municipal. Siglas **FCI–MCA** são **fichas LEDI**, não indicadores.
 
 ### Sistemas, normas e padrões de dados
 
@@ -244,11 +244,11 @@ A aplicação deve **definir e versionar todos os indicadores** em `indicator_ca
 |-------|---------------------|------|-------------------------|
 | Vínculo e acompanhamento territorial | **CVAT**, **V-CAD**, **V-ACOMP**, **V-SAT** | 4 | Componente II (Vínculo) |
 | Qualidade — linhas eSF/eAP | **C1**–**C7** | 7 | Componente III (Qualidade) |
-| Qualidade — saúde bucal | **C8**–**C13** | 6 | Componente III (Qualidade) |
-| Qualidade — eMulti | **C14**, **C15** | 2 | Componente III (Qualidade) |
+| Qualidade — saúde bucal | **B1**–**B6** | 6 | Componente III (Qualidade) |
+| Qualidade — eMulti | **M1**, **M2** | 2 | Componente III (Qualidade) |
 | **Total indicadores de desempenho** | | **17** | Vínculo + Qualidade |
 
-Cada indicador **C*** desdobra em **boas práticas (BP A, B, C…)** em `indicator_rules` — são os itens que geram pendência por cidadão. O **CVAT** é o escore agregado (0–10); **V-CAD** e **V-ACOMP** são as dimensões que o MS soma; **V-SAT** é bônus de satisfação.
+Cada indicador de qualidade desdobra em **boas práticas (BP A, B, C…)** em `indicator_rules` — são os itens que geram pendência por cidadão. O **CVAT** é o escore agregado (0–10); **V-CAD** e **V-ACOMP** são as dimensões que o MS soma; **V-SAT** é bônus de satisfação.
 
 **O que não entra como “indicador de desempenho” no painel:** **Componente fixo** (valor por **IED** do município) e **recurso de implantação** (parcela única para equipe nova). Continuam no módulo financeiro, mas sem numerador/denominador por cidadão.
 
@@ -295,9 +295,11 @@ Cada indicador **C*** desdobra em **boas práticas (BP A, B, C…)** em `indicat
 
 ---
 
-### Componente III — Indicadores C1–C15 (qualidade do cuidado)
+### Componente III — Indicadores de qualidade (C1–C7, B1–B6, M1–M2)
 
-São indicadores **pactuados** com código **C***. Cada um tem **Nota Metodológica** própria (C1–C7 e blocos eSB/eMulti). O score costuma ser **% de boas práticas** sobre o denominador da linha de cuidado → classificação do **componente qualidade** da equipe.
+São indicadores **pactuados** com códigos oficiais SAPS em `indicator_catalog.code` (`C1`–`C7`, `B1`–`B6`, `M1`, `M2`). O score costuma ser **% de boas práticas** (ou ratio, no caso de B3) sobre o denominador → classificação do **componente qualidade** da equipe.
+
+**Notas Metodológicas no site SAPS:** **C1–C7** têm PDFs nomeados **Nota Metodológica C1…C7** na [página eSF/eAP](https://www.gov.br/saude/pt-br/composicao/saps/publicacoes/fichas-tecnicas/equipe-de-atencao-primaria-e-saude-da-familia). Os indicadores de **saúde bucal** usam códigos **B1–B6** na [página eSB](https://www.gov.br/saude/pt-br/composicao/saps/publicacoes/fichas-tecnicas/equipe-de-saude-bucal); **eMulti** usa **M1–M2** na [página eMulti](https://www.gov.br/saude/pt-br/composicao/saps/publicacoes/fichas-tecnicas/equipes-multiprofissionais-emulti). Em `indicator_rules.expression` (ou pack em `db/methodology/3493-2024/`), usar o mesmo código da nota e `source_ref` com URL do PDF SAPS.
 
 | Código | Nome completo | Equipe | BPs (qtd.) | Denominador (resumo) | Fichas LEDI |
 |--------|---------------|--------|------------|----------------------|-------------|
@@ -308,14 +310,14 @@ São indicadores **pactuados** com código **C***. Cada um tem **Nota Metodológ
 | **C5** | Cuidado da pessoa com hipertensão | eSF, eAP | A–D | HAS (CIAP K86/K87, CID I10–I15, FCI) | **FAI**, **FP**, **FVD** |
 | **C6** | Cuidado da pessoa idosa | eSF, eAP | A–D | **≥60 anos** com condição avaliada | **FAI**, **FP**, **FVD**, **FV**, **FAD** |
 | **C7** | Cuidado da mulher na prevenção do câncer | eSF, eAP | rastreamento colo/mama, HPV | Mulheres na faixa etária da nota | **FAI**, **FP**, **FV** |
-| **C8** | 1ª consulta odontológica programada | eSB | — | Usuários odonto (1ª consulta programática) | **FAO** |
-| **C9** | Tratamento odontológico concluído | eSB | — | Usuários em tratamento | **FAO** |
-| **C10** | Taxa de exodontias | eSB | — | Procedimentos odontológicos (ratio extrações) | **FAO** |
-| **C11** | Escovação dental supervisionada | eSB | — | Ações de escovação | **FAC**, **FAO** |
-| **C12** | Procedimentos odontológicos preventivos | eSB | — | Procedimentos preventivos | **FAO** |
-| **C13** | TRA (tratamento restaurador atraumático) | eSB | — | Procedimentos TRA (SIGTAP) | **FAO** |
-| **C14** | Média de atendimentos eMulti por pessoa | eMulti | — | População adscrita × atendimentos eMulti | **FAC**, **FAI**, **FAO** |
-| **C15** | Ações interprofissionais realizadas pela eMulti | eMulti | — | Ações interprofissionais no território | **FAC**, **FCC** |
+| **B1** | 1ª consulta odontológica programada | eSB | — | Usuários odonto (1ª consulta programática) | **FAO** |
+| **B2** | Tratamento odontológico concluído | eSB | — | Usuários em tratamento | **FAO** |
+| **B3** | Taxa de exodontias | eSB | — | Procedimentos odontológicos (ratio extrações) | **FAO** |
+| **B4** | Escovação dental supervisionada | eSB | — | Ações de escovação | **FAC**, **FAO** |
+| **B5** | Procedimentos odontológicos preventivos | eSB | — | Procedimentos preventivos | **FAO** |
+| **B6** | TRA (tratamento restaurador atraumático) | eSB | — | Procedimentos TRA (SIGTAP) | **FAO** |
+| **M1** | Média de atendimentos eMulti por pessoa | eMulti | — | População adscrita × atendimentos eMulti | **FAC**, **FAI**, **FAO** |
+| **M2** | Ações interprofissionais realizadas pela eMulti | eMulti | — | Ações interprofissionais no território | **FAC**, **FCC** |
 
 **Periodicidade:** indicadores de **qualidade** fecham por **quadrimestre** (repasse no quadrimestre seguinte). **Vínculo** usa média mensal das dimensões no quadrimestre avaliado.
 
@@ -329,7 +331,7 @@ São indicadores **pactuados** com código **C***. Cada um tem **Nota Metodológ
 | **Cofinanciamento federal** | Dinheiro que a União repassa ao município para APS (não é o único recurso municipal). |
 | **Componente fixo** | Valor mensal por equipe conforme **IED** (índice do município). |
 | **Componente vínculo (II)** | Pagamento por **CVAT** — escore 0–10 (**V-CAD** 30% + **V-ACOMP** 70% + **V-SAT**). Fichas: **FCI**, **FCD** + atendimentos que contam acompanhamento. |
-| **Componente qualidade (III)** | Pagamento por desempenho nos **17 indicadores catalogados** (**C1–C15** + dimensões **V-*** quando exibidas no mesmo painel). |
+| **Componente qualidade (III)** | Pagamento por desempenho nos **17 indicadores catalogados** (**C1–C7, B1–B6 e M1–M2** + dimensões **V-*** quando exibidas no mesmo painel). |
 | **IED** | Índice de Equidade e Dimensionamento — classifica o município para o componente fixo. |
 | **Quadrimestre** | Período de ~4 meses usado para fechar e pagar indicadores de qualidade. |
 | **INE** | Identificador Nacional de **E**quipes — código da equipe no CNES (10 dígitos). |
@@ -413,9 +415,9 @@ São indicadores **pactuados** com código **C***. Cada um tem **Nota Metodológ
 ```
 LEDI        →  COMO os dados devem ser formatados para o governo
 FCI/FCD     →  Cadastro (alimenta V-CAD / vínculo)
-FAI/FAO/…   →  Atendimentos (alimentam V-ACOMP e C1–C15)
+FAI/FAO/…   →  Atendimentos (alimentam V-ACOMP e C1–C7, B1–B6 e M1–M2)
 CVAT/V-*    →  Componente Vínculo (sem prefixo C)
-C1–C15      →  Componente Qualidade
+C1–C7, B1–B6 e M1–M2      →  Componente Qualidade
 indicator_catalog →  Os 17 indicadores que o município “atende ou não”
 citizen_indicator_gaps →  Pendência por cidadão (BP ou V-CAD-COM, etc.)
 INE/CNES    →  QUEM (equipe / UBS) recebe ou perde repasse
@@ -427,7 +429,7 @@ INE/CNES    →  QUEM (equipe / UBS) recebe ou perde repasse
 
 | Seção | Conteúdo |
 |-------|----------|
-| [Glossário](#glossário-de-siglas-e-termos) | Siglas LEDI, indicadores CVAT/C1–C15, stack |
+| [Glossário](#glossário-de-siglas-e-termos) | Siglas LEDI, indicadores CVAT/C1–C7, B1–B6 e M1–M2, stack |
 | [Roteiro por etapas](#roteiro-de-desenvolvimento-por-etapas-para-agentes) | Épicos → Tarefas → Subtarefas (export Scrum/Kanban) |
 | [Backlog CSV](#formato-de-exportação-para-scrumkanban) | Colunas para Jira, Linear, Azure Boards, Trello |
 | [Modelo de banco A–L](#modelo-de-banco-recomendado-operacional--ledi) | Tabelas en-US por grupo (incl. roteiro domiciliar L) |
@@ -508,7 +510,7 @@ Atualizar ao fechar cada sprint do [roteiro imediato](#roteiro-de-execução-ime
 | S6 | Concluído (MVP) | DSL C1–C7 + V_* + CVAT; Kafka `appointment.noshow` |
 | S7 | Concluído (MVP) | Painel X/N, ranking equipes, gaps por indicador, projeção ilustrativa |
 
-**Gate Fase 5:** aguarda `phase-4-indicators: completed` (C8–C15 + repasse oficial) ou revisão do gate — ver [ADR-0003](docs/adr/0003-epic05-mvp-scope.md).
+**Gate Fase 5:** aguarda `phase-4-indicators: completed` (DSL **B1–B6** / **M1–M2** + repasse oficial) ou revisão do gate — ver [ADR-0003](docs/adr/0003-epic05-mvp-scope.md).
 
 **Kafka dev:** `bin/kafka_create_topics` (inclui `appointment.noshow`).
 
@@ -519,18 +521,18 @@ Atualizar ao fechar cada sprint do [roteiro imediato](#roteiro-de-execução-ime
 | EPIC-02 | Concluído | Ops web; cross-UBS reforçado em specs |
 | EPIC-03 | Concluído | No-show + relatório ocupação/absenteísmo |
 | EPIC-04 | Parcial | API + OpenAPI; app em repos irmãos |
-| EPIC-05 | Parcial (MVP) | ADR-0003; C8–C15 stub |
+| EPIC-05 | Parcial (MVP) | ADR-0003; B1–B6/M1–M2 `dsl_v1_stub` |
 
 | Task | Status |
 |------|--------|
 | TASK-05-01 Schema H | Done |
-| TASK-05-02 Seed 17 | Partial — C1–C7 + V_* + CVAT DSL; C8–C15 stub |
+| TASK-05-02 Seed 17 | Partial — C1–C7 + V_* + CVAT DSL; B1–B6/M1–M2 `dsl_v1_stub` |
 | TASK-05-03 Motor DSL | Partial — `citizens_age_lte`; V_SAT proxy |
 | TASK-05-04 Recálculo Kafka | Done — `appointment.no_show` → `appointment.noshow` |
 | TASK-05-05 WEB-IND-01 | Done (MVP) — score X/N |
 | TASK-05-06 WEB-IND-02 | Done (MVP) — drill-down, ranking, filtro gaps |
 | TASK-05-07 Projeção repasse | Partial — pesos ilustrativos + disclaimer |
-| TASK-05-08 Regras eSF | Partial — C1–C7; C8–C15 stub |
+| TASK-05-08 Regras eSF | Partial — C1–C7; B1–B6/M1–M2 pendente |
 
 ---
 
@@ -1175,7 +1177,7 @@ A vacinação de animais **reutiliza a mesma arquitetura** da vacinação humana
 | Provisionamento | `supply_provisionings` | **Mesma fórmula**: doses campanha × capacidade × estoque |
 | Profissional | Enfermeiro/médico (CBO APS) | **Médico-veterinário** (CRMV) em `professionals` + `professional_credentials` |
 | Eventos | `clinical.record.persisted`, campanha humana | `animal.vaccination.administered`, `animal.vaccination.campaign.launched` |
-| Indicadores Portaria 3.493 | C1–C15, CVAT (humanos) | **Fora do cofinanciamento APS**; indicadores **VCZ** municipais (cobertura antirrábica, etc.) em `indicator_catalog` com `funding_component: zoonoses` (opcional, relatórios web) |
+| Indicadores Portaria 3.493 | C1–C7, B1–B6 e M1–M2, CVAT (humanos) | **Fora do cofinanciamento APS**; indicadores **VCZ** municipais (cobertura antirrábica, etc.) em `indicator_catalog` com `funding_component: zoonoses` (opcional, relatórios web) |
 
 **Fluxo unificado na aplicação:**
 
@@ -1295,7 +1297,7 @@ Referências operacionais: [FAQ novo financiamento APS](https://www.gov.br/saude
 
 ### 15 indicadores de qualidade (blocos eSF/eAP, eSB, eMulti)
 
-Publicados em maio/2025; cada um tem **Nota Metodológica** com numerador, denominador, periodicidade e CID/CIAP aceitos.
+Publicados em maio/2025; cada indicador tem nota metodológica com numerador, denominador e periodicidade — **C1–C7** (notas C*), **B1–B6** (eSB), **M1–M2** (eMulti); ver tabela Componente III acima.
 
 **eSF / eAP (exemplos centrais para o seu escopo LEDI):**
 
@@ -1374,10 +1376,10 @@ flowchart LR
 |------------|----------------------|----------------------|----------------------|
 | **Fixo** | Estrato IED do município × nº equipes | SCNES (admin) | Não é ficha clínica |
 | **Vínculo** | Classificação da eSF/eAP (cadastro + acompanhamento) | **FCI**, **FCD** | Completude cadastro, microárea, vulnerabilidade |
-| **Qualidade** | Classificação por **15 indicadores** (C1–C15) | **FAI**, **FVD**, **FP**, **FV**, **FAO**, **FAC**, etc. | Boas práticas A…K por linha de cuidado |
+| **Qualidade** | Classificação por **15 indicadores** (C1–C7, B1–B6 e M1–M2) | **FAI**, **FVD**, **FP**, **FV**, **FAO**, **FAC**, etc. | Boas práticas A…K por linha de cuidado |
 | **Implantação** | Parcelas de implantação eSB/eMulti | Administrativo | Fora do escopo diário LEDI |
 
-**Premissa do seu produto:** cada boa prática abaixo deve virar uma regra em `indicador_regra` + um `cidadao_indicador_gap` quando faltar registro LEDI equivalente ao que o PEC/SIAPS espera (Notas Metodológicas C1–C15 e Caderno de Ações FEPECS/MS).
+**Premissa do seu produto:** cada boa prática abaixo deve virar uma regra em `indicador_regra` + um `cidadao_indicador_gap` quando faltar registro LEDI equivalente ao que o PEC/SIAPS espera (Notas Metodológicas oficiais e Caderno de Ações FEPECS/MS).
 
 **Atenção:** o MS consolida a partir do **PEC/SIAPS**. Fichas LEDI válidas e sincronizadas são o meio para o município **não perder** contabilização. O motor interno antecipa gaps **antes** do fechamento do quadrimestre.
 
@@ -1395,18 +1397,18 @@ flowchart LR
 | C5 | Hipertensão | eSF, eAP | Qualidade | FCI, FAI, FVD, FP |
 | C6 | Pessoa idosa | eSF, eAP | Qualidade | FCI, FAI, FVD, FP, FV, FAD |
 | C7 | Mulher — prevenção câncer | eSF, eAP | Qualidade | FAI, FP (procedimentos/exames) |
-| C8 | 1ª consulta odontológica programada | eSB | Qualidade | FAO |
-| C9 | Tratamento odontológico concluído | eSB | Qualidade | FAO |
-| C10 | Taxa de exodontias | eSB | Qualidade | FAO |
-| C11 | Escovação supervisionada | eSB | Qualidade | FAC, FAO |
-| C12 | Procedimentos preventivos odonto | eSB | Qualidade | FAO |
-| C13 | TRA (restaurador atraumático) | eSB | Qualidade | FAO |
-| C14 | Média atendimentos eMulti/pessoa | eMulti | Qualidade | FAC, FAI, FAO |
-| C15 | Ações interprofissionais eMulti | eMulti | Qualidade | FAC, FCC |
+| B1 | 1ª consulta odontológica programada | eSB | Qualidade | FAO |
+| B2 | Tratamento odontológico concluído | eSB | Qualidade | FAO |
+| B3 | Taxa de exodontias | eSB | Qualidade | FAO |
+| B4 | Escovação supervisionada | eSB | Qualidade | FAC, FAO |
+| B5 | Procedimentos preventivos odonto | eSB | Qualidade | FAO |
+| B6 | TRA (restaurador atraumático) | eSB | Qualidade | FAO |
+| M1 | Média atendimentos eMulti/pessoa | eMulti | Qualidade | FAC, FAI, FAO |
+| M2 | Ações interprofissionais eMulti | eMulti | Qualidade | FAC, FCC |
 
 ---
 
-#### Vínculo e acompanhamento territorial (não é C1–C15, mas aumenta repasse)
+#### Vínculo e acompanhamento territorial (não faz parte dos 15 de qualidade, mas aumenta repasse)
 
 | Requisito MS | Campo / struct LEDI | Ficha |
 |--------------|---------------------|-------|
@@ -1521,27 +1523,27 @@ Apoio: **FCI** `CondicoesDeSaude` idoso; **FAD** `condicoesAvaliadas` (1–24); 
 
 ---
 
-#### C8–C13 — Saúde bucal (eSB)
+#### B1–B6 — Saúde bucal (eSB)
 
 | Cód. | Indicador | Ficha LEDI | Campos LEDI (child **FAO**) |
 |------|-----------|------------|-----------------------------|
-| C8 | 1ª consulta odontológica programada | **FAO** | `tiposConsultaOdonto` = 1ª consulta programática |
-| C9 | Tratamento concluído | **FAO** | `condutaDesfeudo` / desfecho tratamento |
-| C10 | Taxa exodontias | **FAO** | `procedimentos` + `ProcedimentoQuantidade` |
-| C11 | Escovação supervisionada | **FAC** | `praticasEmSaude` = 9; ou **FAO** |
-| C12 | Procedimentos preventivos | **FAO** | `procedimentos` preventivos |
-| C13 | TRA | **FAO** | procedimento TRA SIGTAP |
+| B1 | 1ª consulta odontológica programada | **FAO** | `tiposConsultaOdonto` = 1ª consulta programática |
+| B2 | Tratamento concluído | **FAO** | `condutaDesfeudo` / desfecho tratamento |
+| B3 | Taxa exodontias | **FAO** | `procedimentos` + `ProcedimentoQuantidade` |
+| B4 | Escovação supervisionada | **FAC** | `praticasEmSaude` = 9; ou **FAO** |
+| B5 | Procedimentos preventivos | **FAO** | `procedimentos` preventivos |
+| B6 | TRA | **FAO** | procedimento TRA SIGTAP |
 
 Header **FAO**: `VariasLotacoesHeader` com CBO cirurgião-dentista → atribuição à **eSB**.
 
 ---
 
-#### C14–C15 — eMulti
+#### M1–M2 — eMulti
 
 | Cód. | Indicador | Ficha LEDI | Campos LEDI |
 |------|-----------|------------|-------------|
-| C14 | Média atendimentos/pessoa | **FAC**, **FAI**, **FAO** | volume de atendimentos com profissional eMulti (CBO na lotação) |
-| C15 | Ações interprofissionais | **FAC** | `profissionais`, `atividadeTipo`, `praticasEmSaude`; **FCC** reforça coordenação |
+| M1 | Média atendimentos/pessoa | **FAC**, **FAI**, **FAO** | volume de atendimentos com profissional eMulti (CBO na lotação) |
+| M2 | Ações interprofissionais | **FAC** | `profissionais`, `atividadeTipo`, `praticasEmSaude`; **FCC** reforça coordenação |
 
 ---
 
@@ -1552,7 +1554,7 @@ Header **FAO**: `VariasLotacoesHeader` com CBO cirurgião-dentista → atribuiç
 | **FAE** | População elegível AD; `condicoesAvaliadas` (mesma tabela FAD) → C6, paliativos |
 | **FCZM** | C2 — triagens neuro (testes olhinho, orelhinha, neuroimagem) |
 | **MCA** | C2 — marcadores alimentares por faixa etária |
-| **FCC** | C15, C1 — continuidade e integralidade entre equipes |
+| **FCC** | M2, C1 — continuidade e integralidade entre equipes |
 | **FAD** | C6 — domiciliados, `condicoesAvaliadas`, `ProblemaCondicao` |
 
 ---
@@ -1587,7 +1589,7 @@ Quando `numerador_query` falha para um `citizen_id` → insere `citizen_indicato
 
 Além dos grupos A–G já definidos (projeções CQRS, **en-US**):
 
-- `indicator_catalog` — code (**CVAT**, **V-CAD**, **V-ACOMP**, **V-SAT**, **C1…C15**), `funding_component`, methodology version, `team_kind`, periodicity
+- `indicator_catalog` — code (**CVAT**, **V-CAD**, **V-ACOMP**, **V-SAT**, **C1…C7, B1…B6, M1…M2**), `funding_component`, methodology version, `team_kind`, periodicity
 - `indicator_rules` — numerator/denominator DSL, allowed ICD/CIAP, time window
 - `care_teams` — INE, CNES, kind, `municipality_id`
 - `team_indicator_results` — quadrimestre snapshot: score, tier, projected transfer
@@ -2115,7 +2117,7 @@ A web **planeja**; o **Field** **executa** no território (LEDI); o **Citizen** 
 
 ### Flutter — app de campo (uso exclusivo)
 
-**Objetivo de produto:** permitir que equipes em ação territorial atendam **qualquer cidadão elegível ao público-alvo** (campanha ou linha de cuidado) e registrem **100% das fichas** exigidas para **CVAT**, **C1–C15** e campanhas zoonoses — offline-first, com sync posterior ao Rails/Kafka/PEC.
+**Objetivo de produto:** permitir que equipes em ação territorial atendam **qualquer cidadão elegível ao público-alvo** (campanha ou linha de cuidado) e registrem **100% das fichas** exigidas para **CVAT**, **C1–C7, B1–B6 e M1–M2** e campanhas zoonoses — offline-first, com sync posterior ao Rails/Kafka/PEC.
 
 **Perfis de uso (campo):**
 
@@ -2136,8 +2138,8 @@ A web **planeja**; o **Field** **executa** no território (LEDI); o **Citizen** 
 | **FCI** | Cadastro individual | CVAT (V-CAD) |
 | **FCD** | Cadastro domiciliar + animais | CVAT, campanhas |
 | **FAI** | Atendimento individual (child) | C1–C7, V-ACOMP |
-| **FAO** | Atendimento odontológico | C8–C13 |
-| **FAC** | Atividade coletiva (master) | C2, C14, C15, multirão |
+| **FAO** | Atendimento odontológico | B1–B6 |
+| **FAC** | Atividade coletiva (master) | C2, M1, M2, multirão |
 | **FP** | Procedimentos / aferições | C4–C6, C3 |
 | **FV** | Vacinação (master/child) | C2, C3, C6, C7, dia D |
 | **FVD** | Visita domiciliar | C2–C6, V-ACOMP, acamados |
@@ -2145,7 +2147,7 @@ A web **planeja**; o **Field** **executa** no território (LEDI); o **Citizen** 
 | **FAE** | Elegibilidade AD | AD / acamados |
 | **FCZM** | Zika/microcefalia | C2 (triagens) |
 | **MCA** | Marcadores alimentares | C2 |
-| **FCC** | Cuidado compartilhado + evolução | C15, continuidade |
+| **FCC** | Cuidado compartilhado + evolução | M2, continuidade |
 
 **Arquitetura técnica do app:**
 
@@ -2439,7 +2441,7 @@ Cada história agrupa uma ou mais **Tasks**. Na exportação CSV, `parent_id` da
 | **STORY-09-01** | EPIC-09 | [Campo] CidadãoBR Saúde Campo — LEDI completo (13 fichas) | Como município, quero todas as fichas LEDI no campo, para envio integral ao PEC. | TASK-09-01, TASK-09-04, TASK-09-05 |
 | **STORY-09-02** | EPIC-09 | [Core] CidadãoBR Saúde — PEC e cuidado compartilhado | Como integrador, quero envio PEC e evoluções FCC, para conformidade federal. | TASK-09-02, TASK-09-03 |
 | **STORY-09-03** | EPIC-09 | [Gestão] CidadãoBR Saúde Gestão — Vacinação animal e walk-in | Como gestor rural, quero vacinação animal e walk-in, para cobertura zoonoses e fila. | TASK-09-06, TASK-09-07, TASK-09-08 |
-| **STORY-09-04** | EPIC-09 | [Gestão] CidadãoBR Saúde Gestão — Indicadores C8–C15 | Como gestor, quero regras completas dos indicadores, para cobrir eSB/eMulti. | TASK-09-09 |
+| **STORY-09-04** | EPIC-09 | [Gestão] Indicadores eSB/eMulti (B1–B6, M1–M2) | Como gestor, quero regras completas dos indicadores, para cobrir eSB/eMulti. | TASK-09-09 |
 | **STORY-10-01** | EPIC-10 | [Cidadão] CidadãoBR Saúde — Medicamentos contínuos | Como cidadão, quero lembretes de medicamento contínuo, para adesão ao tratamento. | TASK-10-03 |
 | **STORY-10-02** | EPIC-10 | [Cidadão] CidadãoBR Saúde — Botão de pânico | Como cidadão em risco, quero acionar pânico, para alertar serviços de urgência. | TASK-10-01, TASK-10-04 |
 | **STORY-10-03** | EPIC-10 | [Cidadão] CidadãoBR Saúde — Teleconsulta | Como cidadão, quero entrar em teleconsulta, para ser atendido sem deslocamento. | TASK-10-02, TASK-10-05 |
@@ -2574,7 +2576,7 @@ Cada história agrupa uma ou mais **Tasks**. Na exportação CSV, `parent_id` da
 | Story | Task | Título | Depends | Legacy |
 |-------|------|--------|---------|--------|
 | STORY-05-01 | **TASK-05-01** | [Gestão] CidadãoBR Saúde Gestão — Schema grupo H — indicadores | EPIC-01 | F4-01 |
-| STORY-05-01 | **TASK-05-02** | [Core] CidadãoBR Saúde — Seed 17 indicadores CVAT C1–C15 | TASK-05-01 | F4-02 |
+| STORY-05-01 | **TASK-05-02** | [Core] CidadãoBR Saúde — Seed 17 indicadores CVAT C1–C7 B1–B6 M1–M2 | TASK-05-01 | F4-02 |
 | STORY-05-01 | **TASK-05-03** | [Core] CidadãoBR Saúde — Motor indicadores DSL v1 | TASK-05-02 | F4-03 |
 | STORY-05-01 | **TASK-05-04** | [Core] CidadãoBR Saúde — Consumer Kafka recálculo gaps | TASK-05-03 | F4-04 |
 | STORY-05-02 | **TASK-05-05** | [Gestão] CidadãoBR Saúde Gestão — WEB-IND-01 Dashboard X/17 | TASK-05-03 | F4-05 |
@@ -2687,7 +2689,7 @@ Cada história agrupa uma ou mais **Tasks**. Na exportação CSV, `parent_id` da
 | STORY-09-03 | **TASK-09-06** | [Gestão] CidadãoBR Saúde Gestão — Campanha vacinação animal | EPIC-06 | F6-06 |
 | STORY-09-03 | **TASK-09-07** | [Campo] CidadãoBR Saúde Campo — FIELD-07 Vacinação animal | TASK-09-06 | F6-13 |
 | STORY-09-03 | **TASK-09-08** | [Gestão] CidadãoBR Saúde Gestão — WEB-SCHED-03 Walk-in e relatórios | EPIC-03 | F6-07 |
-| STORY-09-04 | **TASK-09-09** | [Core] CidadãoBR Saúde — Regras indicadores C8–C15 | EPIC-05 | F6-14 |
+| STORY-09-04 | **TASK-09-09** | [Core] Regras B1–B6/M1–M2 | EPIC-05 | F6-14 |
 
 ---
 

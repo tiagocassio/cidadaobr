@@ -10,7 +10,8 @@ module Indicators
       citizen = resolve_citizen
       return { skipped: true } unless citizen
 
-      indicator_codes = RecordTypeIndex.indicator_codes_for(@clinical_record.record_type)
+      candidate_codes = RecordTypeIndex.indicator_codes_for(@clinical_record.record_type)
+      indicator_codes = RuleCatalog.evaluable_indicator_codes(candidate_codes)
       return { skipped: true } if indicator_codes.empty?
 
       DetectCitizenGaps.call(

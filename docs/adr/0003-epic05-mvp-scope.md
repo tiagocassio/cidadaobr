@@ -12,7 +12,7 @@ O roteiro imediato S1–S7 exige entregar motor de indicadores e painel gestor n
 
 Fechar **Sprints 6–7 no `cidadaobr`** com critério **MVP**, mantendo EPIC-05 como **parcial** no plano até:
 
-1. DSL completo para **C8–C15** (eSB/eMulti) — hoje `stub_expression` no seed.
+1. DSL completo para **B1–B6** (eSB) e **M1–M2** (eMulti) — hoje `dsl_v1_stub` no seed (`indicator_rules.expression`). Fontes: [notas eSB](https://www.gov.br/saude/pt-br/composicao/saps/publicacoes/fichas-tecnicas/equipe-de-saude-bucal) e [notas eMulti](https://www.gov.br/saude/pt-br/composicao/saps/publicacoes/fichas-tecnicas/equipes-multiprofissionais-emulti). Incluir `source_ref` (URL do PDF) em cada regra ou em `db/methodology/3493-2024/`.
 2. Coeficientes oficiais de repasse (substituir `Indicators::Scoring::COMPONENT_BASE_BRL`).
 3. Validação de regras clínicas contra LEDI/PEC em produção (ex.: V_SAT além de proxy `encounter_in_window`).
 
@@ -31,5 +31,5 @@ Fechar **Sprints 6–7 no `cidadaobr`** com critério **MVP**, mantendo EPIC-05 
 ## Consequences
 
 - Gestores podem operar com projeção **não oficial**; copy na UI deixa isso explícito.
-- C8–C15 aparecem no catálogo mas não movem score até regras reais.
+- B1–B6 e M1–M2 aparecem no catálogo mas não movem score até regras `dsl_v1` reais.
 - Gate Fase 5 (EPIC-06/07) permanece bloqueado até `phase-4-indicators: completed` ou revisão explícita do gate.

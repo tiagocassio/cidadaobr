@@ -42,7 +42,7 @@ Task,TASK-04-04,STORY-04-03,EPIC-04,[Cidadão] CidadãoBR Saúde — API-CITIZEN
 Epic,EPIC-05,,EPIC-05,CidadãoBR Saúde Gestão — Indicadores 3.493,4,web;indicators,,F4
 Story,STORY-05-01,EPIC-05,EPIC-05,[Gestão] CidadãoBR Saúde Gestão — Motor de indicadores,4,backend;indicators,TASK-05-01,F4-01
 Task,TASK-05-01,STORY-05-01,EPIC-05,[Gestão] CidadãoBR Saúde Gestão — Schema grupo H — indicadores,4,backend;indicators,EPIC-01,F4-01
-Task,TASK-05-02,STORY-05-01,EPIC-05,[Core] CidadãoBR Saúde — Seed 17 indicadores CVAT C1–C15,4,backend;indicators,TASK-05-01,F4-02
+Task,TASK-05-02,STORY-05-01,EPIC-05,[Core] CidadãoBR Saúde — Seed 17 indicadores CVAT C1–C7 B1–B6 M1–M2,4,backend;indicators,TASK-05-01,F4-02
 Task,TASK-05-03,STORY-05-01,EPIC-05,[Core] CidadãoBR Saúde — Motor indicadores DSL v1,4,backend;indicators,TASK-05-02,F4-03
 Task,TASK-05-04,STORY-05-01,EPIC-05,[Core] CidadãoBR Saúde — Consumer Kafka recálculo gaps,4,backend;kafka,TASK-05-03,F4-04
 Task,TASK-05-08,STORY-05-01,EPIC-05,[Core] CidadãoBR Saúde — Expandir regras C1–C7 e V-ACOMP,4,backend;indicators,TASK-05-02,F4-08
@@ -74,7 +74,7 @@ Epic,EPIC-09,,EPIC-09,CidadãoBR Saúde — LEDI Completo e PEC,6,ledi;integrati
 Story,STORY-09-01,EPIC-09,EPIC-09,[Core] CidadãoBR Saúde — LEDI completo e multirão,6,backend;ledi,TASK-09-01,F6-01
 Task,TASK-09-01,STORY-09-01,EPIC-09,[Core] CidadãoBR Saúde — Adapters LEDI restantes FAO…FCC,6,backend;ledi,EPIC-08,F6-01
 Task,TASK-09-03,STORY-09-01,EPIC-09,[Core] CidadãoBR Saúde — Integração PEC produção,6,backend;ledi,EPIC-01,F6-05
-Task,TASK-09-09,STORY-09-01,EPIC-09,[Core] CidadãoBR Saúde — Regras indicadores C8–C15,6,backend;indicators,EPIC-05,F6-14
+Task,TASK-09-09,STORY-09-01,EPIC-09,[Core] CidadãoBR Saúde — Regras B1–B6/M1–M2,6,backend;indicators,EPIC-05,F6-14
 Epic,EPIC-10,,EPIC-10,CidadãoBR Saúde — Cidadão Plus,6,api;citizen,EPIC-04,F6
 Story,STORY-10-01,EPIC-10,EPIC-10,[Cidadão] CidadãoBR Saúde — Medicamentos contínuos,6,api;citizen,TASK-10-03,F6-10
 Task,TASK-10-01,STORY-10-01,EPIC-10,[Cidadão] CidadãoBR Saúde — panic_alerts TriggerPanicAlert,6,api;citizen,EPIC-04,F6-08

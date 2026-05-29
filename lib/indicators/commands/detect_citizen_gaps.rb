@@ -19,7 +19,7 @@ module Indicators
 
       citizens.find_each do |citizen|
         results[:citizens_processed] += 1
-        rules.each do |rule|
+        rules_for_citizen(citizen, rules).each do |rule|
           process_rule!(citizen: citizen, rule: rule, quadrimester: quadrimester, results: results)
         end
       end
@@ -38,6 +38,13 @@ module Indicators
 
     def indicator_rules
       RuleCatalog.dsl_v1_rules(indicator_codes: @indicator_codes)
+    end
+
+    def rules_for_citizen(citizen, rules)
+      care_team = citizen.care_team
+      return [] if care_team.blank?
+
+      rules.select { |rule| RuleCatalog.rule_applies_to_care_team?(rule, care_team) }
     end
 
     def process_rule!(citizen:, rule:, quadrimester:, results:)

@@ -222,14 +222,14 @@ upsert_indicator!(
 )
 
 [
-  [ "C8", "quality", "esb", 17 ],
-  [ "C9", "quality", "esb", 18 ],
-  [ "C10", "quality", "esb", 19 ],
-  [ "C11", "quality", "esb", 20 ],
-  [ "C12", "quality", "esb", 21 ],
-  [ "C13", "quality", "esb", 22 ],
-  [ "C14", "quality", "emulti", 23 ],
-  [ "C15", "quality", "emulti", 24 ]
+  [ "B1", "quality", "esb", 17 ],
+  [ "B2", "quality", "esb", 18 ],
+  [ "B3", "quality", "esb", 19 ],
+  [ "B4", "quality", "esb", 20 ],
+  [ "B5", "quality", "esb", 21 ],
+  [ "B6", "quality", "esb", 22 ],
+  [ "M1", "quality", "emulti", 23 ],
+  [ "M2", "quality", "emulti", 24 ]
 ].each do |code, component, team_kind, order|
   upsert_indicator!(code: code, funding_component: component, team_kind: team_kind, display_order: order)
 end

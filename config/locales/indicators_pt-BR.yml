@@ -70,19 +70,19 @@ pt-BR:
           name: "Cuidado da pessoa idosa"
         C7:
           name: "Cuidado da mulher na prevenção do câncer"
-        C8:
+        B1:
           name: "1ª consulta odontológica programada"
-        C9:
+        B2:
           name: "Tratamento odontológico concluído"
-        C10:
-          name: "Exodontias"
-        C11:
+        B3:
+          name: "Taxa de exodontias"
+        B4:
           name: "Escovação supervisionada"
-        C12:
+        B5:
           name: "Procedimentos preventivos odontológicos"
-        C13:
+        B6:
           name: "Tratamento restaurador atraumático"
-        C14:
-          name: "Média de atendimentos por pessoa"
-        C15:
-          name: "Ações interprofissionais"
+        M1:
+          name: "Média de atendimentos eMulti por pessoa"
+        M2:
+          name: "Ações interprofissionais eMulti"
