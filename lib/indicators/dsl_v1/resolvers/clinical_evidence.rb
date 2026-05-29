@@ -10,6 +10,10 @@ module Indicators
           case clause["type"]
           when "registration_complete"
             registration_complete?(context)
+          when "registration_updated_mici"
+            registration_updated_mici?(context, clause)
+          when "registration_within_team_limit"
+            registration_within_team_limit?(context, clause)
           when "clinical_predicate"
             clinical_predicate?(context, clause)
           when "appointment_in_quadrimester"
@@ -29,6 +33,24 @@ module Indicators
             citizen.birth_date.present? &&
             citizen.care_team_id.present? &&
             citizen.full_name.present?
+        end
+
+        def registration_updated_mici?(context, clause)
+          return false unless registration_complete?(context)
+
+          within_months = clause.fetch("within_months", 24).to_i
+          window_start = context.reference_date - within_months.months
+          context.citizen.updated_at.to_date >= window_start
+        end
+
+        def registration_within_team_limit?(context, clause)
+          return false unless registration_complete?(context)
+
+          limit = clause.fetch("team_limit", 3_500).to_i
+          team_id = context.citizen.care_team_id
+          return true if team_id.blank?
+
+          Citizen.where(municipality_id: context.municipality_id, care_team_id: team_id).count <= limit
         end
 
         def clinical_predicate?(context, clause)

@@ -100,7 +100,7 @@ todos:
     status: completed
   - id: phase-5-field-campaigns
     content: "Fase 5: EPIC-06 + EPIC-07 + EPIC-08"
-    status: pending
+    status: completed
   - id: phase-6-full-stack
     content: "Fase 6: EPIC-09 + EPIC-10"
     status: pending
@@ -2839,9 +2839,9 @@ Cada história agrupa uma ou mais **Tasks**. Na exportação CSV, `parent_id` da
 - [x] **EPIC-03** CidadãoBR Saúde Gestão — Agendamentos UBS  
 - [~] **EPIC-04** CidadãoBR Saúde — MVP Cidadão (API ok; Flutter em `cidadaobr-citizen` pendente)  
 - [~] **EPIC-05** CidadãoBR Saúde Gestão — Indicadores 3.493 (em andamento)  
-- [ ] **EPIC-06** CidadãoBR Saúde Gestão — Estoque e Campanhas  
-- [ ] **EPIC-07** CidadãoBR Saúde Gestão — Rotas e Provisionamento  
-- [ ] **EPIC-08** CidadãoBR Saúde Campo — App Profissional  
+- [x] **EPIC-06** CidadãoBR Saúde Gestão — Estoque e Campanhas (MVP: catálogo, lotes, wizard público-alvo, provisionamento + evento rejected)
+- [x] **EPIC-07** CidadãoBR Saúde Gestão — Rotas e Provisionamento (MVP: schema grupo L, BuildCampaignTargetList, GenerateVisitRoutes, preview rollup)
+- [x] **EPIC-08** CidadãoBR Saúde Campo — App Profissional (MVP monólito: API-FIELD campanhas/rotas; Flutter em repo irmão — ver docs/commercial/cidadaobr-field-mvp-api.md)
 - [ ] **EPIC-09** CidadãoBR Saúde — LEDI Completo e PEC  
 - [ ] **EPIC-10** CidadãoBR Saúde — Cidadão Plus  
 - [ ] **EPIC-11** CidadãoBR Saúde — Core IA e Produção  

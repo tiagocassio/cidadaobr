@@ -149,4 +149,91 @@ FactoryBot.define do
     species { "cão" }
     quantity { 1 }
   end
+
+  factory :immunobiologic_product do
+    municipality
+    sequence(:code) { |n| "VAC#{n}" }
+    sequence(:name) { |n| "Vacina #{n}" }
+    target_species { "human" }
+    active { true }
+
+    to_create { |instance| TenantFactoryHelpers.save_with_municipality_tenant!(instance) }
+  end
+
+  factory :immunobiologic_lot do
+    municipality
+    health_facility { association :health_facility, municipality: municipality }
+    immunobiologic_product { association :immunobiologic_product, municipality: municipality }
+    sequence(:lot_number) { |n| "LOT-#{n}" }
+    expires_on { 1.year.from_now.to_date }
+    manufacturer { "Lab Demo" }
+    quantity_on_hand { 100 }
+
+    to_create { |instance| TenantFactoryHelpers.save_with_municipality_tenant!(instance) }
+  end
+
+  factory :vaccination_campaign do
+    municipality
+    health_facility { association :health_facility, municipality: municipality }
+    immunobiologic_product { association :immunobiologic_product, municipality: municipality }
+    sequence(:name) { |n| "Campanha #{n}" }
+    campaign_kind { "human_immunization" }
+    status { "draft" }
+    starts_on { Date.current }
+    ends_on { Date.current + 6.days }
+    target_doses { 100 }
+    room_capacity_per_day { 50 }
+    target_audience_definition { {} }
+
+    to_create { |instance| TenantFactoryHelpers.save_with_municipality_tenant!(instance) }
+  end
+
+  factory :home_visit_campaign do
+    municipality
+    health_facility { association :health_facility, municipality: municipality }
+    sequence(:name) { |n| "Visita #{n}" }
+    status { "draft" }
+    starts_on { Date.current }
+    ends_on { Date.current + 30.days }
+    target_audience_definition { {} }
+    supply_plan { [] }
+    waste_factor { 0 }
+
+    to_create { |instance| TenantFactoryHelpers.save_with_municipality_tenant!(instance) }
+  end
+
+  factory :campaign_target do
+    municipality
+    health_facility { association :health_facility, municipality: municipality }
+    association :campaign, factory: :home_visit_campaign
+    citizen do
+      association :citizen, municipality: municipality, health_facility: health_facility
+    end
+    status { "pending" }
+    priority_score { 0 }
+
+    to_create { |instance| TenantFactoryHelpers.save_with_municipality_tenant!(instance) }
+  end
+
+  factory :visit_route do
+    municipality
+    health_facility { association :health_facility, municipality: municipality }
+    home_visit_campaign { association :home_visit_campaign, municipality: municipality, health_facility: health_facility }
+    care_team { association :care_team, municipality: municipality, health_facility: health_facility }
+    route_date { Date.current }
+    sequence_number { 1 }
+    status { "draft" }
+
+    to_create { |instance| TenantFactoryHelpers.save_with_municipality_tenant!(instance) }
+  end
+
+  factory :visit_route_stop do
+    municipality
+    visit_route { association :visit_route, municipality: municipality }
+    citizen { association :citizen, municipality: municipality }
+    stop_order { 1 }
+    status { "pending" }
+
+    to_create { |instance| TenantFactoryHelpers.save_with_municipality_tenant!(instance) }
+  end
 end

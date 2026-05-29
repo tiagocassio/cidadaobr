@@ -1,0 +1,29 @@
+<section>
+  <h2 class="mb-6 text-2xl font-bold"><%= t("cidadaobr.campaigns.home_visit.new_title") %></h2>
+
+  <%= form_with model: @campaign, url: web_campaigns_home_visit_campaigns_path, class: "max-w-xl space-y-4 rounded-lg border border-slate-200 bg-white p-6" do |form| %>
+    <div>
+      <%= form.label :name, class: "mb-1 block text-sm font-medium" %>
+      <%= form.text_field :name, required: true, class: "w-full rounded border border-slate-300 px-3 py-2" %>
+    </div>
+    <div>
+      <%= form.label :health_facility_id, class: "mb-1 block text-sm font-medium" %>
+      <%= form.collection_select :health_facility_id, @facilities, :id, :name, {}, class: "w-full rounded border border-slate-300 px-3 py-2" %>
+    </div>
+    <div class="grid grid-cols-2 gap-4">
+      <div>
+        <%= form.label :starts_on, class: "mb-1 block text-sm font-medium" %>
+        <%= form.date_field :starts_on, required: true, class: "w-full rounded border border-slate-300 px-3 py-2" %>
+      </div>
+      <div>
+        <%= form.label :ends_on, class: "mb-1 block text-sm font-medium" %>
+        <%= form.date_field :ends_on, required: true, class: "w-full rounded border border-slate-300 px-3 py-2" %>
+      </div>
+    </div>
+    <div>
+      <%= label_tag "home_visit_campaign_target_audience_definition_min_age", t("cidadaobr.campaigns.min_age"), class: "mb-1 block text-sm font-medium" %>
+      <%= number_field_tag "home_visit_campaign[target_audience_definition][min_age]", 60, min: 0, class: "w-full rounded border border-slate-300 px-3 py-2" %>
+    </div>
+    <%= form.submit t("cidadaobr.campaigns.home_visit.submit"), class: "rounded bg-emerald-700 px-4 py-2 font-semibold text-white" %>
+  <% end %>
+</section>

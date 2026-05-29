@@ -1,0 +1,52 @@
+<section>
+  <%= link_to t("cidadaobr.campaigns.back"), web_campaigns_vaccination_campaigns_path, class: "text-sm text-slate-600 underline" %>
+  <h2 class="mt-2 mb-6 text-2xl font-bold"><%= @campaign.name %></h2>
+
+  <div class="mb-6 flex flex-wrap gap-2">
+    <%= link_to t("cidadaobr.campaigns.edit_link"), edit_web_campaigns_vaccination_campaign_path(@campaign), class: "rounded border border-slate-300 px-3 py-2 text-sm" %>
+    <%= link_to t("cidadaobr.campaigns.preview_targets_link"), preview_targets_web_campaigns_vaccination_campaign_path(@campaign), class: "rounded border border-slate-300 px-3 py-2 text-sm" %>
+    <%= button_to t("cidadaobr.campaigns.build_targets_link"), build_targets_web_campaigns_vaccination_campaign_path(@campaign), method: :post, class: "rounded bg-slate-800 px-3 py-2 text-sm font-semibold text-white" %>
+    <% if @campaign.supply_provisioning&.status == "approved" %>
+      <%= button_to t("cidadaobr.campaigns.publish_link"), publish_web_campaigns_vaccination_campaign_path(@campaign), method: :post, class: "rounded bg-emerald-700 px-3 py-2 text-sm font-semibold text-white" %>
+    <% end %>
+  </div>
+
+  <div class="mb-6 rounded-lg border border-slate-200 bg-white p-6 text-sm">
+    <p><strong><%= VaccinationCampaign.human_attribute_name(:health_facility_id) %>:</strong> <%= @campaign.health_facility.name %></p>
+    <p><strong><%= ImmunobiologicProduct.model_name.human %>:</strong> <%= @campaign.immunobiologic_product.name %></p>
+    <p><strong><%= VaccinationCampaign.human_attribute_name(:target_doses) %>:</strong> <%= @campaign.target_doses %></p>
+    <p><strong><%= VaccinationCampaign.human_attribute_name(:room_capacity_per_day) %>:</strong> <%= @campaign.room_capacity_per_day %></p>
+    <p><strong><%= VaccinationCampaign.human_attribute_name(:status) %>:</strong> <%= @campaign.status %></p>
+    <p><strong><%= t("cidadaobr.campaigns.targets_count") %>:</strong> <%= @campaign.campaign_targets.count %></p>
+  </div>
+
+  <% if @provisioning %>
+    <div class="mb-6 rounded-lg border border-slate-200 bg-white p-6">
+      <h3 class="mb-4 font-semibold"><%= t("cidadaobr.campaigns.provisioning_title") %></h3>
+      <p class="mb-2 text-sm">
+        <%= t("cidadaobr.campaigns.provisioning_status") %>:
+        <span class="font-medium"><%= @provisioning.status %></span>
+      </p>
+      <% if @provisioning.shortages.present? %>
+        <ul class="list-disc pl-5 text-sm text-red-800">
+          <% @provisioning.shortages.each do |shortage| %>
+            <li><%= shortage %></li>
+          <% end %>
+        </ul>
+      <% else %>
+        <p class="text-sm text-emerald-800"><%= t("cidadaobr.campaigns.provisioning_ok") %></p>
+      <% end %>
+    </div>
+  <% end %>
+
+  <% if @targets.any? %>
+    <div class="rounded-lg border border-slate-200 bg-white p-6">
+      <h3 class="mb-4 font-semibold"><%= t("cidadaobr.campaigns.targets_preview_title") %></h3>
+      <ul class="divide-y text-sm">
+        <% @targets.each do |target| %>
+          <li class="py-2"><%= target.citizen.full_name %> · <%= target.status %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+</section>

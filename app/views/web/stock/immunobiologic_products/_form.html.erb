@@ -1,0 +1,23 @@
+<%= form_with model: product, url: product.persisted? ? web_stock_immunobiologic_product_path(product) : web_stock_immunobiologic_products_path, class: "max-w-xl space-y-4 rounded-lg border border-slate-200 bg-white p-6" do |form| %>
+  <% if product.errors.any? %>
+    <div class="rounded bg-red-50 px-4 py-2 text-sm text-red-800"><%= product.errors.full_messages.to_sentence %></div>
+  <% end %>
+
+  <div>
+    <%= form.label :code, class: "mb-1 block text-sm font-medium" %>
+    <%= form.text_field :code, required: true, class: "w-full rounded border border-slate-300 px-3 py-2" %>
+  </div>
+  <div>
+    <%= form.label :name, class: "mb-1 block text-sm font-medium" %>
+    <%= form.text_field :name, required: true, class: "w-full rounded border border-slate-300 px-3 py-2" %>
+  </div>
+  <div>
+    <%= form.label :target_species, class: "mb-1 block text-sm font-medium" %>
+    <%= form.select :target_species, ImmunobiologicProduct::TARGET_SPECIES, {}, class: "w-full rounded border border-slate-300 px-3 py-2" %>
+  </div>
+  <div class="flex items-center gap-2">
+    <%= form.check_box :active %>
+    <%= form.label :active, class: "text-sm" %>
+  </div>
+  <%= form.submit class: "rounded bg-emerald-700 px-4 py-2 font-semibold text-white" %>
+<% end %>

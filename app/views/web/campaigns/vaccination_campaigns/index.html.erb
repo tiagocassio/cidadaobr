@@ -1,0 +1,36 @@
+<section>
+  <div class="mb-6 flex items-center justify-between">
+    <h2 class="text-2xl font-bold"><%= t("cidadaobr.campaigns.index_title") %></h2>
+    <% if municipality_scope? || facility_scope? %>
+      <%= link_to t("cidadaobr.campaigns.new"), new_web_campaigns_vaccination_campaign_path, class: "rounded bg-emerald-700 px-4 py-2 text-sm font-semibold text-white" %>
+    <% end %>
+  </div>
+
+  <div class="overflow-hidden rounded-lg border border-slate-200 bg-white">
+    <table class="min-w-full text-sm">
+      <thead class="bg-slate-50 text-left">
+        <tr>
+          <th class="px-4 py-3"><%= VaccinationCampaign.human_attribute_name(:name) %></th>
+          <th class="px-4 py-3"><%= VaccinationCampaign.human_attribute_name(:health_facility_id) %></th>
+          <th class="px-4 py-3"><%= VaccinationCampaign.human_attribute_name(:starts_on) %></th>
+          <th class="px-4 py-3"><%= VaccinationCampaign.human_attribute_name(:status) %></th>
+          <th class="px-4 py-3"></th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @campaigns.each do |campaign| %>
+          <tr class="border-t border-slate-100">
+            <td class="px-4 py-3"><%= campaign.name %></td>
+            <td class="px-4 py-3"><%= campaign.health_facility.name %></td>
+            <td class="px-4 py-3"><%= l(campaign.starts_on) %> — <%= l(campaign.ends_on) %></td>
+            <td class="px-4 py-3"><%= campaign.status %></td>
+            <td class="px-4 py-3 text-right">
+              <%= link_to t("cidadaobr.common.view"), web_campaigns_vaccination_campaign_path(campaign), class: "text-emerald-700 hover:underline" %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+  <%= render "web/shared/pagination" %>
+</section>

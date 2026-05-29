@@ -298,6 +298,34 @@ module Cidadaobr
       if connection.table_exists?(:team_indicator_results)
         connection.execute team_indicator_result_table_policies_for(:team_indicator_results)
       end
+
+      %i[immunobiologic_products supply_items].each do |table_name|
+        next unless connection.table_exists?(table_name)
+
+        connection.execute municipality_only_table_policies_for(table_name)
+      end
+
+      %i[
+        immunobiologic_lots
+        stock_balances
+        stock_movements
+        vaccination_campaigns
+        supply_provisionings
+        campaign_targets
+        home_visit_campaigns
+        home_visit_campaign_provisionings
+        visit_routes
+        visit_route_provisionings
+        team_supply_dispatches
+      ].each do |table_name|
+        next unless connection.table_exists?(table_name)
+
+        connection.execute health_facility_scoped_table_policies_for(table_name)
+      end
+
+      if connection.table_exists?(:visit_route_stops)
+        connection.execute municipality_only_table_policies_for(:visit_route_stops)
+      end
     end
 
     def citizens_citizen_self_read_policy

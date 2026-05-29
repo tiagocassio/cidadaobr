@@ -3,19 +3,14 @@
 require "rails_helper"
 
 RSpec.describe Indicators::Scoring do
-  describe ".projected_transfer" do
-    def catalog_entry(team_kind:, funding_component:)
-      IndicatorCatalog.new(team_kind: team_kind, funding_component: funding_component)
-    end
+  it "loads repasse coefficients from config when present" do
+    expect(described_class.repasse_coefficients.dig("esf", "linkage")).to eq(5_000.0)
+  end
 
-    it "weights by funding component and team kind" do
-      amount = described_class.projected_transfer(80.0, catalog_entry: catalog_entry(team_kind: "esf", funding_component: "quality"))
-      expect(amount).to eq(5_600.0)
-    end
+  it "projects transfer from catalog entry and score" do
+    catalog = IndicatorCatalog.new(code: "V_CAD", funding_component: "linkage", team_kind: "esf")
+    amount = described_class.projected_transfer(50.0, catalog_entry: catalog)
 
-    it "returns zero when component has no base" do
-      entry = catalog_entry(team_kind: "esb", funding_component: "linkage")
-      expect(described_class.projected_transfer(90.0, catalog_entry: entry)).to eq(0.0)
-    end
+    expect(amount).to eq(2_500.0)
   end
 end

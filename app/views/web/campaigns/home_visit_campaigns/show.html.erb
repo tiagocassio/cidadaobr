@@ -1,0 +1,26 @@
+<section>
+  <%= link_to t("cidadaobr.campaigns.home_visit.back"), web_campaigns_home_visit_campaigns_path, class: "text-sm text-slate-600 underline" %>
+  <h2 class="mt-2 mb-6 text-2xl font-bold"><%= @campaign.name %></h2>
+
+  <div class="mb-6 flex flex-wrap gap-2">
+    <%= button_to t("cidadaobr.campaigns.build_targets_link"), build_targets_web_campaigns_home_visit_campaign_path(@campaign), method: :post, class: "rounded bg-slate-800 px-3 py-2 text-sm font-semibold text-white" %>
+    <%= button_to t("cidadaobr.campaigns.home_visit.generate_routes"), generate_routes_web_campaigns_home_visit_campaign_path(@campaign), method: :post, class: "rounded bg-emerald-700 px-3 py-2 text-sm font-semibold text-white" %>
+    <%= link_to t("cidadaobr.campaigns.home_visit.preview_provisioning"), preview_provisioning_web_campaigns_home_visit_campaign_path(@campaign), class: "rounded border border-slate-300 px-3 py-2 text-sm" %>
+  </div>
+
+  <div class="mb-6 rounded-lg border border-slate-200 bg-white p-6 text-sm">
+    <p><strong><%= t("cidadaobr.campaigns.targets_count") %>:</strong> <%= @targets_count %></p>
+    <p><strong><%= HomeVisitCampaign.human_attribute_name(:status) %>:</strong> <%= @campaign.status %></p>
+  </div>
+
+  <% if @routes.any? %>
+    <div class="rounded-lg border border-slate-200 bg-white p-6">
+      <h3 class="mb-4 font-semibold"><%= t("cidadaobr.campaigns.home_visit.routes_title") %></h3>
+      <ul class="divide-y text-sm">
+        <% @routes.each do |route| %>
+          <li class="py-2"><%= route.route_date %> · <%= route.care_team.name %> · <%= route.visit_route_stops.count %> paradas</li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+</section>

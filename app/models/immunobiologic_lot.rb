@@ -1,0 +1,16 @@
+# frozen_string_literal: true
+
+class ImmunobiologicLot < ApplicationRecord
+  belongs_to :municipality
+  belongs_to :health_facility
+  belongs_to :immunobiologic_product
+  has_many :stock_balances, dependent: :destroy
+  has_many :stock_movements, dependent: :restrict_with_error
+
+  validates :lot_number, :expires_on, presence: true
+  validates :lot_number, uniqueness: { scope: %i[health_facility_id immunobiologic_product_id] }
+  validates :quantity_on_hand, numericality: { greater_than_or_equal_to: 0 }
+
+  scope :not_expired, -> { where("expires_on >= ?", Date.current) }
+  scope :fefo, -> { order(:expires_on, :created_at) }
+end

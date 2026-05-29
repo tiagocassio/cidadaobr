@@ -11,6 +11,10 @@ pt-BR:
       map: "Mapa"
       appointments: "Agenda"
       ledi_batches: "Lotes LEDI"
+      stock: "Estoque"
+      products: "Produtos"
+      campaigns: "Campanhas vacina"
+      home_visit_campaigns: "Campanhas domiciliares"
     common:
       save: "Salvar"
       view: "Ver"

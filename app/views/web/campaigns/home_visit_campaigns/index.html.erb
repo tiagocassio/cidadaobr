@@ -1,0 +1,29 @@
+<section>
+  <div class="mb-4 flex items-center justify-between">
+    <h2 class="text-2xl font-bold"><%= t("cidadaobr.campaigns.home_visit.index_title") %></h2>
+    <%= link_to t("cidadaobr.campaigns.home_visit.new_link"), new_web_campaigns_home_visit_campaign_path, class: "rounded bg-emerald-700 px-4 py-2 text-sm font-semibold text-white" %>
+  </div>
+
+  <div class="overflow-hidden rounded-lg border border-slate-200 bg-white">
+    <table class="min-w-full text-sm">
+      <thead class="bg-slate-50 text-left">
+        <tr>
+          <th class="px-4 py-3"><%= HomeVisitCampaign.human_attribute_name(:name) %></th>
+          <th class="px-4 py-3"><%= HomeVisitCampaign.human_attribute_name(:status) %></th>
+          <th class="px-4 py-3"></th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @campaigns.each do |campaign| %>
+          <tr class="border-t border-slate-100">
+            <td class="px-4 py-3"><%= campaign.name %></td>
+            <td class="px-4 py-3"><%= campaign.status %></td>
+            <td class="px-4 py-3 text-right">
+              <%= link_to t("cidadaobr.actions.show"), web_campaigns_home_visit_campaign_path(campaign), class: "text-emerald-700 underline" %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+</section>

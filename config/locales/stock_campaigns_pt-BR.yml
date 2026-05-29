@@ -1,0 +1,105 @@
+pt-BR:
+  cidadaobr:
+    actions:
+      edit: "Editar"
+      show: "Ver"
+    stock:
+      lots:
+        index_title: "Lotes de imunobiológicos"
+        new_title: "Registrar lote"
+        flash:
+          created: "Lote registrado com sucesso."
+      products:
+        index_title: "Catálogo de imunobiológicos"
+        new_title: "Novo imunobiológico"
+        edit_title: "Editar imunobiológico"
+        new_link: "Novo produto"
+        flash:
+          created: "Imunobiológico cadastrado."
+          updated: "Imunobiológico atualizado."
+    campaigns:
+      index_title: "Campanhas de vacinação"
+      new_title: "Nova campanha"
+      edit_title: "Editar campanha"
+      back: "Voltar para campanhas"
+      submit: "Criar campanha e validar estoque"
+      save: "Salvar e revalidar estoque"
+      edit_link: "Editar"
+      preview_targets_link: "Preview público-alvo"
+      preview_targets_title: "Preview do público-alvo"
+      preview_targets_count: "Cerca de %{count} cidadãos elegíveis com os critérios atuais."
+      build_targets_link: "Gerar campaign_targets"
+      publish_link: "Publicar campanha"
+      targets_count: "Alvos cadastrados"
+      targets_preview_title: "Público-alvo (amostra)"
+      min_age: "Idade mínima"
+      no_room: "Capacidade manual (sem sala)"
+      provisioning_title: "Provisionamento"
+      provisioning_status: "Status"
+      provisioning_ok: "Estoque e capacidade suficientes para a meta de doses."
+      flash:
+        created_provisioning_ok: "Campanha criada e provisionamento aprovado."
+        created_provisioning_blocked: "Campanha criada, mas provisionamento bloqueado — revise estoque ou capacidade."
+        updated: "Campanha atualizada."
+        targets_built: "%{count} alvos adicionados ao público-alvo."
+        publish_blocked: "Provisionamento precisa estar aprovado antes de publicar."
+        published: "Campanha publicada."
+      home_visit:
+        index_title: "Campanhas domiciliares"
+        new_title: "Nova campanha domiciliar"
+        new_link: "Nova campanha"
+        back: "Voltar"
+        submit: "Criar campanha"
+        routes_title: "Rotas geradas"
+        generate_routes: "Gerar rotas"
+        preview_provisioning: "Preview provisionamento"
+        item: "Insumo"
+        quantity: "Quantidade"
+        flash:
+          created: "Campanha domiciliar criada."
+          routes_generated: "%{routes} rotas com %{stops} paradas."
+  activerecord:
+    models:
+      immunobiologic_product: "Imunobiológico"
+      immunobiologic_lot: "Lote"
+      supply_item: "Insumo"
+      stock_balance: "Saldo de estoque"
+      stock_movement: "Movimentação"
+      vaccination_campaign: "Campanha de vacinação"
+      home_visit_campaign: "Campanha domiciliar"
+      supply_provisioning: "Provisionamento"
+      campaign_target: "Alvo de campanha"
+      visit_route: "Roteiro de visita"
+    attributes:
+      immunobiologic_lot:
+        health_facility_id: "UBS"
+        lot_number: "Lote"
+        expires_on: "Validade"
+        manufacturer: "Fabricante"
+        quantity_on_hand: "Quantidade"
+      immunobiologic_product:
+        code: "Código"
+        name: "Nome"
+        target_species: "Espécie"
+        active: "Ativo"
+      vaccination_campaign:
+        name: "Nome"
+        health_facility_id: "UBS"
+        starts_on: "Início"
+        ends_on: "Fim"
+        target_doses: "Meta de doses"
+        room_capacity_per_day: "Capacidade diária (doses)"
+        status: "Status"
+      home_visit_campaign:
+        name: "Nome"
+        status: "Status"
+    errors:
+      models:
+        stock_balance:
+          attributes:
+            base:
+              invalid_stockable_reference: "informe lote ou insumo, não ambos"
+        vaccination_campaign:
+          attributes:
+            ends_on:
+              must_be_on_or_after_starts_on: "deve ser igual ou posterior ao início"

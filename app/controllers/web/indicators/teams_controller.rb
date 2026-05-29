@@ -11,7 +11,8 @@ module Web
         @results = scoped_team_indicator_results
           .where(care_team_id: @team.id, quadrimester: @quadrimester)
           .order(:indicator_code)
-        gaps_scope = scoped_citizen_indicator_gaps.where(care_team_id: @team.id, status: "open")
+        active_codes = IndicatorCatalog.active_portaria.select(:code)
+        gaps_scope = scoped_citizen_indicator_gaps.where(care_team_id: @team.id, status: "open", indicator_code: active_codes)
         gaps_scope = gaps_scope.where(indicator_code: params[:indicator_code]) if params[:indicator_code].present?
         @open_gaps = gaps_scope.includes(:citizen).order(:indicator_code, :due_on)
         @gaps_by_indicator = @open_gaps.group_by(&:indicator_code)

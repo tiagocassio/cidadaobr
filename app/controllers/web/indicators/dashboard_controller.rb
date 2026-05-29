@@ -10,7 +10,8 @@ module Web
         @catalog = IndicatorCatalog.active_portaria.order(:display_order)
         @team_results = scoped_team_indicator_results.where(quadrimester: @quadrimester).includes(:care_team)
         @scores_by_indicator = average_scores(@team_results)
-        @open_gaps_count = scoped_citizen_indicator_gaps.where(status: "open").count
+        active_codes = IndicatorCatalog.active_portaria.select(:code)
+        @open_gaps_count = scoped_citizen_indicator_gaps.where(status: "open", indicator_code: active_codes).count
         @catalog_total = @catalog.count
         @evaluated_indicator_count = @scores_by_indicator.size
         @scored_count = @scores_by_indicator.count { |_, score| score.to_f >= 85.0 }

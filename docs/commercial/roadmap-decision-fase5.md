@@ -1,6 +1,6 @@
 # Decisão de roadmap — pós-piloto Fase 4
 
-**Status:** aguardando decisão do CEO (maio/2026)  
+**Status:** Opção A registrada — EPIC-06 (estoque + campanhas) em andamento (maio/2026)  
 **Gate técnico:** Fase 4 concluída — ver [ADR-0003](../adr/0003-epic05-mvp-scope.md)
 
 ---
@@ -13,7 +13,7 @@
 | Painel gestor + gaps + ranking | Entregue |
 | Repasse em R$ | **Ilustrativo** (TASK-05-07 pendente) |
 | `phase-4-indicators` | completed no plano mestre |
-| `phase-5-field-campaigns` | pending — **próximo gate** |
+| `phase-5-field-campaigns` | **in_progress** — Opção A (EPIC-06 kickoff) |
 
 ---
 
@@ -41,11 +41,11 @@ Após piloto validado com checklist ([checklist-piloto-prefeitura.md](checklist-
 
 Marque a opção escolhida e atualize o [plano mestre](../padrão_ledi_e-sus_4f004208.plan.md):
 
-- [ ] **Opção A — Fase 5 (EPIC-06):** `phase-5-field-campaigns` → `in_progress`
+- [x] **Opção A — Fase 5 (EPIC-06):** `phase-5-field-campaigns` → `in_progress`
 - [ ] **Opção B — Credibilidade (TASK-05-07 + EPIC-11):** documentar ADR ou epic dedicado
 - [ ] **Opção C — Paralelo:** EPIC-06 in_progress + TASK-05-07 em sprint paralelo
 - [ ] **Opção D — Cidadão primeiro:** EPIC-04 antes de EPIC-06
 
-**Decisão registrada:** _pendente_  
-**Data:** _—_  
-**Responsável:** _CEO / PO_
+**Decisão registrada:** Opção A — iniciar EPIC-06 (estoque + campanhas de vacinação) como trilha padrão pós-gate Fase 4; TASK-05-07 e SIAPS permanecem paralelos opcionais.  
+**Data:** 2026-05-28  
+**Responsável:** PO (default técnico alinhado ao plano mestre)

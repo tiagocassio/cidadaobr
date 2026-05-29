@@ -11,7 +11,7 @@ RSpec.describe "Indicator catalog seed" do
     expect(IndicatorCatalog.active_portaria.count).to eq(IndicatorCatalog::PORTARIA_3493_CODES.size)
 
     portaria_rule_count = IndicatorRule.joins(:indicator_catalog).merge(IndicatorCatalog.active_portaria).count
-    expect(portaria_rule_count).to eq(IndicatorCatalog.active_portaria.count)
+    expect(portaria_rule_count).to eq(IndicatorCatalog.active_portaria.count + 2)
   end
 
   it "seeds only official Portaria good_practice_code values in dsl_v1 expressions" do

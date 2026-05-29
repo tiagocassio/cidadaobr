@@ -45,6 +45,28 @@ Rails.application.routes.draw do
       resources :teams, only: :show
       get "projections", to: "projections#show"
     end
+
+    namespace :stock do
+      resources :immunobiologic_products, except: :destroy
+      resources :immunobiologic_lots, only: %i[index new create]
+    end
+
+    namespace :campaigns do
+      resources :vaccination_campaigns, only: %i[index show new create edit update] do
+        member do
+          get :preview_targets
+          post :build_targets
+          post :publish
+        end
+      end
+      resources :home_visit_campaigns, only: %i[index show new create] do
+        member do
+          post :build_targets
+          post :generate_routes
+          get :preview_provisioning
+        end
+      end
+    end
   end
 
   namespace :api, defaults: { format: :json } do
@@ -53,6 +75,8 @@ Rails.application.routes.draw do
         get "health", to: "health#show"
         post "auth", to: "auth#create"
         post "clinical_records/:id/validate", to: "clinical_records#validate"
+        resources :campaigns, only: %i[index show]
+        resources :visit_routes, only: %i[index show]
       end
 
       namespace :citizen do

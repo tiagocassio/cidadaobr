@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_05_28_140000) do
+ActiveRecord::Schema[8.1].define(version: 2026_05_28_150000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
@@ -68,6 +68,21 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_28_140000) do
     t.datetime "updated_at", null: false
     t.index ["health_facility_id", "status", "scheduled_at"], name: "idx_on_health_facility_id_status_scheduled_at_ef6560721a"
     t.index ["municipality_id", "scheduled_at"], name: "index_appointments_on_municipality_id_and_scheduled_at"
+  end
+
+  create_table "campaign_targets", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "campaign_id", null: false
+    t.string "campaign_type", null: false
+    t.uuid "citizen_id", null: false
+    t.datetime "created_at", null: false
+    t.uuid "health_facility_id", null: false
+    t.uuid "household_id"
+    t.uuid "municipality_id", null: false
+    t.integer "priority_score", default: 0, null: false
+    t.string "status", default: "pending", null: false
+    t.datetime "updated_at", null: false
+    t.index ["campaign_type", "campaign_id", "citizen_id"], name: "index_campaign_targets_on_campaign_citizen", unique: true
+    t.index ["campaign_type", "campaign_id", "status"], name: "index_campaign_targets_on_campaign_status"
   end
 
   create_table "care_teams", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -242,6 +257,32 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_28_140000) do
     t.index ["municipality_id"], name: "index_health_facilities_on_municipality_id"
   end
 
+  create_table "home_visit_campaign_provisionings", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.uuid "health_facility_id", null: false
+    t.uuid "home_visit_campaign_id", null: false
+    t.uuid "municipality_id", null: false
+    t.string "status", default: "draft", null: false
+    t.jsonb "totals_json", default: [], null: false
+    t.datetime "updated_at", null: false
+    t.index ["home_visit_campaign_id"], name: "index_home_visit_campaign_provisionings_on_campaign", unique: true
+  end
+
+  create_table "home_visit_campaigns", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.date "ends_on", null: false
+    t.uuid "health_facility_id", null: false
+    t.uuid "municipality_id", null: false
+    t.string "name", null: false
+    t.date "starts_on", null: false
+    t.string "status", default: "draft", null: false
+    t.jsonb "supply_plan", default: [], null: false
+    t.jsonb "target_audience_definition", default: {}, null: false
+    t.datetime "updated_at", null: false
+    t.decimal "waste_factor", precision: 5, scale: 4, default: "0.0", null: false
+    t.index ["municipality_id", "health_facility_id", "status"], name: "index_home_visit_campaigns_on_municipality_facility_status"
+  end
+
   create_table "household_animals", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.datetime "created_at", null: false
     t.uuid "household_id", null: false
@@ -279,6 +320,30 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_28_140000) do
     t.datetime "updated_at", null: false
     t.index ["location"], name: "index_households_on_location", using: :gist
     t.index ["municipality_id", "clinical_record_id"], name: "index_households_on_municipality_and_clinical_record", unique: true
+  end
+
+  create_table "immunobiologic_lots", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.date "expires_on", null: false
+    t.uuid "health_facility_id", null: false
+    t.uuid "immunobiologic_product_id", null: false
+    t.string "lot_number", null: false
+    t.string "manufacturer"
+    t.uuid "municipality_id", null: false
+    t.decimal "quantity_on_hand", precision: 12, scale: 3, default: "0.0", null: false
+    t.datetime "updated_at", null: false
+    t.index ["health_facility_id", "immunobiologic_product_id", "lot_number"], name: "index_immunobiologic_lots_on_facility_product_lot", unique: true
+  end
+
+  create_table "immunobiologic_products", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.boolean "active", default: true, null: false
+    t.string "code", null: false
+    t.datetime "created_at", null: false
+    t.uuid "municipality_id", null: false
+    t.string "name", null: false
+    t.string "target_species", default: "human", null: false
+    t.datetime "updated_at", null: false
+    t.index ["municipality_id", "code"], name: "index_immunobiologic_products_on_municipality_code", unique: true
   end
 
   create_table "indicator_catalog", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -450,6 +515,60 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_28_140000) do
     t.index ["consultation_room_id", "slot_date", "starts_at"], name: "index_room_capacity_slots_on_room_date_start", unique: true
   end
 
+  create_table "stock_balances", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.uuid "health_facility_id", null: false
+    t.uuid "immunobiologic_lot_id"
+    t.uuid "municipality_id", null: false
+    t.decimal "quantity", precision: 12, scale: 3, default: "0.0", null: false
+    t.uuid "supply_item_id"
+    t.datetime "updated_at", null: false
+    t.index ["health_facility_id", "immunobiologic_lot_id"], name: "index_stock_balances_on_facility_lot", unique: true, where: "(immunobiologic_lot_id IS NOT NULL)"
+    t.index ["health_facility_id", "supply_item_id"], name: "index_stock_balances_on_facility_supply_item", unique: true, where: "(supply_item_id IS NOT NULL)"
+  end
+
+  create_table "stock_movements", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.uuid "health_facility_id", null: false
+    t.uuid "immunobiologic_lot_id"
+    t.string "movement_type", null: false
+    t.uuid "municipality_id", null: false
+    t.text "notes"
+    t.decimal "quantity", precision: 12, scale: 3, null: false
+    t.uuid "reference_id"
+    t.string "reference_type"
+    t.uuid "supply_item_id"
+    t.datetime "updated_at", null: false
+    t.index ["municipality_id", "health_facility_id", "created_at"], name: "index_stock_movements_on_municipality_facility_created"
+  end
+
+  create_table "supply_items", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.boolean "active", default: true, null: false
+    t.string "code", null: false
+    t.datetime "created_at", null: false
+    t.uuid "municipality_id", null: false
+    t.string "name", null: false
+    t.string "unit", default: "unit", null: false
+    t.datetime "updated_at", null: false
+    t.index ["municipality_id", "code"], name: "index_supply_items_on_municipality_code", unique: true
+  end
+
+  create_table "supply_provisionings", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.jsonb "available_items", default: [], null: false
+    t.boolean "capacity_ok", default: true, null: false
+    t.datetime "created_at", null: false
+    t.uuid "health_facility_id", null: false
+    t.uuid "municipality_id", null: false
+    t.uuid "provisionable_id", null: false
+    t.string "provisionable_type", null: false
+    t.text "rejection_reason"
+    t.jsonb "required_items", default: [], null: false
+    t.jsonb "shortages", default: [], null: false
+    t.string "status", default: "pending", null: false
+    t.datetime "updated_at", null: false
+    t.index ["provisionable_type", "provisionable_id"], name: "index_supply_provisionings_on_provisionable", unique: true
+  end
+
   create_table "team_indicator_results", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.uuid "care_team_id", null: false
     t.datetime "created_at", null: false
@@ -461,6 +580,18 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_28_140000) do
     t.string "tier"
     t.datetime "updated_at", null: false
     t.index ["care_team_id", "indicator_code", "quadrimester"], name: "index_team_indicator_results_unique", unique: true
+  end
+
+  create_table "team_supply_dispatches", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "care_team_id", null: false
+    t.datetime "created_at", null: false
+    t.date "dispatch_date", null: false
+    t.uuid "health_facility_id", null: false
+    t.jsonb "lines_json", default: [], null: false
+    t.uuid "municipality_id", null: false
+    t.string "status", default: "pending", null: false
+    t.datetime "updated_at", null: false
+    t.index ["care_team_id", "dispatch_date"], name: "index_team_supply_dispatches_on_team_date", unique: true
   end
 
   create_table "transport_records", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -531,6 +662,63 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_28_140000) do
     t.index ["email"], name: "index_users_on_email", unique: true
   end
 
+  create_table "vaccination_campaigns", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.string "campaign_kind", default: "human_immunization", null: false
+    t.uuid "consultation_room_id"
+    t.datetime "created_at", null: false
+    t.date "ends_on", null: false
+    t.uuid "health_facility_id", null: false
+    t.uuid "immunobiologic_product_id", null: false
+    t.uuid "municipality_id", null: false
+    t.string "name", null: false
+    t.integer "room_capacity_per_day", default: 0, null: false
+    t.date "starts_on", null: false
+    t.string "status", default: "draft", null: false
+    t.jsonb "target_audience_definition", default: {}, null: false
+    t.integer "target_doses", default: 0, null: false
+    t.datetime "updated_at", null: false
+    t.index ["consultation_room_id"], name: "index_vaccination_campaigns_on_consultation_room_id"
+    t.index ["municipality_id", "health_facility_id", "status"], name: "index_vaccination_campaigns_on_municipality_facility_status"
+  end
+
+  create_table "visit_route_provisionings", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.uuid "health_facility_id", null: false
+    t.jsonb "lines_json", default: [], null: false
+    t.uuid "municipality_id", null: false
+    t.string "status", default: "draft", null: false
+    t.datetime "updated_at", null: false
+    t.uuid "visit_route_id", null: false
+    t.index ["visit_route_id"], name: "index_visit_route_provisionings_on_route", unique: true
+  end
+
+  create_table "visit_route_stops", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "campaign_target_id"
+    t.uuid "citizen_id", null: false
+    t.datetime "created_at", null: false
+    t.uuid "household_id"
+    t.uuid "municipality_id", null: false
+    t.string "status", default: "pending", null: false
+    t.integer "stop_order", null: false
+    t.datetime "updated_at", null: false
+    t.uuid "visit_route_id", null: false
+    t.datetime "visited_at"
+    t.index ["visit_route_id", "stop_order"], name: "index_visit_route_stops_on_route_order", unique: true
+  end
+
+  create_table "visit_routes", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "care_team_id", null: false
+    t.datetime "created_at", null: false
+    t.uuid "health_facility_id", null: false
+    t.uuid "home_visit_campaign_id", null: false
+    t.uuid "municipality_id", null: false
+    t.date "route_date", null: false
+    t.integer "sequence_number", default: 1, null: false
+    t.string "status", default: "draft", null: false
+    t.datetime "updated_at", null: false
+    t.index ["home_visit_campaign_id", "care_team_id", "route_date", "sequence_number"], name: "index_visit_routes_on_campaign_team_date_seq", unique: true
+  end
+
   add_foreign_key "care_teams", "health_facilities"
   add_foreign_key "care_teams", "municipalities"
   add_foreign_key "citizen_indicator_gaps", "care_teams"
@@ -540,12 +728,23 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_28_140000) do
   add_foreign_key "facility_micro_area_coverages", "health_facilities"
   add_foreign_key "facility_micro_area_coverages", "micro_areas"
   add_foreign_key "health_facilities", "municipalities"
+  add_foreign_key "home_visit_campaign_provisionings", "home_visit_campaigns"
+  add_foreign_key "home_visit_campaigns", "health_facilities"
   add_foreign_key "household_animals", "households"
+  add_foreign_key "immunobiologic_lots", "health_facilities"
+  add_foreign_key "immunobiologic_lots", "immunobiologic_products"
   add_foreign_key "indicator_rules", "indicator_catalog"
   add_foreign_key "micro_areas", "care_teams"
   add_foreign_key "micro_areas", "municipalities"
+  add_foreign_key "stock_balances", "health_facilities"
+  add_foreign_key "stock_balances", "immunobiologic_lots"
+  add_foreign_key "stock_balances", "supply_items"
+  add_foreign_key "stock_movements", "health_facilities"
+  add_foreign_key "stock_movements", "immunobiologic_lots"
+  add_foreign_key "stock_movements", "supply_items"
   add_foreign_key "team_indicator_results", "care_teams"
   add_foreign_key "team_indicator_results", "municipalities"
+  add_foreign_key "team_supply_dispatches", "care_teams"
   add_foreign_key "user_municipality_memberships", "health_facilities"
   add_foreign_key "user_municipality_memberships", "municipalities"
   add_foreign_key "user_municipality_memberships", "users"
@@ -553,4 +752,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_28_140000) do
   add_foreign_key "user_roles", "users"
   add_foreign_key "user_team_assignments", "care_teams"
   add_foreign_key "user_team_assignments", "users"
+  add_foreign_key "vaccination_campaigns", "consultation_rooms"
+  add_foreign_key "vaccination_campaigns", "health_facilities"
+  add_foreign_key "vaccination_campaigns", "immunobiologic_products"
+  add_foreign_key "visit_route_provisionings", "visit_routes"
+  add_foreign_key "visit_route_stops", "visit_routes"
+  add_foreign_key "visit_routes", "care_teams"
+  add_foreign_key "visit_routes", "home_visit_campaigns"
 end

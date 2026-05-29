@@ -1,0 +1,32 @@
+<section>
+  <div class="mb-4 flex items-center justify-between">
+    <h2 class="text-2xl font-bold"><%= t("cidadaobr.stock.products.index_title") %></h2>
+    <%= link_to t("cidadaobr.stock.products.new_link"), new_web_stock_immunobiologic_product_path, class: "rounded bg-emerald-700 px-4 py-2 text-sm font-semibold text-white" %>
+  </div>
+
+  <div class="overflow-hidden rounded-lg border border-slate-200 bg-white">
+    <table class="min-w-full text-sm">
+      <thead class="bg-slate-50 text-left">
+        <tr>
+          <th class="px-4 py-3"><%= ImmunobiologicProduct.human_attribute_name(:code) %></th>
+          <th class="px-4 py-3"><%= ImmunobiologicProduct.human_attribute_name(:name) %></th>
+          <th class="px-4 py-3"><%= ImmunobiologicProduct.human_attribute_name(:target_species) %></th>
+          <th class="px-4 py-3"></th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @products.each do |product| %>
+          <tr class="border-t border-slate-100">
+            <td class="px-4 py-3"><%= product.code %></td>
+            <td class="px-4 py-3"><%= product.name %></td>
+            <td class="px-4 py-3"><%= product.target_species %></td>
+            <td class="px-4 py-3 text-right">
+              <%= link_to t("cidadaobr.actions.edit"), edit_web_stock_immunobiologic_product_path(product), class: "text-emerald-700 underline" %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+  <%== pagy_nav(@pagy) if @pagy.pages > 1 %>
+</section>

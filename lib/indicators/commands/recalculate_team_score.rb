@@ -19,6 +19,7 @@ module Indicators
 
       RuleCatalog.rules_for_care_team(care_team, indicator_codes: @indicator_codes).each do |rule|
         expression = rule.expression
+        next if expression["skip_team_score"]
         indicator_code = expression.fetch("indicator_code")
         score = DslV1::Evaluator.team_score(
           expression: expression,

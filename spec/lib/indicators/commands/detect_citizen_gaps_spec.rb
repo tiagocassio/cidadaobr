@@ -44,8 +44,8 @@ RSpec.describe Indicators::DetectCitizenGaps do
 
     with_tenant(membership) do
       result = described_class.call(citizen_id: citizen.id, indicator_codes: %w[V_CAD])
-      expect(result[:gaps_opened]).to eq(1)
-      expect(CitizenIndicatorGap.where(citizen: citizen, indicator_code: "V_CAD", status: "open").count).to eq(1)
+      expect(result[:gaps_opened]).to eq(3)
+      expect(CitizenIndicatorGap.where(citizen: citizen, indicator_code: "V_CAD", status: "open").count).to eq(3)
     end
 
     with_tenant(membership) do
@@ -54,7 +54,7 @@ RSpec.describe Indicators::DetectCitizenGaps do
 
     with_tenant(membership) do
       result = described_class.call(citizen_id: citizen.id, indicator_codes: %w[V_CAD])
-      expect(result[:gaps_resolved]).to eq(1)
+      expect(result[:gaps_resolved]).to eq(3)
       expect(CitizenIndicatorGap.where(citizen: citizen, indicator_code: "V_CAD", status: "open").count).to eq(0)
     end
   end

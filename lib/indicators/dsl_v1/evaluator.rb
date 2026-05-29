@@ -109,8 +109,40 @@ module Indicators
 
           return 0.0 if weight_total.zero?
 
-          # EPIC-05: replace renormalization with fixed MS weights when V_SAT joins CVAT (see plan Camada II).
-          (weighted_sum / weight_total).round(2)
+          divisor = if expression["use_fixed_ms_weights"]
+            components.sum { |component| component.fetch("weight").to_f }
+          else
+            weight_total
+          end
+          base_score = (weighted_sum / divisor).round(2)
+          apply_linkage_sat_bonus(
+            expression: expression,
+            base_score: base_score,
+            citizens: citizens,
+            quadrimester: quadrimester,
+            reference_date: reference_date,
+            care_team_id: care_team_id
+          )
+        end
+
+        def apply_linkage_sat_bonus(expression:, base_score:, citizens:, quadrimester:, reference_date:, care_team_id:)
+          bonus_config = expression["linkage_sat_bonus"]
+          return base_score unless bonus_config.is_a?(Hash)
+
+          code = bonus_config.fetch("code")
+          max_bonus = bonus_config.fetch("max_bonus", 10.0).to_f
+          child_rule = RuleCatalog.dsl_v1_rules(indicator_codes: [ code ]).first
+          return base_score unless child_rule
+
+          sat_score = team_score(
+            expression: child_rule.expression,
+            citizens: citizens,
+            quadrimester: quadrimester,
+            reference_date: reference_date,
+            care_team_id: care_team_id
+          )
+          bonus = (sat_score / 100.0 * max_bonus).round(2)
+          [ base_score + bonus, 100.0 ].min.round(2)
         end
       end
     end

@@ -23,7 +23,8 @@ class OutboxPublisher
     "appointment.cancelled" => "appointment.cancelled",
     "appointment.no_show" => "appointment.noshow",
     "indicator.gap.detected" => "indicator.gap.detected",
-    "indicator.team_score.updated" => "indicator.team.score.updated"
+    "indicator.team_score.updated" => "indicator.team.score.updated",
+    "supply.provisioning.rejected" => "supply.provisioning.rejected"
   }.freeze
 
   # Sweeps every municipality under RLS (O(municipalities) tenant switches per loop).

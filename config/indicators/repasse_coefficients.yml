@@ -1,0 +1,20 @@
+# Official Portaria GM/MS 3.493/2024 repasse coefficients (BRL per component).
+# Copy to repasse_coefficients.yml when MS publishes authoritative tables.
+# Until then, the application falls back to COMPONENT_BASE_BRL in lib/indicators/scoring.rb.
+
+esf:
+  fixed: 3000.0
+  linkage: 5000.0
+  quality: 7000.0
+  implementation: 1500.0
+  zoonoses: 500.0
+esb:
+  quality: 4000.0
+  implementation: 1000.0
+emulti:
+  quality: 3500.0
+  implementation: 1000.0
+municipality:
+  fixed: 2000.0
+  linkage: 3000.0
+  quality: 4000.0

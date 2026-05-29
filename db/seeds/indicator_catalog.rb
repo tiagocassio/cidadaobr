@@ -2,7 +2,7 @@
 
 METHODOLOGY_VERSION = "3493/2024" unless defined?(METHODOLOGY_VERSION)
 
-def dsl_v1_expression(indicator_code:, denominator:, numerator:, good_practice_code: nil, team_score_mode: nil, skip_citizen_gaps: false, linkage_components: nil)
+def dsl_v1_expression(indicator_code:, denominator:, numerator:, good_practice_code: nil, team_score_mode: nil, skip_citizen_gaps: false, skip_team_score: false, linkage_components: nil, use_fixed_ms_weights: false, linkage_sat_bonus: nil)
   expression = {
     "version" => "dsl_v1",
     "indicator_code" => indicator_code,
@@ -13,6 +13,9 @@ def dsl_v1_expression(indicator_code:, denominator:, numerator:, good_practice_c
   expression["good_practice_code"] = good_practice_code if good_practice_code.present?
   expression["team_score_mode"] = team_score_mode if team_score_mode.present?
   expression["skip_citizen_gaps"] = true if skip_citizen_gaps
+  expression["skip_team_score"] = true if skip_team_score
+  expression["use_fixed_ms_weights"] = true if use_fixed_ms_weights
+  expression["linkage_sat_bonus"] = linkage_sat_bonus if linkage_sat_bonus.present?
   if linkage_components.present?
     expression["team_score_mode"] = "linkage_aggregate"
     expression["linkage_components"] = linkage_components
@@ -56,11 +59,12 @@ upsert_indicator!(
     denominator: { "type" => "citizens_on_team" },
     numerator: { "type" => "citizens_on_team" },
     skip_citizen_gaps: true,
-    # MVP: V_CAD + V_ACOMP only. Official CVAT also includes V_SAT — add when satisfaction DSL ships (EPIC-05).
+    use_fixed_ms_weights: true,
     linkage_components: [
       { "code" => "V_CAD", "weight" => 0.3 },
       { "code" => "V_ACOMP", "weight" => 0.7 }
-    ]
+    ],
+    linkage_sat_bonus: { "code" => "V_SAT", "max_bonus" => 10.0 }
   )
 )
 
@@ -76,6 +80,31 @@ upsert_indicator!(
     numerator: { "type" => "registration_complete" }
   )
 )
+
+v_cad_catalog = IndicatorCatalog.find_by!(code: "V_CAD")
+IndicatorRule.find_or_initialize_by(indicator_catalog: v_cad_catalog, rule_code: "cad_atu").tap do |rule|
+  rule.rule_kind = "good_practice"
+  rule.expression = dsl_v1_expression(
+    indicator_code: "V_CAD",
+    good_practice_code: "V_CAD_ATU",
+    skip_team_score: true,
+    denominator: { "type" => "citizens_on_team" },
+    numerator: { "type" => "registration_updated_mici", "within_months" => 24 }
+  )
+  rule.save!
+end
+
+IndicatorRule.find_or_initialize_by(indicator_catalog: v_cad_catalog, rule_code: "lim_cad").tap do |rule|
+  rule.rule_kind = "good_practice"
+  rule.expression = dsl_v1_expression(
+    indicator_code: "V_CAD",
+    good_practice_code: "V_LIM_CAD",
+    skip_team_score: true,
+    denominator: { "type" => "citizens_on_team" },
+    numerator: { "type" => "registration_within_team_limit", "team_limit" => 3_500 }
+  )
+  rule.save!
+end
 
 upsert_indicator!(
   code: "V_ACOMP",
