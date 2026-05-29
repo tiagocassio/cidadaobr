@@ -21,7 +21,7 @@ pt-BR:
       edit: "Editar"
       remove: "Remover"
       search: "Buscar"
-      yes: "Sim"
+      "yes": "Sim"
       empty: "—"
       all: "Todos"
       unknown_enum: "Valor desconhecido (%{value})"

@@ -6,6 +6,7 @@ pt-BR:
     stock:
       lots:
         index_title: "Lotes de imunobiológicos"
+        new: "Registrar lote"
         new_title: "Registrar lote"
         flash:
           created: "Lote registrado com sucesso."
@@ -19,6 +20,7 @@ pt-BR:
           updated: "Imunobiológico atualizado."
     campaigns:
       index_title: "Campanhas de vacinação"
+      new: "Nova campanha"
       new_title: "Nova campanha"
       edit_title: "Editar campanha"
       back: "Voltar para campanhas"
