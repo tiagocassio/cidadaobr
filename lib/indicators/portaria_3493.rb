@@ -11,9 +11,7 @@ module Indicators
       M1 M2
     ].freeze
 
-    # Linkage rule codes (plan: V-CAD-ATU, V-CAD-COM, V-ACOMP-12M, V-LIM-CAD).
-    # V_CAD_ATU and V_LIM_CAD are gap-engine placeholders only (MICI 24m, cadastro teto).
-    # They are not seeded as dsl_v1 rules until EPIC-05 adds the matching resolvers.
+    # Linkage rule codes (NT 30/2025 / Portaria SAPS 161/2024): V-CAD-COM, V-CAD-ATU, V-ACOMP-12M, V-LIM-CAD.
     LINKAGE_RULE_CODES = %w[
       V_CAD_ATU
       V_CAD_COM

@@ -1,0 +1,35 @@
+{
+  "catalog": {
+    "code": "C4",
+    "funding_component": "quality",
+    "team_kind": "esf",
+    "display_order": 13,
+    "methodology_version": "3493/2024",
+    "periodicity": "quarterly"
+  },
+  "rule_code": "F",
+  "good_practice_code": "F",
+  "source_ref": "https://www.gov.br/saude/pt-br/composicao/saps/publicacoes/fichas-tecnicas/equipe-de-atencao-primaria-e-saude-da-familia",
+  "numerator_summary": "≥1 avaliação dos pés 12m",
+  "denominator_summary": null,
+  "record_types": null,
+  "expression": {
+    "denominator": {
+      "type": "citizens_with_condition",
+      "source": "fci",
+      "flag": "diabetes"
+    },
+    "numerator": {
+      "type": "clinical_predicate",
+      "record_types": [
+        "FAI",
+        "FP"
+      ],
+      "within_months": 12,
+      "predicate": {
+        "type": "procedure_present",
+        "code": "0301040095"
+      }
+    }
+  }
+}

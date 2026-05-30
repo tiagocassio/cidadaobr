@@ -7,8 +7,8 @@ module Indicators
 
       class << self
         def evaluate(expression:, context:)
-          return Result.new(in_denominator: false, meets_numerator: false, good_practice_code: nil) unless dsl_v1?(expression)
-          return Result.new(in_denominator: false, meets_numerator: false, good_practice_code: nil) if expression["team_score_mode"] == "linkage_aggregate"
+          return empty_result unless dsl_v1?(expression)
+          return empty_result if aggregate_only?(expression)
 
           in_denominator = denominator_match?(expression.fetch("denominator"), context)
           meets_numerator = in_denominator && numerator_match?(expression.fetch("numerator"), context)
@@ -20,42 +20,111 @@ module Indicators
           )
         end
 
-        def team_score(expression:, citizens:, quadrimester:, reference_date: Date.current, care_team_id: nil)
+        def team_score(expression:, citizens:, quadrimester:, reference_date: Date.current, care_team_id: nil, care_team: nil)
           return 0.0 if citizens.blank?
 
-          if expression["team_score_mode"] == "linkage_aggregate"
-            return linkage_aggregate_score(
+          case expression["team_score_mode"]
+          when "linkage_aggregate"
+            linkage_aggregate_score(
               expression: expression,
               citizens: citizens,
               quadrimester: quadrimester,
               reference_date: reference_date,
+              care_team_id: care_team_id,
+              care_team: care_team
+            )
+          when "procedure_ratio"
+            procedure_ratio_score(expression: expression, citizens: citizens, quadrimester: quadrimester, care_team_id: care_team_id)
+          when "programmed_attendance_ratio"
+            programmed_attendance_ratio_score(
+              citizens: citizens,
+              quadrimester: quadrimester,
               care_team_id: care_team_id
             )
-          end
-
-          if expression["team_score_mode"] == "procedure_ratio"
-            team_id = care_team_id || citizens.limit(1).pick(:care_team_id)
-            municipality_id = citizens.limit(1).pick(:municipality_id)
-            return 0.0 if team_id.blank?
-
-            return Resolvers::TeamProcedureRatio.score(
-              care_team_id: team_id,
-              municipality_id: municipality_id,
+          when "good_practices_pct"
+            good_practices_pct_score(
+              indicator_code: expression.fetch("indicator_code"),
+              citizens: citizens,
               quadrimester: quadrimester,
-              numerator_prefixes: expression.dig("numerator", "extraction_prefixes") ||
-                LediPayloadPaths::EXTRACTION_PROCEDURE_CODE_PREFIXES
+              reference_date: reference_date,
+              care_team_id: care_team_id,
+              care_team: care_team
+            )
+          else
+            standard_pct_score(
+              expression: expression,
+              citizens: citizens,
+              quadrimester: quadrimester,
+              reference_date: reference_date,
+              care_team: care_team
             )
           end
+        end
 
-          denominator_count = 0
-          numerator_count = 0
+        def good_practices_pct_score(indicator_code:, citizens:, quadrimester:, reference_date: Date.current, care_team_id: nil, care_team: nil)
+          rules = bp_rules_for(indicator_code, care_team_id: care_team_id, care_team: care_team)
+          return 0.0 if rules.empty?
+
+          total_applicable = 0
+          total_met = 0
+          cache = {}
 
           citizens.find_each do |citizen|
             context = Context.new(
               citizen: citizen,
-              care_team: citizen.care_team,
+              care_team: care_team,
               quadrimester: quadrimester,
-              reference_date: reference_date
+              reference_date: reference_date,
+              cache: cache
+            )
+            rules.each do |rule|
+              result = evaluate(expression: rule.expression, context: context)
+              next unless result.in_denominator
+
+              total_applicable += 1
+              total_met += 1 if result.meets_numerator
+            end
+          end
+
+          return 0.0 if total_applicable.zero?
+
+          ((total_met.to_f / total_applicable) * 100).round(2)
+        end
+
+        def dsl_v1?(expression)
+          expression.is_a?(Hash) && expression["version"] == "dsl_v1"
+        end
+
+        private
+
+        def empty_result
+          Result.new(in_denominator: false, meets_numerator: false, good_practice_code: nil)
+        end
+
+        def aggregate_only?(expression)
+          expression["team_score_mode"] == "linkage_aggregate"
+        end
+
+        def denominator_match?(clause, context)
+          ::Indicators::DslV1::Resolvers::CitizenScope.matches?(clause, context)
+        end
+
+        def numerator_match?(clause, context)
+          ::Indicators::DslV1::Resolvers::ClinicalEvidence.matches?(clause, context)
+        end
+
+        def standard_pct_score(expression:, citizens:, quadrimester:, reference_date:, care_team: nil)
+          denominator_count = 0
+          numerator_count = 0
+          cache = {}
+
+          citizens.find_each do |citizen|
+            context = Context.new(
+              citizen: citizen,
+              care_team: care_team,
+              quadrimester: quadrimester,
+              reference_date: reference_date,
+              cache: cache
             )
             result = evaluate(expression: expression, context: context)
             next unless result.in_denominator
@@ -69,80 +138,163 @@ module Indicators
           ((numerator_count.to_f / denominator_count) * 100).round(2)
         end
 
-        def dsl_v1?(expression)
-          expression.is_a?(Hash) && expression["version"] == "dsl_v1"
+        def procedure_ratio_score(expression:, citizens:, quadrimester:, care_team_id:)
+          team_id = care_team_id || citizens.limit(1).pick(:care_team_id)
+          municipality_id = citizens.limit(1).pick(:municipality_id)
+          return 0.0 if team_id.blank?
+
+          Resolvers::TeamProcedureRatio.score(
+            care_team_id: team_id,
+            municipality_id: municipality_id,
+            quadrimester: quadrimester,
+            numerator_prefixes: expression.dig("numerator", "extraction_prefixes") ||
+              LediPayloadPaths::EXTRACTION_PROCEDURE_CODE_PREFIXES
+          )
         end
 
-        private
+        def programmed_attendance_ratio_score(citizens:, quadrimester:, care_team_id:)
+          team_id = care_team_id || citizens.limit(1).pick(:care_team_id)
+          municipality_id = citizens.limit(1).pick(:municipality_id)
+          return 0.0 if team_id.blank?
 
-        def denominator_match?(clause, context)
-          ::Indicators::DslV1::Resolvers::CitizenScope.matches?(clause, context)
+          range = Quadrimester.range_for(quadrimester)
+          scope = Appointment.where(municipality_id: municipality_id, care_team_id: team_id)
+            .where(scheduled_at: range.begin.beginning_of_day..range.end.end_of_day)
+            .where(status: "completed")
+          total, programmed = scope.pick(
+            Arel.sql("COUNT(*)"),
+            Arel.sql("COUNT(*) FILTER (WHERE kind = 'scheduled')")
+          )
+          return 0.0 if total.to_i.zero?
+
+          # C1 Nota: numerador = atendimentos programados concluídos; denominador = todos concluídos no quadrimestre.
+          ((programmed.to_f / total) * 100).round(2)
         end
 
-        def numerator_match?(clause, context)
-          ::Indicators::DslV1::Resolvers::ClinicalEvidence.matches?(clause, context)
-        end
-
-        def linkage_aggregate_score(expression:, citizens:, quadrimester:, reference_date:, care_team_id:)
+        def linkage_aggregate_score(expression:, citizens:, quadrimester:, reference_date:, care_team_id:, care_team: nil)
+          care_team ||= CareTeam.find_by(id: care_team_id) if care_team_id.present?
           components = expression.fetch("linkage_components")
+          ms_scale = expression["score_scale"] == "ms_0_10"
           weighted_sum = 0.0
-          weight_total = 0.0
+          weight_total = components.sum { |c| c.fetch("weight").to_f } unless ms_scale
 
           components.each do |component|
             code = component.fetch("code")
             weight = component.fetch("weight").to_f
-            child_rule = RuleCatalog.dsl_v1_rules(indicator_codes: [ code ]).first
-            unless child_rule
-              raise ArgumentError, "linkage_aggregate missing dsl_v1 rule for indicator #{code.inspect}"
-            end
-
-            child_score = team_score(
-              expression: child_rule.expression,
+            resolved = child_indicator_team_score(
+              code: code,
               citizens: citizens,
               quadrimester: quadrimester,
               reference_date: reference_date,
-              care_team_id: care_team_id
+              care_team_id: care_team_id,
+              care_team: care_team
             )
-            weighted_sum += child_score * weight
-            weight_total += weight
+            unless resolved
+              raise ArgumentError, "linkage_aggregate missing dsl_v1 rule for indicator #{code.inspect}"
+            end
+
+            child_score, child_expression = resolved
+
+            if ms_scale
+              weighted_sum += (child_score / score_scale_divisor(child_expression)) * weight
+            else
+              next if weight_total.zero?
+
+              weighted_sum += child_score * (weight / weight_total)
+            end
           end
 
-          return 0.0 if weight_total.zero?
+          base_score = weighted_sum.round(2)
 
-          divisor = if expression["use_fixed_ms_weights"]
-            components.sum { |component| component.fetch("weight").to_f }
-          else
-            weight_total
-          end
-          base_score = (weighted_sum / divisor).round(2)
           apply_linkage_sat_bonus(
             expression: expression,
             base_score: base_score,
             citizens: citizens,
             quadrimester: quadrimester,
             reference_date: reference_date,
-            care_team_id: care_team_id
+            care_team_id: care_team_id,
+            care_team: care_team,
+            ms_scale: ms_scale
           )
         end
 
-        def apply_linkage_sat_bonus(expression:, base_score:, citizens:, quadrimester:, reference_date:, care_team_id:)
+        def team_indicator_rules(code, care_team_id: nil, care_team: nil, require_team: false)
+          rules = RuleCatalog.dsl_v1_rules(indicator_codes: [ code ])
+          if care_team_id.blank? && care_team.nil?
+            raise Errors::TeamContextRequiredError, "care_team or care_team_id required for #{code.inspect}" if require_team
+
+            return rules
+          end
+
+          team = care_team || CareTeam.find_by(id: care_team_id)
+          raise Errors::UnknownCareTeamError, "care team not found: #{care_team_id.inspect}" unless team
+
+          rules.select { |r| RuleCatalog.rule_applies_to_care_team?(r, team) }
+        end
+
+        def bp_rules_for(indicator_code, care_team_id: nil, care_team: nil)
+          team_indicator_rules(
+            indicator_code,
+            care_team_id: care_team_id,
+            care_team: care_team,
+            require_team: true
+          ).reject { |r| r.expression["skip_citizen_gaps"] || r.expression["skip_team_score"] }
+        end
+
+        def apply_linkage_sat_bonus(expression:, base_score:, citizens:, quadrimester:, reference_date:, care_team_id:, ms_scale:, care_team: nil)
           bonus_config = expression["linkage_sat_bonus"]
           return base_score unless bonus_config.is_a?(Hash)
+          return base_score if bonus_config["external_until_import"]
 
           code = bonus_config.fetch("code")
-          max_bonus = bonus_config.fetch("max_bonus", 10.0).to_f
-          child_rule = RuleCatalog.dsl_v1_rules(indicator_codes: [ code ]).first
-          return base_score unless child_rule
-
-          sat_score = team_score(
-            expression: child_rule.expression,
+          max_bonus = bonus_config.fetch("max_bonus", 1.0).to_f
+          resolved = child_indicator_team_score(
+            code: code,
             citizens: citizens,
             quadrimester: quadrimester,
             reference_date: reference_date,
-            care_team_id: care_team_id
+            care_team_id: care_team_id,
+            care_team: care_team
           )
-          bonus = (sat_score / 100.0 * max_bonus).round(2)
-          [ base_score + bonus, 100.0 ].min.round(2)
+          return base_score unless resolved
+
+          sat_score, sat_expression = resolved
+
+          bonus = (sat_score / score_scale_divisor(sat_expression) * max_bonus).round(2)
+          max_total = ms_scale ? 10.0 : 100.0
+          [ base_score + bonus, max_total ].min.round(2)
+        end
+
+        def child_indicator_team_score(code:, citizens:, quadrimester:, reference_date:, care_team_id:, care_team:)
+          team_rules = team_indicator_rules(
+            code,
+            care_team_id: care_team_id,
+            care_team: care_team,
+            require_team: true
+          )
+          scoring_rules = team_rules.reject { |r| r.expression["skip_team_score"] }
+          child_rule = scoring_rules.find { |r| r.expression["team_score_mode"].present? } || scoring_rules.first
+          return nil unless child_rule
+
+          bp_rules = team_rules.reject { |r| r.expression["skip_citizen_gaps"] || r.expression["skip_team_score"] }
+          expression = Indicators::TeamScoreExpression.resolve(
+            indicator_code: code,
+            rules: bp_rules,
+            fallback_expression: child_rule.expression
+          )
+          score = team_score(
+            expression: expression,
+            citizens: citizens,
+            quadrimester: quadrimester,
+            reference_date: reference_date,
+            care_team_id: care_team_id,
+            care_team: care_team
+          )
+          [ score, expression ]
+        end
+
+        def score_scale_divisor(expression)
+          expression["score_scale"].to_s == "ms_0_10" ? 10.0 : 100.0
         end
       end
     end

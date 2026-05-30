@@ -1,0 +1,33 @@
+{
+  "catalog": {
+    "code": "C5",
+    "funding_component": "quality",
+    "team_kind": "esf",
+    "display_order": 14,
+    "methodology_version": "3493/2024",
+    "periodicity": "quarterly"
+  },
+  "rule_code": "B",
+  "good_practice_code": "B",
+  "source_ref": "https://www.gov.br/saude/pt-br/composicao/saps/publicacoes/fichas-tecnicas/equipe-de-atencao-primaria-e-saude-da-familia",
+  "numerator_summary": "≥1 aferição PA 6m",
+  "denominator_summary": null,
+  "record_types": null,
+  "expression": {
+    "denominator": {
+      "type": "citizens_with_condition",
+      "source": "fci",
+      "flag": "hypertension"
+    },
+    "numerator": {
+      "type": "blood_pressure_count_gte",
+      "record_types": [
+        "FAI",
+        "FP",
+        "FVD"
+      ],
+      "within_months": 6,
+      "minimum_count": 1
+    }
+  }
+}

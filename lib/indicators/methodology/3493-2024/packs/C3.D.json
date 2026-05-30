@@ -1,0 +1,33 @@
+{
+  "catalog": {
+    "code": "C3",
+    "funding_component": "quality",
+    "team_kind": "esf",
+    "display_order": 12,
+    "methodology_version": "3493/2024",
+    "periodicity": "quarterly"
+  },
+  "rule_code": "D",
+  "good_practice_code": "D",
+  "source_ref": "https://www.gov.br/saude/pt-br/composicao/saps/publicacoes/fichas-tecnicas/equipe-de-atencao-primaria-e-saude-da-familia",
+  "numerator_summary": "Gestante BP D",
+  "denominator_summary": null,
+  "record_types": null,
+  "expression": {
+    "denominator": {
+      "type": "citizens_with_condition",
+      "source": "fci",
+      "flag": "pregnant"
+    },
+    "numerator": {
+      "type": "anthropometry_count_gte",
+      "record_types": [
+        "FAI",
+        "FVD",
+        "FP"
+      ],
+      "within_months": 9,
+      "minimum_count": 7
+    }
+  }
+}

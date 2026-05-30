@@ -5,6 +5,8 @@ module Indicators
     APPOINTMENT_CLAUSE_TYPE = "appointment_in_quadrimester"
     # When CareTeam has no team_kind, only catalog rules for these kinds are evaluated.
     FALLBACK_TEAM_KINDS_FOR_UNKNOWN_CARE_TEAM = %w[esf municipality].freeze
+    # eAP follows the same APS primary-care methodology packs as eSF (NT 30/2025).
+    EQUIVALENT_TEAM_KINDS = { "eap" => "esf" }.freeze
 
     module_function
 
@@ -14,7 +16,8 @@ module Indicators
 
       inferred = care_team.try(:team_kind)
       if inferred.present?
-        return inferred == required
+        return inferred == required if inferred == required
+        return required == EQUIVALENT_TEAM_KINDS[inferred]
       end
 
       FALLBACK_TEAM_KINDS_FOR_UNKNOWN_CARE_TEAM.include?(required)
@@ -35,19 +38,24 @@ module Indicators
     end
 
     def dsl_v1_rules(indicator_codes: nil, team_kinds: nil)
-      scope = IndicatorRule.includes(:indicator_catalog).joins(:indicator_catalog).merge(IndicatorCatalog.active_portaria)
+      scope = IndicatorRule.includes(:indicator_catalog).joins(:indicator_catalog).where(indicator_catalog: active_portaria_attributes)
       scope = scope.where(indicator_catalog: { code: Array(indicator_codes) }) if indicator_codes.present?
       scope = scope.where(indicator_catalog: { team_kind: team_kinds }) if team_kinds
+      scope.where("indicator_rules.expression->>'version' = ?", "dsl_v1")
+    end
 
-      scope.select { |rule| DslV1::Evaluator.dsl_v1?(rule.expression) }
+    def active_portaria_attributes
+      { code: IndicatorCatalog::PORTARIA_3493_CODES, active: true }
     end
 
     def appointment_dependent_codes
       dsl_v1_rules.filter_map do |rule|
         expression = rule.expression
+        code = expression["indicator_code"]
+        next code if expression["team_score_mode"] == "programmed_attendance_ratio"
         next unless references_appointments?(expression["numerator"]) || references_appointments?(expression["denominator"])
 
-        expression["indicator_code"]
+        code
       end.uniq
     end
 

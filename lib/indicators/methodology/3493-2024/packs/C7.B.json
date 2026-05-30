@@ -1,0 +1,33 @@
+{
+  "catalog": {
+    "code": "C7",
+    "funding_component": "quality",
+    "team_kind": "esf",
+    "display_order": 16,
+    "methodology_version": "3493/2024",
+    "periodicity": "quarterly"
+  },
+  "rule_code": "B",
+  "good_practice_code": "B",
+  "source_ref": "https://www.gov.br/saude/pt-br/composicao/saps/publicacoes/fichas-tecnicas/equipe-de-atencao-primaria-e-saude-da-familia",
+  "numerator_summary": "Rastreamento mama",
+  "denominator_summary": null,
+  "record_types": null,
+  "expression": {
+    "denominator": {
+      "type": "citizens_sex_female"
+    },
+    "numerator": {
+      "type": "clinical_predicate",
+      "record_types": [
+        "FAI",
+        "FP"
+      ],
+      "within_months": 24,
+      "predicate": {
+        "type": "procedure_present",
+        "code": "0204030188"
+      }
+    }
+  }
+}

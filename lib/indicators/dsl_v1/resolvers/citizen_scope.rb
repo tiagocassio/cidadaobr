@@ -68,14 +68,10 @@ module Indicators
         end
 
         def latest_fci_payload(citizen)
-          if citizen.clinical_record&.record_type == "FCI"
-            return citizen.clinical_record.payload_json
-          end
-
           ClinicalRecord
+            .joins(:encounters)
             .where(municipality_id: citizen.municipality_id, record_type: "FCI", validation_status: "valid")
-            .joins(:citizen)
-            .where(citizens: { id: citizen.id })
+            .where(encounters: { citizen_id: citizen.id })
             .order(updated_at: :desc)
             .first
             &.payload_json

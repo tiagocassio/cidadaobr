@@ -30,6 +30,11 @@ RSpec.describe Indicators::RuleCatalog do
       expect(described_class.rule_applies_to_care_team?(esf_rule, team)).to be(true)
     end
 
+    it "applies esf catalog rules to eAP care teams" do
+      eap_team = double(team_kind: "eap")
+      expect(described_class.rule_applies_to_care_team?(esf_rule, eap_team)).to be(true)
+    end
+
     it "skips esb catalog rules when care team has no team_kind" do
       expect(described_class.rule_applies_to_care_team?(esb_rule, team)).to be(false)
     end

@@ -332,7 +332,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_29_130000) do
     t.uuid "municipality_id", null: false
     t.decimal "quantity_on_hand", precision: 12, scale: 3, default: "0.0", null: false
     t.datetime "updated_at", null: false
-    t.index ["expires_on"], name: "index_immunobiological_lots_on_expires_on"
+    t.index ["health_facility_id", "immunobiological_product_id", "expires_on"], name: "index_immunobiological_lots_on_facility_product_expires"
     t.index ["health_facility_id", "immunobiological_product_id", "lot_number"], name: "index_immunobiological_lots_on_facility_product_lot", unique: true
   end
 
@@ -347,7 +347,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_29_130000) do
     t.index ["municipality_id", "code"], name: "index_immunobiological_products_on_municipality_code", unique: true
   end
 
-  create_table "indicator_catalog", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+  create_table "indicator_catalogs", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.boolean "active", default: true, null: false
     t.string "code", null: false
     t.datetime "created_at", null: false
@@ -358,7 +358,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_29_130000) do
     t.string "periodicity", default: "quarterly", null: false
     t.string "team_kind"
     t.datetime "updated_at", null: false
-    t.index ["code"], name: "index_indicator_catalog_on_code", unique: true
+    t.index ["code"], name: "index_indicator_catalogs_on_code", unique: true
   end
 
   create_table "indicator_rules", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -414,7 +414,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_29_130000) do
     t.index ["status"], name: "index_ledi_batches_on_status"
   end
 
-  create_table "ledi_field_catalog", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+  create_table "ledi_field_catalogs", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.datetime "created_at", null: false
     t.string "data_type", null: false
     t.string "field_path", null: false
@@ -424,7 +424,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_29_130000) do
     t.string "record_type", null: false
     t.boolean "required", default: false, null: false
     t.datetime "updated_at", null: false
-    t.index ["record_type", "field_path", "ledi_version"], name: "index_ledi_field_catalog_on_type_path_version", unique: true
+    t.index ["record_type", "field_path", "ledi_version"], name: "index_ledi_field_catalogs_on_type_path_version", unique: true
   end
 
   create_table "ledi_validation_rules", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -781,7 +781,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_29_130000) do
   add_foreign_key "household_animals", "households"
   add_foreign_key "immunobiological_lots", "health_facilities"
   add_foreign_key "immunobiological_lots", "immunobiological_products"
-  add_foreign_key "indicator_rules", "indicator_catalog"
+  add_foreign_key "indicator_rules", "indicator_catalogs"
   add_foreign_key "micro_areas", "care_teams"
   add_foreign_key "micro_areas", "municipalities"
   add_foreign_key "stock_balances", "health_facilities"

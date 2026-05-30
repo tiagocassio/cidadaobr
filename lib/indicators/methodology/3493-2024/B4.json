@@ -1,9 +1,0 @@
-{
-  "code": "B4",
-  "methodology_version": "3493/2024",
-  "team_kind": "esb",
-  "record_types": ["FAC", "FAO"],
-  "numerator_summary": "Escovação dental supervisionada (praticasEmSaude = 9 em FAC ou FAO).",
-  "denominator_summary": "Usuários vinculados à equipe de Saúde Bucal.",
-  "source_ref": "https://www.gov.br/saude/pt-br/composicao/saps/publicacoes/fichas-tecnicas/equipe-de-saude-bucal"
-}

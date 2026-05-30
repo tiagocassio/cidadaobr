@@ -1,0 +1,32 @@
+{
+  "catalog": {
+    "code": "C6",
+    "funding_component": "quality",
+    "team_kind": "esf",
+    "display_order": 15,
+    "methodology_version": "3493/2024",
+    "periodicity": "quarterly"
+  },
+  "rule_code": "B",
+  "good_practice_code": "B",
+  "source_ref": "https://www.gov.br/saude/pt-br/composicao/saps/publicacoes/fichas-tecnicas/equipe-de-atencao-primaria-e-saude-da-familia",
+  "numerator_summary": "≥2 peso+altura 12m",
+  "denominator_summary": null,
+  "record_types": null,
+  "expression": {
+    "denominator": {
+      "type": "citizens_age_gte",
+      "min_age": 60
+    },
+    "numerator": {
+      "type": "anthropometry_count_gte",
+      "record_types": [
+        "FAI",
+        "FP",
+        "FVD"
+      ],
+      "within_months": 12,
+      "minimum_count": 2
+    }
+  }
+}

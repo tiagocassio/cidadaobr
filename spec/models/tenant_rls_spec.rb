@@ -177,4 +177,14 @@ RSpec.describe "Tenant RLS isolation", type: :model do
 
     expect(visible_ids).to eq([ gap_a.id ])
   end
+
+  it "splits health_facilities RLS so citizen policy can load after citizens table exists" do
+    base_sql = Cidadaobr::TenantRlsPolicies.health_facilities_base_policies
+    citizen_sql = Cidadaobr::TenantRlsPolicies.health_facilities_citizen_access_policy
+
+    expect(base_sql).to include("health_facilities_facility_access")
+    expect(base_sql).not_to include("FROM citizens")
+    expect(citizen_sql).to include("health_facilities_citizen_access")
+    expect(citizen_sql).to include("FROM citizens")
+  end
 end

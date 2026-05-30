@@ -5,5 +5,9 @@ module Indicators
     class SkippableRecalculationError < StandardError; end
 
     class AppointmentOutsideTenantError < SkippableRecalculationError; end
+
+    class TeamContextRequiredError < ArgumentError; end
+
+    class UnknownCareTeamError < ArgumentError; end
   end
 end

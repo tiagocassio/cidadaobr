@@ -1,0 +1,29 @@
+{
+  "catalog": {
+    "code": "C7",
+    "funding_component": "quality",
+    "team_kind": "esf",
+    "display_order": 16,
+    "methodology_version": "3493/2024",
+    "periodicity": "quarterly"
+  },
+  "rule_code": "C",
+  "good_practice_code": "C",
+  "source_ref": "https://www.gov.br/saude/pt-br/composicao/saps/publicacoes/fichas-tecnicas/equipe-de-atencao-primaria-e-saude-da-familia",
+  "numerator_summary": "Vacinação HPV",
+  "denominator_summary": null,
+  "record_types": null,
+  "expression": {
+    "denominator": {
+      "type": "citizens_sex_female"
+    },
+    "numerator": {
+      "type": "vaccination_immunobiologic",
+      "record_types": [
+        "FV"
+      ],
+      "within_months": 120,
+      "immunobiologic": "HPV"
+    }
+  }
+}

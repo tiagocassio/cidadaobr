@@ -1,0 +1,29 @@
+{
+  "catalog": {
+    "code": "C2",
+    "funding_component": "quality",
+    "team_kind": "esf",
+    "display_order": 11,
+    "methodology_version": "3493/2024",
+    "periodicity": "quarterly"
+  },
+  "rule_code": "A",
+  "good_practice_code": "A",
+  "source_ref": "https://www.gov.br/saude/pt-br/composicao/saps/publicacoes/fichas-tecnicas/equipe-de-atencao-primaria-e-saude-da-familia",
+  "numerator_summary": "1ª consulta até 30º dia",
+  "denominator_summary": null,
+  "record_types": null,
+  "expression": {
+    "denominator": {
+      "type": "citizens_age_lte",
+      "max_age": 2
+    },
+    "numerator": {
+      "type": "first_consult_by_age",
+      "record_types": [
+        "FAI"
+      ],
+      "max_days": 30
+    }
+  }
+}

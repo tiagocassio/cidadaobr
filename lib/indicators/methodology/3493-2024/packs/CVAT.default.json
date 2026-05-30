@@ -1,0 +1,42 @@
+{
+  "catalog": {
+    "code": "CVAT",
+    "funding_component": "linkage",
+    "team_kind": "esf",
+    "display_order": 0,
+    "methodology_version": "3493/2024",
+    "periodicity": "quarterly"
+  },
+  "rule_code": "default",
+  "good_practice_code": null,
+  "source_ref": "https://www.gov.br/saude/pt-br/composicao/saps/publicacoes/fichas-tecnicas/equipe-de-atencao-primaria-e-saude-da-familia",
+  "numerator_summary": null,
+  "denominator_summary": null,
+  "record_types": null,
+  "expression": {
+    "denominator": {
+      "type": "citizens_on_team"
+    },
+    "numerator": {
+      "type": "citizens_on_team"
+    },
+    "skip_citizen_gaps": true,
+    "score_scale": "ms_0_10",
+    "team_score_mode": "linkage_aggregate",
+    "linkage_components": [
+      {
+        "code": "V_CAD",
+        "weight": 3.0
+      },
+      {
+        "code": "V_ACOMP",
+        "weight": 7.0
+      }
+    ],
+    "linkage_sat_bonus": {
+      "code": "V_SAT",
+      "max_bonus": 1.0,
+      "external_until_import": true
+    }
+  }
+}

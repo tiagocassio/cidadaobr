@@ -206,7 +206,9 @@ module Cidadaobr
 
     def ensure_optional_table_policies!(connection)
       if connection.table_exists?(:health_facilities)
-        connection.execute health_facilities_policies
+        connection.execute health_facilities_base_policies
+        # Citizen-scoped SELECT requires citizens table (applied on re-run after citizens migration).
+        connection.execute health_facilities_citizen_access_policy if connection.table_exists?(:citizens)
       end
 
       if connection.table_exists?(:installations)
@@ -1009,7 +1011,7 @@ module Cidadaobr
       SQL
     end
 
-    def health_facilities_policies
+    def health_facilities_base_policies
       <<~SQL
         ALTER TABLE health_facilities ENABLE ROW LEVEL SECURITY;
         ALTER TABLE health_facilities FORCE ROW LEVEL SECURITY;
@@ -1055,7 +1057,11 @@ module Cidadaobr
             AND current_setting('app.current_scope', true) = 'facility'
             AND id = NULLIF(current_setting('app.current_health_facility_id', true), '')::uuid
           );
+      SQL
+    end
 
+    def health_facilities_citizen_access_policy
+      <<~SQL
         DROP POLICY IF EXISTS health_facilities_citizen_access ON health_facilities;
         CREATE POLICY health_facilities_citizen_access ON health_facilities
           FOR SELECT
@@ -1069,6 +1075,10 @@ module Cidadaobr
             )
           );
       SQL
+    end
+
+    def health_facilities_policies
+      health_facilities_base_policies + health_facilities_citizen_access_policy
     end
 
     def micro_areas_policies

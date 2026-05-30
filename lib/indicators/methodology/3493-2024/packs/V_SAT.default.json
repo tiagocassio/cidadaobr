@@ -1,0 +1,26 @@
+{
+  "catalog": {
+    "code": "V_SAT",
+    "funding_component": "linkage",
+    "team_kind": "esf",
+    "display_order": 3,
+    "methodology_version": "3493/2024",
+    "periodicity": "quarterly"
+  },
+  "rule_code": "default",
+  "good_practice_code": "V_SAT",
+  "source_ref": "https://www.gov.br/saude/pt-br/composicao/saps/publicacoes/fichas-tecnicas/equipe-de-atencao-primaria-e-saude-da-familia",
+  "numerator_summary": "Satisfação do usuário (pesquisa MS; fallback encounter 6m)",
+  "denominator_summary": null,
+  "record_types": null,
+  "expression": {
+    "denominator": {
+      "type": "citizens_on_team"
+    },
+    "numerator": {
+      "type": "satisfaction_survey",
+      "within_months": 6,
+      "fallback_encounter": true
+    }
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "catalog": {
+    "code": "C6",
+    "funding_component": "quality",
+    "team_kind": "esf",
+    "display_order": 15,
+    "methodology_version": "3493/2024",
+    "periodicity": "quarterly"
+  },
+  "rule_code": "D",
+  "good_practice_code": "D",
+  "source_ref": "https://www.gov.br/saude/pt-br/composicao/saps/publicacoes/fichas-tecnicas/equipe-de-atencao-primaria-e-saude-da-familia",
+  "numerator_summary": "≥1 dose influenza 12m",
+  "denominator_summary": null,
+  "record_types": null,
+  "expression": {
+    "denominator": {
+      "type": "citizens_age_gte",
+      "min_age": 60
+    },
+    "numerator": {
+      "type": "vaccination_immunobiologic",
+      "record_types": [
+        "FV"
+      ],
+      "within_months": 12,
+      "immunobiologic": "influenza"
+    }
+  }
+}

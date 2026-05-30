@@ -1,0 +1,26 @@
+{
+  "catalog": {
+    "code": "C1",
+    "funding_component": "quality",
+    "team_kind": "esf",
+    "display_order": 10,
+    "methodology_version": "3493/2024",
+    "periodicity": "quarterly"
+  },
+  "rule_code": "default",
+  "good_practice_code": "A",
+  "source_ref": "https://www.gov.br/saude/pt-br/composicao/saps/publicacoes/fichas-tecnicas/equipe-de-atencao-primaria-e-saude-da-familia",
+  "numerator_summary": "Proporção de atendimentos programados no quadrimestre",
+  "denominator_summary": null,
+  "record_types": null,
+  "expression": {
+    "denominator": {
+      "type": "citizens_on_team"
+    },
+    "numerator": {
+      "type": "citizens_on_team"
+    },
+    "team_score_mode": "programmed_attendance_ratio",
+    "skip_citizen_gaps": true
+  }
+}

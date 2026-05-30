@@ -1,0 +1,36 @@
+{
+  "catalog": {
+    "code": "V_ACOMP",
+    "funding_component": "linkage",
+    "team_kind": "esf",
+    "display_order": 2,
+    "methodology_version": "3493/2024",
+    "periodicity": "quarterly"
+  },
+  "rule_code": "default",
+  "good_practice_code": "V_ACOMP_12M",
+  "source_ref": "https://www.gov.br/saude/pt-br/composicao/saps/publicacoes/fichas-tecnicas/equipe-de-atencao-primaria-e-saude-da-familia",
+  "numerator_summary": "Mais de 1 contato e ao menos 1 atendimento em 12 meses",
+  "denominator_summary": null,
+  "record_types": null,
+  "expression": {
+    "denominator": {
+      "type": "citizens_on_team"
+    },
+    "numerator": {
+      "type": "contact_and_attendance",
+      "within_months": 12,
+      "minimum_contacts": 2,
+      "minimum_attendances": 1,
+      "record_types": [
+        "FAI",
+        "FAO",
+        "FP",
+        "FVD",
+        "FAC",
+        "FV",
+        "MCA"
+      ]
+    }
+  }
+}

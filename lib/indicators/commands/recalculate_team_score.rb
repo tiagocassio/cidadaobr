@@ -15,21 +15,33 @@ module Indicators
       raise ActiveRecord::RecordNotFound unless care_team.municipality_id == tenant.municipality_id
 
       citizens = Citizen.where(municipality_id: tenant.municipality_id, care_team_id: care_team.id)
+      citizen_count = citizens.count
       results = []
 
-      RuleCatalog.rules_for_care_team(care_team, indicator_codes: @indicator_codes).each do |rule|
-        expression = rule.expression
-        next if expression["skip_team_score"]
-        indicator_code = expression.fetch("indicator_code")
+      scoring_groups(care_team).each do |indicator_code, rules|
+        expression = TeamScoreExpression.resolve(indicator_code: indicator_code, rules: rules)
+        next unless expression
+
         score = DslV1::Evaluator.team_score(
           expression: expression,
           citizens: citizens,
           quadrimester: @quadrimester,
           reference_date: @reference_date,
-          care_team_id: care_team.id
+          care_team_id: care_team.id,
+          care_team: care_team
         )
-        tier = Scoring.tier_for(score)
-        projected_transfer = Scoring.projected_transfer(score, catalog_entry: rule.indicator_catalog)
+        catalog_entry = rules.min_by(&:rule_code).indicator_catalog
+        score_scale = expression["score_scale"]
+        tier = Scoring.tier_for(score, score_scale: score_scale)
+        tier = Scoring.apply_linkage_tier_cap_for_indicator(
+          tier,
+          indicator_code: indicator_code,
+          care_team: care_team,
+          citizens: citizens,
+          rules: rules,
+          citizen_count: citizen_count
+        )
+        projected_transfer = Scoring.projected_transfer(score, catalog_entry: catalog_entry, score_scale: score_scale)
 
         result = TeamIndicatorResult.find_or_initialize_by(
           municipality_id: tenant.municipality_id,
@@ -52,6 +64,11 @@ module Indicators
     end
 
     private
+
+    def scoring_groups(care_team)
+      rules = RuleCatalog.rules_for_care_team(care_team, indicator_codes: @indicator_codes)
+      rules.group_by { |rule| rule.expression.fetch("indicator_code") }
+    end
 
     def emit_team_score_updated!(result)
       RecordPlatformEvent.call(

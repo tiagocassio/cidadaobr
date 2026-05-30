@@ -1,0 +1,26 @@
+{
+  "catalog": {
+    "code": "V_CAD",
+    "funding_component": "linkage",
+    "team_kind": "esf",
+    "display_order": 1,
+    "methodology_version": "3493/2024",
+    "periodicity": "quarterly"
+  },
+  "rule_code": "cad_atu",
+  "good_practice_code": "V_CAD_ATU",
+  "source_ref": "https://www.gov.br/saude/pt-br/composicao/saps/publicacoes/fichas-tecnicas/equipe-de-atencao-primaria-e-saude-da-familia",
+  "numerator_summary": "MICI revisado nos últimos 24 meses",
+  "denominator_summary": null,
+  "record_types": null,
+  "expression": {
+    "denominator": {
+      "type": "citizens_on_team"
+    },
+    "numerator": {
+      "type": "fci_updated_within",
+      "within_months": 24
+    },
+    "skip_team_score": true
+  }
+}

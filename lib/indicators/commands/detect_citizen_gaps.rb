@@ -13,14 +13,25 @@ module Indicators
       tenant = Cidadaobr::TenantContext.current_or_raise!
       quadrimester = Quadrimester.current(@reference_date)
       results = { gaps_opened: 0, gaps_resolved: 0, citizens_processed: 0 }
+      cache_by_team = {}
 
       citizens = citizens_for(tenant)
       rules = indicator_rules
+      care_teams_by_id = CareTeam.where(municipality_id: tenant.municipality_id).index_by(&:id)
 
       citizens.find_each do |citizen|
         results[:citizens_processed] += 1
-        rules_for_citizen(citizen, rules).each do |rule|
-          process_rule!(citizen: citizen, rule: rule, quadrimester: quadrimester, results: results)
+        team_cache = cache_by_team[[ citizen.municipality_id, citizen.care_team_id ]] ||= {}
+        care_team = care_teams_by_id[citizen.care_team_id]
+        rules_for_citizen(citizen, rules, care_team: care_team).each do |rule|
+          process_rule!(
+            citizen: citizen,
+            rule: rule,
+            quadrimester: quadrimester,
+            results: results,
+            cache: team_cache,
+            care_team: care_team
+          )
         end
       end
 
@@ -40,21 +51,23 @@ module Indicators
       RuleCatalog.dsl_v1_rules(indicator_codes: @indicator_codes)
     end
 
-    def rules_for_citizen(citizen, rules)
-      care_team = citizen.care_team
+    def rules_for_citizen(citizen, rules, care_team: nil)
+      care_team ||= citizen.care_team
       return [] if care_team.blank?
 
       rules.select { |rule| RuleCatalog.rule_applies_to_care_team?(rule, care_team) }
     end
 
-    def process_rule!(citizen:, rule:, quadrimester:, results:)
+    def process_rule!(citizen:, rule:, quadrimester:, results:, cache: {}, care_team: nil)
       expression = rule.expression
       return if expression["skip_citizen_gaps"]
 
       context = DslV1::Context.new(
         citizen: citizen,
+        care_team: care_team,
         quadrimester: quadrimester,
-        reference_date: @reference_date
+        reference_date: @reference_date,
+        cache: cache
       )
       evaluation = DslV1::Evaluator.evaluate(expression: expression, context: context)
       return unless evaluation.in_denominator

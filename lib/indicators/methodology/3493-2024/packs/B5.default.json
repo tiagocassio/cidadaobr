@@ -1,0 +1,31 @@
+{
+  "catalog": {
+    "code": "B5",
+    "funding_component": "quality",
+    "team_kind": "esb",
+    "display_order": 21,
+    "methodology_version": "3493/2024",
+    "periodicity": "quarterly"
+  },
+  "rule_code": "default",
+  "good_practice_code": "B5",
+  "source_ref": "https://www.gov.br/saude/pt-br/composicao/saps/publicacoes/fichas-tecnicas/equipe-de-saude-bucal",
+  "numerator_summary": null,
+  "denominator_summary": null,
+  "record_types": null,
+  "expression": {
+    "denominator": {
+      "type": "citizens_on_team"
+    },
+    "numerator": {
+      "type": "clinical_predicate",
+      "record_types": [
+        "FAO"
+      ],
+      "within_months": 12,
+      "predicate": {
+        "type": "preventive_procedure"
+      }
+    }
+  }
+}

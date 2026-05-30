@@ -1,0 +1,27 @@
+{
+  "catalog": {
+    "code": "V_CAD",
+    "funding_component": "linkage",
+    "team_kind": "esf",
+    "display_order": 1,
+    "methodology_version": "3493/2024",
+    "periodicity": "quarterly"
+  },
+  "rule_code": "lim_cad",
+  "good_practice_code": "V_LIM_CAD",
+  "source_ref": "https://www.gov.br/saude/pt-br/composicao/saps/publicacoes/fichas-tecnicas/equipe-de-atencao-primaria-e-saude-da-familia",
+  "numerator_summary": "Cadastros da equipe dentro do teto Portaria 3.493",
+  "denominator_summary": null,
+  "record_types": null,
+  "expression": {
+    "denominator": {
+      "type": "citizens_on_team"
+    },
+    "numerator": {
+      "type": "registration_within_team_limit",
+      "team_limit": 3500
+    },
+    "skip_team_score": true,
+    "caps_linkage_tier": "good"
+  }
+}
