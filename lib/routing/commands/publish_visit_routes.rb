@@ -21,9 +21,11 @@ module Routing
             Inventory::ProvisioningValidator.lock_stock_for_home_visit!(campaign: campaign)
             Inventory::PreviewCampaignProvisioning.rollup!(campaign: campaign)
             provisioning = campaign.reload.home_visit_campaign_provisioning
-            unless provisioning&.status == "calculated"
+            unless provisioning&.status == "reserved"
               message = if provisioning&.status == "blocked"
                 I18n.t("cidadaobr.campaigns.home_visit.flash.publish_blocked_provisioning")
+              elsif provisioning&.status == "calculated"
+                I18n.t("cidadaobr.campaigns.home_visit.flash.publish_provisioning_not_reserved")
               else
                 I18n.t("cidadaobr.campaigns.home_visit.flash.publish_provisioning_not_calculated")
               end

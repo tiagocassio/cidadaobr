@@ -36,6 +36,8 @@ Rails.application.routes.draw do
         get :reception
         get :utilization
         get :select_facility
+        get :walk_in
+        post :walk_in
       end
     end
     resources :ledi_batches, only: %i[index show]
@@ -67,6 +69,10 @@ Rails.application.routes.draw do
           post :publish_routes
           get :preview_provisioning
           post :calculate_provisioning
+          post :reserve_provisioning
+          patch :update_provisioning
+          post :dispatch_supplies
+          get :route_map
         end
       end
     end
@@ -96,6 +102,10 @@ Rails.application.routes.draw do
         end
         resources :immunization_records, only: :index
       end
+
+      get "reference/manifest", to: "reference#manifest"
+      get "reference/domains/:key", to: "reference#domain"
+      get "reference/ledi/catalog", to: "reference#ledi_catalog"
     end
   end
 end

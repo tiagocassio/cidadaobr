@@ -1,7 +1,10 @@
 <section>
   <div class="mb-6 flex flex-wrap items-center justify-between gap-4">
     <h2 class="text-2xl font-bold"><%= t("cidadaobr.appointments.reception_title") %></h2>
-    <%= link_to t("cidadaobr.appointments.back_to_schedule"), web_appointments_path(facility_scope_params), class: "rounded border border-slate-300 px-4 py-2 text-sm" %>
+    <div class="flex gap-2">
+      <%= link_to t("cidadaobr.appointments.walk_in_title"), walk_in_web_appointments_path(facility_scope_params), class: "rounded bg-slate-800 px-4 py-2 text-sm font-semibold text-white" %>
+      <%= link_to t("cidadaobr.appointments.back_to_schedule"), web_appointments_path(facility_scope_params), class: "rounded border border-slate-300 px-4 py-2 text-sm" %>
+    </div>
   </div>
 
   <div class="overflow-hidden rounded-lg border border-slate-200 bg-white">

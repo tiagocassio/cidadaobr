@@ -1,0 +1,21 @@
+entries:
+  - domain_key: ciap2
+    domain_label: CIAP-2
+    code: A01
+    label: Dor generalizada / múltipla
+    active: true
+  - domain_key: ciap2
+    domain_label: CIAP-2
+    code: T90
+    label: Diabetes insulino-dependente
+    active: true
+  - domain_key: cid10
+    domain_label: CID-10
+    code: E11
+    label: Diabetes mellitus não-insulino-dependente
+    active: true
+  - domain_key: sigtap_procedure
+    domain_label: Procedimentos SIGTAP
+    code: "0301100039"
+    label: Consulta médica em atenção básica
+    active: true

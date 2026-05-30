@@ -3,11 +3,11 @@
 module Web
   class AppointmentsController < BaseController
     before_action :require_facility_or_municipality!
-    before_action :require_facility_or_municipality_write!, only: %i[new create reschedule]
-    before_action :require_reception_operations!, only: %i[check_in complete cancel no_show reschedule]
-    before_action :ensure_health_facility_selected!, only: %i[index reception utilization new create]
+    before_action :require_facility_or_municipality_write!, only: %i[new create reschedule walk_in]
+    before_action :require_reception_operations!, only: %i[check_in complete cancel no_show reschedule walk_in]
+    before_action :ensure_health_facility_selected!, only: %i[index reception utilization new create walk_in]
     before_action :set_appointment, only: %i[show check_in complete cancel no_show reschedule]
-    before_action :set_form_collections, only: %i[new create]
+    before_action :set_form_collections, only: %i[new create walk_in]
 
     helper_method :facility_scope_params
 
@@ -84,6 +84,32 @@ module Web
         from_date: @from_date,
         to_date: @to_date
       ).call
+    end
+
+    def walk_in
+      @appointment = Appointment.new
+      return if request.get?
+
+      attrs = walk_in_params
+      room = scoped_consultation_rooms.find(attrs.fetch(:consultation_room_id))
+      citizen = scoped_citizens.find(attrs.fetch(:citizen_id))
+
+      appointment = Scheduling::BookWalkInAppointment.call(
+        citizen_id: citizen.id,
+        appointment_service_type_id: attrs.fetch(:appointment_service_type_id),
+        consultation_room_id: room.id,
+        care_team_id: attrs[:care_team_id]
+      )
+      redirect_to reception_web_appointments_path(facility_scope_params(room.health_facility_id)),
+                  notice: t("cidadaobr.appointments.flash.walk_in_booked")
+    rescue Scheduling::Errors::SlotUnavailableError => e
+      flash.now[:alert] = Scheduling::ErrorMessages.slot_unavailable_message(e)
+      @appointment = Appointment.new(attrs)
+      render :walk_in, status: :unprocessable_entity
+    rescue ActiveRecord::RecordNotFound, ArgumentError
+      flash.now[:alert] = t("cidadaobr.appointments.flash.invalid_booking_data")
+      @appointment = Appointment.new(walk_in_params)
+      render :walk_in, status: :unprocessable_entity
     end
 
     def check_in
@@ -229,6 +255,10 @@ module Web
 
     def appointment_params
       params.require(:appointment).permit(:citizen_id, :appointment_service_type_id, :consultation_room_id, :room_capacity_slot_id, :care_team_id)
+    end
+
+    def walk_in_params
+      params.require(:appointment).permit(:citizen_id, :appointment_service_type_id, :consultation_room_id, :care_team_id)
     end
 
     def render_new_with_errors

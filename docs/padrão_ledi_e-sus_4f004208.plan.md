@@ -6,8 +6,11 @@ todos:
     content: Definir versão LEDI alvo e obter Thrift/XSD oficiais
     status: completed
   - id: catalog-fields
-    content: Gerar catálogo de campos/regras a partir dos 13 dicionários + thrift-xsd
-    status: completed
+    content: "Catálogo LEDI: parser HTML/XSD 13 fichas → ledi_field_catalog + ledi_validation_rules (MVP seed manual; conclusão via EPIC-12 TASK-12-03)"
+    status: partial
+  - id: reference-data-sync
+    content: "EPIC-12: sync periódico UFSC + SIGTAP → grupo M + jobs recurring + API /reference/* + release versionada"
+    status: pending
   - id: schema-transport-ficha
     content: "Migrations en-US: ledi_batches, transport_records, clinical_records, clinical_record_items"
     status: completed
@@ -32,11 +35,14 @@ todos:
   - id: api-clients
     content: "APIs v1: /field (LEDI) e /citizen (agenda, vacinas) — MVP; meds/pânico/tele = Fase 6"
     status: completed
+  - id: mobile-shared
+    content: "Repo cidadaobr-mobile-shared: pacote Dart api_client (OpenAPI), auth e tokens compartilhados entre Citizen e Field"
+    status: pending
   - id: flutter-field-app
-    content: "Flutter Field: multirão, visita acamados, 13 fichas LEDI, offline-first"
+    content: "Fase 8 — Flutter Field: multirão, visita acamados, 13 fichas LEDI, offline-first (EPIC-08)"
     status: pending
   - id: flutter-citizen-app
-    content: "Flutter Citizen: agenda consultas/vacinas, carteira vacinal, medicamentos contínuos, pânico, teleconsulta"
+    content: "Fase 8 — Flutter Citizen: agenda, vacinas, meds, pânico, tele (EPIC-04 app + EPIC-10 UI)"
     status: pending
   - id: schema-citizen-portal
     content: "en-US: citizen_accounts + citizen_immunization_records (MVP); panic/tele/meds = EPIC-10 Fase 6"
@@ -93,25 +99,28 @@ todos:
     content: "Fase 2: EPIC-02 (TASK-02-01..07)"
     status: completed
   - id: phase-3-scheduling-citizen-mvp
-    content: "Fase 3: EPIC-03 + EPIC-04 — backend/API ok; Flutter em cidadaobr-citizen pendente"
+    content: "Fase 3: EPIC-03 + EPIC-04 API — agenda web + APIs /api/v1/citizen (sem Flutter)"
     status: partial
   - id: phase-4-indicators
     content: "Fase 4: EPIC-05 (TASK-05-01..08) — DSL B1–B6/M1–M2 + metodologia 3493; repasse ilustrativo (ADR-0003)"
     status: completed
   - id: phase-5-field-campaigns
-    content: "Fase 5: EPIC-06 + EPIC-07 + EPIC-08"
-    status: completed
+    content: "Fase 5: EPIC-06 + EPIC-07 — estoque, campanhas e rotas (web gestão only)"
+    status: in_progress
   - id: phase-6-full-stack
-    content: "Fase 6: EPIC-09 + EPIC-10"
+    content: "Fase 6: EPIC-09 + EPIC-10 — LEDI/PEC, walk-in web, APIs panic/tele/meds (sem Flutter)"
     status: pending
   - id: phase-7-ai-siaps
     content: "Fase 7: EPIC-11 (TASK-11-01..06)"
+    status: pending
+  - id: phase-8-mobile-apps
+    content: "Fase 8: mobile-shared + cidadaobr-citizen + cidadaobr-field (EPIC-04 app, EPIC-08, UI 09/10)"
     status: pending
   - id: epic-backlog-export
     content: "Manter backlog EPIC/STORY/TASK/SUB sincronizado; export CSV para Jira/Linear"
     status: completed
   - id: repo-layout-option-a
-    content: "Polyrepo Opção A — cidadaobr + cidadaobr-citizen/field/mobile-shared (sem apps/ no Rails)"
+    content: "Polyrepo Opção A — cidadaobr (web/API) + repos Flutter só na Fase 8 (sem apps/ no Rails)"
     status: completed
 ---
 
@@ -437,8 +446,9 @@ INE/CNES    →  QUEM (equipe / UBS) recebe ou perde repasse
 | [Modelo de banco A–L](#modelo-de-banco-recomendado-operacional--ledi) | Tabelas en-US por grupo (incl. roteiro domiciliar L) |
 | [Financiamento / indicadores](#financiamento-aps-e-metas-municipais-portaria-gmms-nº-34932024) | Co-relação ficha ↔ BP ↔ repasse |
 | [Stack + 3 canais](#stack-técnica-rails-8--postgresql-18) | Rails, Kafka, Web, Flutter Field, Flutter Citizen |
-| [Repositórios Git](#repositórios-git-decisão-opção-a) | Polyrepo: `cidadaobr`, `cidadaobr-citizen`, `cidadaobr-field`, `cidadaobr-mobile-shared` |
+| [Repositórios Git](#repositórios-git-decisão-opção-a) | Polyrepo: `cidadaobr` (F0–7) + Flutter repos na **Fase 8** |
 | [Roteiro imediato S1–S7](#roteiro-de-execução-imediato-sprints-17) | Ordem de trabalho para iniciar agora |
+| [Roteiro de continuação S10+](#roteiro-de-continuação-s10) | Próximos passos: Fase 5 → EPIC-12 → Fase 6 |
 | [Referências LEDI](#referências-rápidas-por-ficha-ledi) | Links dicionários UFSC |
 
 **Regra para agentes:** não implementar feature de fase N+1 sem concluir dependências da fase N (ver coluna `depends_on` no roteiro). **Não** criar `apps/citizen_app` ou `apps/field_app` dentro do repo `cidadaobr` — apps Flutter vivem em repositórios irmãos (ver seção Repositórios Git).
@@ -453,10 +463,24 @@ Slugs de repositório **sem** o termo `saude` (a vertente continua no produto **
 
 | Repositório | Conteúdo | Quando |
 |-------------|----------|--------|
-| **`cidadaobr`** | API Rails 8, web gestão (Hotwire), Karafka, LEDI, indicadores; contrato em `doc/api/openapi.v1.yaml` | Atual |
-| **`cidadaobr-citizen`** | App Flutter cidadão (TASK-04-06/07) | Fase 3 |
-| **`cidadaobr-field`** | App Flutter profissional (EPIC-08) | Fase 5–6 |
-| **`cidadaobr-mobile-shared`** | Pacotes Dart (`api_client` gerado do OpenAPI, UI tokens futuro) | Antes ou com `cidadaobr-citizen` |
+| **`cidadaobr`** | API Rails 8, web gestão (Hotwire), Karafka, LEDI, indicadores; contrato em `doc/api/openapi.v1.yaml` | Fases 0–7 |
+| **`cidadaobr-mobile-shared`** | Pacotes Dart compartilhados — ver [Para que serve mobile-shared](#para-que-serve-cidadaobr-mobile-shared) | **Fase 8** (antes dos dois apps) |
+| **`cidadaobr-citizen`** | App Flutter cidadão (TASK-04-06/07 + EPIC-10 UI) | **Fase 8** |
+| **`cidadaobr-field`** | App Flutter profissional (EPIC-08 + FIELD-* de EPIC-09) | **Fase 8** |
+
+### Para que serve `cidadaobr-mobile-shared`
+
+Repositório de **pacotes Dart**, não um app instalável. Evita duplicar código entre Citizen e Field:
+
+| Pacote (planejado) | Função |
+|--------------------|--------|
+| `api_client` | Cliente HTTP gerado a partir de `doc/api/openapi.v1.yaml` (SSOT no repo Rails) |
+| `auth` | Login, refresh JWT, armazenamento seguro de token |
+| `design_tokens` | Cores, tipografia e componentes base CidadãoBR (futuro) |
+
+Citizen e Field **dependem** deste repo como path/git dependency; releases mobile pinam tag OpenAPI (`openapi-x.y.z`). Ver [ADR-0002](docs/adr/0002-multi-repo-mobile-and-api-contracts.md).
+
+**Decisão (2026-05-29):** apps Flutter **não** entram nas fases de web/API (3–7). Piloto e operação municipal usam **web gestão** até Fase 8; APIs `/api/v1/citizen` e `/api/v1/field` ficam prontas antes, para testes via OpenAPI/Postman.
 
 **Layout local típico** (vários clones, mesmo diretório pai):
 
@@ -486,13 +510,20 @@ Ponto de partida para o time. Detalhe tarefa a tarefa no plano de execução do 
 | **2** | Specs RLS + cross-UBS (F0/F2) | `cidadaobr` / `spec/` |
 | **3** | `MarkAppointmentNoShow` + UI recepção | `cidadaobr` |
 | **4** | ADR-0002 + `doc/api/openapi.v1.yaml` | `cidadaobr` |
-| **5** | `cidadaobr-mobile-shared` + `cidadaobr-citizen` MVP | repos novos |
+| **5** | *(adiado — Fase 8)* OpenAPI estável + script `doc/mobile/bootstrap_sibling_repos.sh` | repos Flutter na Fase 8 |
 | **6** | Motor indicadores (C2, CVAT, V_SAT, recálculo) | `cidadaobr` |
 | **7** | Painel X/17, gaps, projeção repasse | `cidadaobr` |
 
 **Regra:** Sprint 1 obrigatório antes de feature nova. **Gate Fase 5:** Sprints 1–7 + `phase-4-indicators` completed.
 
-**Paralelo (2 pessoas):** após Sprint 2 — A: 3→4→5 (agenda + mobile); B: 6→7 (indicadores).
+**Paralelo (2 pessoas):** após Sprint 2 — A: 3→4 (agenda + OpenAPI); B: 6→7 (indicadores). **Mobile (ex-Sprint 5) = Fase 8**, após Fases 5–7.
+
+**Trilha paralela S8–S9 (dados de referência):** pode rodar **em paralelo** a EPIC-06/07 — ver [EPIC-12](#epic-12--cidadãobr-saúde--dados-de-referência-msledi). **Gate Fase 6 clínica:** EPIC-12 concluído antes de EPIC-09 (walk-in web + validação combos).
+
+| Sprint | O quê | Onde |
+|--------|-------|------|
+| **8** | Schema grupo M + import UFSC (fixtures CI) + `LediCatalogSyncJob` | `cidadaobr` |
+| **9** | SIGTAP + `PublishReferenceReleaseJob` + `recurring.yml` + API `/reference/*` | `cidadaobr` |
 
 ---
 
@@ -508,9 +539,11 @@ Atualizar ao fechar cada sprint do [roteiro imediato](#roteiro-de-execução-ime
 | S2 | Concluído | Specs cross-UBS + consumer tenant |
 | S3 | Concluído | `MarkAppointmentNoShow`, recepção, relatório `utilization` |
 | S4 | Concluído | ADR-0002 + `doc/api/openapi.v1.yaml` |
-| S5 | Parcial | `doc/mobile/bootstrap_sibling_repos.sh`; repos Flutter manuais |
+| S5 | Adiado → Fase 8 | Script bootstrap repos; apps Flutter fora do roteiro web |
 | S6 | Concluído (MVP) | DSL C1–C7 + V_* + CVAT; Kafka `appointment.noshow` |
 | S7 | Concluído (MVP) | Painel X/N, ranking equipes, gaps por indicador, projeção ilustrativa |
+| S8 | Pendente | EPIC-12 — schema M + import UFSC + `LediCatalogSyncJob` |
+| S9 | Pendente | EPIC-12 — SIGTAP + release + `recurring.yml` + API `/reference/*` |
 
 **Gate Fase 5:** `phase-4-indicators` concluído com DSL **B1–B6** / **M1–M2** e pack `lib/indicators/methodology/3493-2024/`; repasse permanece ilustrativo até Portaria — ver [ADR-0003](docs/adr/0003-epic05-mvp-scope.md).
 
@@ -519,11 +552,15 @@ Atualizar ao fechar cada sprint do [roteiro imediato](#roteiro-de-execução-ime
 | Épico | Status | Nota |
 |-------|--------|------|
 | EPIC-00 | Concluído | RLS, CQRS, Kafka, auth |
-| EPIC-01 | Concluído | LEDI 7.4.0; PEC stub → Fase 6 |
+| EPIC-01 | Concluído (MVP) | LEDI 7.4.0; catálogo seed manual; catálogo automático = **EPIC-12** |
+| EPIC-12 | Pendente (S8–S9) | Sync UFSC + SIGTAP → Postgres; **paralelo** EPIC-06/07; gate EPIC-09 |
 | EPIC-02 | Concluído | Ops web; cross-UBS reforçado em specs |
 | EPIC-03 | Concluído | No-show + relatório ocupação/absenteísmo |
-| EPIC-04 | Parcial | API + OpenAPI; app em repos irmãos |
+| EPIC-04 | Parcial (API) | APIs + OpenAPI na Fase 3; **app Flutter = Fase 8** |
 | EPIC-05 | MVP entregue (Fase 4) | ADR-0003; DSL B1–B6/M1–M2; repasse ilustrativo |
+| EPIC-06 | Em andamento | Estoque + campanha vacina (web) |
+| EPIC-07 | Em andamento | Rotas + provisionamento (web) |
+| EPIC-08 | Pendente (Fase 8) | App Campo — após web/API Fases 5–7 |
 
 | Task | Status |
 |------|--------|
@@ -535,6 +572,108 @@ Atualizar ao fechar cada sprint do [roteiro imediato](#roteiro-de-execução-ime
 | TASK-05-06 WEB-IND-02 | Done (MVP) — drill-down, ranking, filtro gaps |
 | TASK-05-07 Projeção repasse | Partial — pesos ilustrativos + disclaimer |
 | TASK-05-08 Regras eSF | Done — C1–C7; B1–B6/M1–M2 via DSL v1 |
+
+---
+
+## Roteiro de continuação (S10+)
+
+**Onde estamos (2026-05-29):** Sprints S1–S7 concluídos (Fases 0–4). **Fase 5 em curso** — EPIC-06 ~75% e EPIC-07 ~40% no código (schema e comandos base prontos; reserva FEFO, romaneio, mapa e dashboards pendentes). EPIC-12 documentado (S8–S9), ainda não implementado. Mobile = Fase 8.
+
+**Objetivo imediato:** fechar **Gate Fase 5** (campanha domiciliar operável na web gestão) e, em paralelo opcional, avançar **EPIC-12** antes da Fase 6 clínica.
+
+### Visão por fases
+
+```mermaid
+flowchart LR
+  now[Fase5_EPIC06_07]
+  ref[EPIC12_S8_S9]
+  f6[Fase6_EPIC09_10]
+  ai[Fase7_EPIC11]
+  mob[Fase8_Flutter]
+
+  now --> ref
+  ref --> f6
+  f6 --> ai
+  ai --> mob
+  now -.->|"gate mínimo"| f6
+```
+
+| Fase | Épicos | Gate de saída |
+|------|--------|---------------|
+| **5 (atual)** | EPIC-06, EPIC-07 | Gestor publica campanha domiciliar → rotas → reserva kit → romaneio; piloto web checklist |
+| **1.5 transversal** | EPIC-12 | Release `reference_data_releases` + API `/reference/*` + jobs mensais |
+| **6** | EPIC-09, EPIC-10 (API) | Walk-in web, PEC produção, adapters restantes; **requer EPIC-12** |
+| **7** | EPIC-11 | IA + conciliação MS |
+| **8** | EPIC-04 app, EPIC-08, EPIC-10 UI | `mobile-shared` + Citizen + Field |
+
+### Trilha principal — fechar Fase 5 (prioridade)
+
+Ordem sugerida respeitando `depends_on` e o que falta no repo:
+
+| Ordem | Sprint | Task | Entrega verificável |
+|-------|--------|------|---------------------|
+| 1 | **S10** | **TASK-07-05** | `ReserveVisitRouteSupplies` + movimentos `stock_movements` tipo `reserve` (FEFO por lote); specs |
+| 2 | **S10** | **TASK-07-06** | WEB-CAMP-06 — revisão de provisionamento (override manual, déficit por item) |
+| 3 | **S11** | **TASK-07-07** | `DispatchTeamSupplyKit` + WEB-STOCK-02 romaneio/despacho |
+| 4 | **S11** | **TASK-07-08** | WEB-CAMP-03 — mapa PostGIS + wizard rotas (Stimulus/Leaflet ou Mapbox) |
+| 5 | **S12** | **TASK-07-04** | PostGIS clustering + TSP (substituir nearest-neighbor MVP em `generate_visit_routes.rb`) |
+| 6 | **S12** | **TASK-07-09** | WEB-CAMP-04 — progresso por equipe/rota |
+| 7 | **S12** | **TASK-06-04** | WEB-CAMP-01 wizard vacinação (multi-step dia D; hoje CRUD único) |
+| 8 | **S12** | **TASK-07-03** | Enriquecer preview (base `citizen_count`, tabela déficit SUB-07-03-01) |
+
+**Adiado (Field / Fase 8):** TASK-07-10 visão prédio/condomínio — EPIC-08.
+
+**Gate Fase 5 (checklist):**
+
+- [ ] Campanha domiciliar: público-alvo → rotas publicadas → provisionamento reservado → kit despachado
+- [ ] Campanha vacinação: wizard + validação `ProvisioningValidator` end-to-end
+- [ ] Request specs verdes: `spec/requests/web/stock_and_campaigns_spec.rb` + novos fluxos reserve/dispatch
+- [ ] Atualizar [`docs/commercial/checklist-piloto-prefeitura.md`](docs/commercial/checklist-piloto-prefeitura.md) com fluxo Fase 5
+- [ ] EPIC-06 e EPIC-07 marcados concluídos no [checklist executivo](#checklist-por-épico-executivo)
+
+### Trilha paralela — EPIC-12 (S8–S9, pode intercalar)
+
+Rodar **entre S10–S12** se houver capacidade (1 dev part-time) ou **bloquear antes de S13** (Fase 6):
+
+| Sprint | Tasks | Entrega |
+|--------|-------|---------|
+| **S8** | TASK-12-01, 12-02, 12-03 | Grupo M + import UFSC + `LediCatalogSyncJob` + fixtures CI |
+| **S9** | TASK-12-04, 12-05, 12-06 | SIGTAP + `recurring.yml` + API manifest/domains + Kafka release |
+
+**Gate EPIC-12 obrigatório antes de:** TASK-09-08 (walk-in web) e formulários clínicos com combos.
+
+### Após Fase 5 — Fase 6 (S13–S16)
+
+| Sprint | Foco | Tasks principais |
+|--------|------|------------------|
+| **S13** | PEC + adapters | TASK-09-01, 09-03 — adapters FAO…FCC; integração PEC produção |
+| **S14** | Clínica web | TASK-09-08 walk-in; TASK-12-07 autocompletes CIAP/CID/SIGTAP |
+| **S15** | Cuidado compartilhado | TASK-09-02 FCC + `shared_care_cases` |
+| **S16** | Cidadão Plus API | TASK-10-01, 10-02 — panic, tele, meds (sem UI Flutter) |
+
+### Backlog técnico transversal (quando couber)
+
+| Item | Épico | Nota |
+|------|-------|------|
+| TASK-05-03 motor DSL | EPIC-05 | Completar `citizens_age_lte`, V_SAT real |
+| TASK-05-07 repasse | EPIC-05 | Coeficientes oficiais quando Portaria fechar |
+| ADR-0004 | EPIC-12 | Fontes UFSC + DATASUS |
+| EPIC-04 API gaps | EPIC-04 | Completar endpoints citizen pendentes do OpenAPI |
+
+### Alocação sugerida (time pequeno)
+
+| Pessoa | S10–S12 | S13+ |
+|--------|---------|------|
+| **Dev A** | EPIC-07 reserve → romaneio → mapa | EPIC-09 PEC + walk-in |
+| **Dev B (opcional)** | EPIC-12 S8–S9 | EPIC-10 APIs |
+| **Solo** | S10→S11→S12 EPIC-07; depois S8→S9 EPIC-12; só então S13 Fase 6 | — |
+
+### Próximo passo concreto (começar amanhã)
+
+1. Branch `TASK-07-05/reserve-visit-route-supplies`
+2. Implementar `lib/inventory/commands/reserve_visit_route_supplies.rb` (FEFO, `stock_movements`, idempotência)
+3. Wire em `HomeVisitCampaignsController#calculate_provisioning` / publish gate
+4. Spec de integração + atualizar status TASK-07-05 nesta seção ao merge
 
 ---
 
@@ -1232,9 +1371,60 @@ flowchart LR
 
 ### E. Catálogo e validação LEDI
 
-- `ledi_field_catalog` — metadados gerados a partir dos dicionários HTML / XSD (tipo, obrigatoriedade, min/max, referências)
-- `ledi_validation_rule` — regras condicionais por `tipo` + versão LEDI
-- Motor de validação na aplicação (idealmente gerado dos `.xsd` / `.thrift` oficiais)
+- `ledi_field_catalog` — metadados gerados a partir dos [13 dicionários HTML por ficha](https://integracao.esusaps.bridge.ufsc.tech/ledi/documentacao/estrutura_arquivos/index.html) e XSD (tipo, obrigatoriedade Sim/Não/Condicional, min/max, `domain_key`, referências a struct filho)
+- `ledi_validation_rule` — regras condicionais por `record_type` + versão LEDI (prosa UFSC → DSL: `absent_when`, cardinalidade de listas, XOR CPF/CNS, valor fixo `tpCdsOrigem=3`, etc.)
+- Motor de validação na aplicação ([`Ledi::ValidationEngine`](lib/ledi/validation_engine.rb)); expandir conforme import automático
+
+**Estado atual:** seed MVP manual ([`db/seeds/ledi_catalog.rb`](db/seeds/ledi_catalog.rb)); [`ledi:catalog:import_xsd`](lib/tasks/ledi_catalog.rake) ainda stub.
+
+#### E.1 — Sincronização periódica de referência MS/LEDI (decisão 2026-05-29)
+
+**Objetivo:** manter Postgres sempre alinhado à documentação UFSC vigente, para web gestão, validação server-side, APIs Field/Citizen e apps Flutter (Fase 8) consumirem **JSON versionado**, não HTML ao vivo.
+
+**Duas fontes UFSC complementares:**
+
+| Fonte | URL | Alimenta |
+|-------|-----|----------|
+| Dicionários **por ficha** (13) | [estrutura_arquivos](https://integracao.esusaps.bridge.ufsc.tech/ledi/documentacao/estrutura_arquivos/index.html) → `dicionario-fci.html` … | `ledi_field_catalog`, `ledi_validation_rules` |
+| Dicionário de **domínios** (~87 tabelas) | [referencias/dicionario.html](https://integracao.esusaps.bridge.ufsc.tech/ledi/documentacao/referencias/dicionario.html) + CBOs, CIAP×CID, CATMAT, municípios | `reference_domain_entries` |
+
+**Referências cruzadas na doc de ficha:** struct aninhada (mesma página); código em coluna do Dicionário de dados (`Long`/`List` → `Sexo`, `Imunobiologico`, …); validações externas (CNS, nome, epoch ms).
+
+**Complemento:** SIGTAP completo via [download DATASUS](https://wiki.saude.gov.br/sigtap/index.php/Download) (mensal), além dos domínios UFSC.
+
+**Pipeline (Solid Queue + `config/recurring.yml`):**
+
+1. **Mirror** — HTML espelhado em `vendor/reference/{ledi_version}/` (como Thrift em `vendor/ledi/`)
+2. **`UfscReferenceImportJob`** — parse `dicionario.html` + Referências → `reference_domain_entries`
+3. **`LediCatalogSyncJob`** — parse 13 HTML de ficha (+ XSD) → catálogo + regras
+4. **`SigtapImportJob`** — ZIP mensal DATASUS (procedimentos)
+5. **`PublishReferenceReleaseJob`** — `reference_data_releases` + checksum; evento `reference_data.release_published` (Kafka)
+
+**Frequência acordada (2026-05-29):**
+
+| Job | Cadência | Horário sugerido (`config/recurring.yml`) | Observação |
+|-----|----------|-------------------------------------------|------------|
+| `UfscReferenceImportJob` | Mensal | `at 3am on day 1` | `dicionario.html` + páginas Referências |
+| `LediCatalogSyncJob` | Mensal + on deploy | `at 4am on day 1` | 13 HTML de ficha + XSD; **extra** quando `LEDI_VERSION` muda no deploy |
+| `SigtapImportJob` | Mensal pós-competência | `at 5am on day 5` | ZIP DATASUS (~5º dia útil após fechamento MS) |
+| `PublishReferenceReleaseJob` | Após imports | `at 6am on day 1` e `at 6am on day 5` | Só publica se checksum mudou; emite Kafka |
+
+**Distribuição aos clientes:**
+
+- Web Hotwire: leitura Postgres + cache; autocompletes CIAP/CID/SIGTAP (Fase 6 walk-in)
+- API: `GET /api/v1/reference/manifest`, `/domains/{key}`, `/ledi/catalog` (OpenAPI, ETag)
+- Mobile Fase 8: pull na abertura + SQLite offline; notificação opcional após nova release
+
+**Grupo M — Reference data (tabelas globais, sem tenant):**
+
+| Tabela | Responsabilidade |
+|--------|------------------|
+| `reference_data_releases` | `release_key`, `ledi_version`, `sigtap_competence`, checksum, `published_at` |
+| `reference_domains` | `domain_key`, `source` (`ufsc_dictionary`, `sigtap`, …) |
+| `reference_domain_entries` | `domain_key`, `code`, `label`, `active`, `payload_json` |
+| `reference_import_runs` | auditoria de cada job de import |
+
+Plano detalhado de implementação: **EPIC-12** (backlog abaixo). ADR proposto: **ADR-0004** (fontes UFSC + DATASUS).
 
 ### H. Indicadores APS / Portaria 3.493 (gestão municipal)
 
@@ -2125,9 +2315,9 @@ Particionar por `ibge_code` (ou `citizen_id` hash). **Transactional outbox** na 
 | **CidadãoBR Saúde** | `citizen_app` | Cidadão | Consultas, vacinas, medicamentos, pânico, teleconsulta |
 | **CidadãoBR Saúde Gestão** | Rails Hotwire `web` | Gestor/recepção/secretaria | Indicadores, campanhas, agenda UBS, LEDI ops |
 
-**Repositórios Flutter (Opção A):** `cidadaobr-field` (loja **CidadãoBR Saúde Campo**, código `field_app`), `cidadaobr-citizen` (**CidadãoBR Saúde**, `citizen_app`), pacotes compartilhados em **`cidadaobr-mobile-shared`** (`api_client` a partir do OpenAPI publicado por **`cidadaobr`**). Marca mãe **CidadãoBR** no splash/onboarding futuro hub multivertente.
+**Repositórios Flutter (Opção A, Fase 8):** `cidadaobr-mobile-shared` primeiro; depois `cidadaobr-field` (**CidadãoBR Saúde Campo**) e `cidadaobr-citizen` (**CidadãoBR Saúde**). `api_client` gerado do OpenAPI em **`cidadaobr`**. Marca mãe **CidadãoBR** no splash/onboarding futuro hub multivertente.
 
-A web **planeja**; o **Field** **executa** no território (LEDI); o **Citizen** **autogere** serviços da UBS vinculada (CNES/equipe do cadastro FCI).
+A web **planeja** (Fases 2–7); o **Field** **executa** no território (Fase 8); o **Citizen** **autogere** serviços (Fase 8).
 
 ---
 
@@ -2168,7 +2358,7 @@ A web **planeja**; o **Field** **executa** no território (LEDI); o **Citizen** 
 **Arquitetura técnica do app:**
 
 - **Offline-first:** SQLite local (`pending_clinical_records`, `pending_commands`); sync quando há rede.
-- **Command API:** `POST /api/v1/field/clinical_records` com `record_type` + payload JSON canônico (pré-validação LEDI no device com regras espelhadas de `ledi_validation_rule`).
+- **Command API:** `POST /api/v1/field/clinical_records` com `record_type` + payload JSON canônico (pré-validação LEDI no device: regras de `ledi_validation_rule` + combos de `reference_domain_entries` via pacote `reference_data`).
 - **Wizard por missão:** “Visita acamado” abre sequência FVD → FAI → FP; “Dia D vacina” abre FCI (se necessário) → FV → FP.
 - **Checklist de BP:** antes de encerrar visita, app cruza `citizen_indicator_gaps` e exige fichas/campos faltantes (ex.: C4-F avaliação do pé).
 - **Geo:** navegação até `households.location`; registro de check-in no domicílio.
@@ -2293,7 +2483,9 @@ flowchart TB
 
 ## Roteiro de desenvolvimento por etapas (para agentes)
 
-Backlog estruturado para **exportação Scrum/Kanban** em **quatro níveis**: **Épico** (`EPIC-NN`) → **História** (`STORY-NN-NN`, valor de negócio) → **Tarefa** (`TASK-NN-NN`, entrega técnica) → **Subtarefa** (`SUB-NN-NN-NN`, implementação). Cada item tem `depends_on`, `legacy_ref`, `labels` e `phase` (0–7). Código **en-US**; UI **pt-BR**; narrativas de história em **pt-BR**.
+Backlog estruturado para **exportação Scrum/Kanban** em **quatro níveis**: **Épico** (`EPIC-NN`) → **História** (`STORY-NN-NN`, valor de negócio) → **Tarefa** (`TASK-NN-NN`, entrega técnica) → **Subtarefa** (`SUB-NN-NN-NN`, implementação). Cada item tem `depends_on`, `legacy_ref`, `labels` e `phase` (0–8). Código **en-US**; UI **pt-BR**; narrativas de história em **pt-BR**.
+
+**Decisão de roadmap (2026-05-29):** Fases **0–7** = monólito Rails + web gestão + APIs JSON. Fase **8** = repos Flutter (`mobile-shared`, `citizen`, `field`). Não iniciar apps mobile durante entrega web.
 
 ### Visão das fases
 
@@ -2302,11 +2494,12 @@ flowchart LR
   p0[Fase 0 Foundation]
   p1[Fase 1 LEDI Core]
   p2[Fase 2 Ops Web]
-  p3[Fase 3 Schedule Citizen]
+  p3[Fase 3 Schedule APIs]
   p4[Fase 4 Indicators]
-  p5[Fase 5 Field Campaigns]
-  p6[Fase 6 Full Field Citizen]
+  p5[Fase 5 Campaigns Web]
+  p6[Fase 6 LEDI PEC Plus API]
   p7[Fase 7 AI SIAPS]
+  p8[Fase 8 Mobile Apps]
 
   p0 --> p1 --> p2
   p2 --> p3
@@ -2315,18 +2508,20 @@ flowchart LR
   p4 --> p5
   p5 --> p6
   p6 --> p7
+  p7 --> p8
 ```
 
-| Fase | Nome | Objetivo | Apps impactados |
-|------|------|----------|-----------------|
+| Fase | Nome | Objetivo | Superfície |
+|------|------|----------|------------|
 | **0** | Foundation | Monólito Rails, ES/CQRS, Kafka, auth | — |
 | **1** | LEDI Core | Ingestão e validação fichas; cadastro | — |
 | **2** | Ops + Web base | UBS, equipes, cidadãos, domicílio | Web gestão |
-| **3** | Scheduling + Citizen MVP | Agenda + app cidadão consultas/vacinas | Web agenda, Citizen |
+| **3** | Scheduling + Citizen API | Agenda web + `/api/v1/citizen` | Web agenda |
 | **4** | Indicators | 17 indicadores, gaps, painel gestor | Web indicadores |
-| **5** | Campaigns + Field MVP | Campanhas, estoque, Field offline básico | Web campanhas, Field |
-| **6** | Full LEDI + Citizen+ | 13 fichas, pânico, telehealth, PEC | Field, Citizen |
-| **7** | AI + SIAPS | Perfis, conciliação MS, produção | Todos |
+| **5** | Campaigns (web) | Campanhas, estoque, rotas, romaneio | Web campanhas |
+| **6** | LEDI/PEC + Plus API | PEC, 13 fichas outbound, panic/tele/meds **backend** | Web + APIs |
+| **7** | AI + SIAPS | Perfis, conciliação MS, produção | Web + jobs |
+| **8** | Mobile apps | `mobile-shared`, Citizen, Field | Flutter (lojas) |
 
 ---
 
@@ -2381,43 +2576,57 @@ Subtask,SUB-00-01-01,TASK-00-01,EPIC-00,[Core] CidadãoBR Saúde — rails new +
 |---------|------|------|----------|
 | **EPIC-00** | 0 | CidadãoBR Saúde — Core Plataforma | Rails, ES/CQRS, Kafka, auth, APIs |
 | **EPIC-01** | 1 | CidadãoBR Saúde — Core LEDI | Transporte, fichas, adapters, PEC draft |
+| **EPIC-12** | transversal (1→6) | CidadãoBR Saúde — Dados de Referência MS/LEDI | Ingestão UFSC + SIGTAP, SSOT Postgres, API `/reference/*`, jobs mensais |
 | **EPIC-02** | 2 | CidadãoBR Saúde Gestão — Admin Municipal | UBS, equipes, cidadãos, mapa, LEDI status |
 | **EPIC-03** | 3 | CidadãoBR Saúde Gestão — Agendamentos UBS | Agendamentos web staff + salas |
-| **EPIC-04** | 3 | CidadãoBR Saúde — MVP Cidadão | Consultas + vacinas — Minha UBS no celular |
+| **EPIC-04** | 3 (API) / **8** (App) | CidadãoBR Saúde — Portal cidadão | Fase 3: auth, slots, vacinas API; Fase 8: app Flutter |
 | **EPIC-05** | 4 | CidadãoBR Saúde Gestão — Indicadores 3.493 | 17 indicadores, gaps, painel gestor |
 | **EPIC-06** | 5 | CidadãoBR Saúde Gestão — Estoque e Campanhas | Estoque, campanha vacina, dia D |
 | **EPIC-07** | 5 | CidadãoBR Saúde Gestão — Rotas e Provisionamento | Público-alvo, rotas 1..N, kit insumos |
-| **EPIC-08** | 5–6 | CidadãoBR Saúde Campo — App Profissional | Offline, roteiro, FVD, kit equipe |
-| **EPIC-09** | 6 | CidadãoBR Saúde — LEDI Completo e PEC | 13 fichas, FCC, envio PEC |
-| **EPIC-10** | 6 | CidadãoBR Saúde — Cidadão Plus | Meds, pânico, teleconsulta |
+| **EPIC-08** | **8** | CidadãoBR Saúde Campo — App Profissional | Offline, roteiro, FVD, kit equipe |
+| **EPIC-09** | 6 (Core) / **8** (Field UI) | CidadãoBR Saúde — LEDI Completo e PEC | PEC, adapters, walk-in web; fichas Field UI na Fase 8 |
+| **EPIC-10** | 6 (API) / **8** (App UI) | CidadãoBR Saúde — Cidadão Plus | Backend panic/tele/meds Fase 6; telas Flutter Fase 8 |
 | **EPIC-11** | 7 | CidadãoBR Saúde — Core IA e Produção | Perfis IA, conciliação MS, relatórios |
 
 ```mermaid
 flowchart TB
   E0[EPIC-00]
   E1[EPIC-01]
+  E12[EPIC-12 Reference]
   E2[EPIC-02]
   E3[EPIC-03]
-  E4[EPIC-04]
+  E4api[EPIC-04 API]
   E5[EPIC-05]
   E6[EPIC-06]
   E7[EPIC-07]
-  E8[EPIC-08]
-  E9[EPIC-09]
-  E10[EPIC-10]
+  E9[EPIC-09 Core]
+  E10api[EPIC-10 API]
   E11[EPIC-11]
-  E0 --> E1 --> E2
+  E8[EPIC-08 Field App]
+  E4app[EPIC-04 Citizen App]
+  E10ui[EPIC-10 Citizen UI]
+  E9field[EPIC-09 Field UI]
+  E0 --> E1 --> E12
+  E1 --> E2
+  E12 --> E9
+  E12 --> E8
   E2 --> E3
   E2 --> E5
-  E3 --> E4
+  E3 --> E4api
   E5 --> E6
   E5 --> E7
-  E7 --> E8
-  E6 --> E8
-  E8 --> E9
-  E9 --> E10
+  E6 --> E9
+  E7 --> E9
+  E4api --> E10api
+  E9 --> E10api
   E5 --> E11
-  E10 --> E11
+  E10api --> E11
+  E11 --> E8
+  E11 --> E4app
+  E8 --> E9field
+  E4app --> E10ui
+  E9 --> E9field
+  E10api --> E10ui
 ```
 
 ---
@@ -2435,6 +2644,10 @@ Cada história agrupa uma ou mais **Tasks**. Na exportação CSV, `parent_id` da
 | **STORY-01-01** | EPIC-01 | [Core] CidadãoBR Saúde — Artefatos e schema LEDI | Como integrador LEDI, quero versão oficial e schema de transporte, para validar fichas antes do PEC. | TASK-01-01, TASK-01-02, TASK-01-03 |
 | **STORY-01-02** | EPIC-01 | [Core] CidadãoBR Saúde — Validar e enviar fichas | Como sistema, quero adapters e batch LEDI, para submeter fichas conforme MS. | TASK-01-04, TASK-01-05, TASK-01-06 |
 | **STORY-01-03** | EPIC-01 | [Core] CidadãoBR Saúde — Projetar cadastro operacional | Como UBS, quero cidadãos e domicílios projetados das fichas, para operar sem re-digitar. | TASK-01-07 |
+| **STORY-12-01** | EPIC-12 | [Core] CidadãoBR Saúde — Schema e ADR dados de referência | Como plataforma, quero tabelas globais versionadas, para auditar imports UFSC/SIGTAP. | TASK-12-01 |
+| **STORY-12-02** | EPIC-12 | [Core] CidadãoBR Saúde — Importar domínios e catálogo UFSC | Como integrador, quero parse automático da doc UFSC, para manter combos e campos LEDI atualizados. | TASK-12-02, TASK-12-03 |
+| **STORY-12-03** | EPIC-12 | [Core] CidadãoBR Saúde — SIGTAP e publicar release | Como sistema, quero SIGTAP mensal e release com checksum, para clientes sincronizarem por versão. | TASK-12-04, TASK-12-05 |
+| **STORY-12-04** | EPIC-12 | [Core] CidadãoBR Saúde — API e autocompletes de referência | Como desenvolvedor web/mobile, quero API `/reference/*`, para formulários clínicos sem HTML ao vivo. | TASK-12-06, TASK-12-07 |
 | **STORY-02-01** | EPIC-02 | [Gestão] CidadãoBR Saúde Gestão — Cadastrar UBS e equipes | Como gestor municipal, quero cadastrar UBS, INE e profissionais, para organizar a rede. | TASK-02-01, TASK-02-03, TASK-02-05 |
 | **STORY-02-02** | EPIC-02 | [Gestão] CidadãoBR Saúde Gestão — Cidadãos e domicílios no mapa | Como ACS/gestor, quero ver cidadãos e domicílios no mapa, para planejar cobertura territorial. | TASK-02-02, TASK-02-04, TASK-02-07 |
 | **STORY-02-03** | EPIC-02 | [Gestão] CidadãoBR Saúde Gestão — Monitorar envios LEDI | Como gestor, quero ver status de lotes e rejeições PEC, para corrigir envios. | TASK-02-06 |
@@ -2528,6 +2741,36 @@ Cada história agrupa uma ou mais **Tasks**. Na exportação CSV, `parent_id` da
 
 ---
 
+#### EPIC-12 — CidadãoBR Saúde — Dados de Referência MS/LEDI
+
+**Épico transversal** (Sprints S8–S9): mantém Postgres alinhado à documentação UFSC e SIGTAP via jobs recorrentes. **Não bloqueia** EPIC-06/07 (campanhas/rotas); **bloqueia** EPIC-09 Fase 6 (formulários clínicos web, validação combos, autocompletes). Detalhe técnico § [E.1](#e1--sincronização-periódica-de-referência-msledi-decisão-2026-05-29).
+
+**Objetivo:** substituir seed manual e HTML ao vivo por **SSOT versionado** (`reference_data_releases`) consumido por web, API Field/Citizen e apps Flutter (Fase 8).
+
+| Story | Task | Título | Depends | Legacy |
+|-------|------|--------|---------|--------|
+| STORY-12-01 | **TASK-12-01** | [Core] ADR-0004 + schema grupo M (`reference_*`) | EPIC-01 | F1.5-01 |
+| STORY-12-02 | **TASK-12-02** | [Core] Mirror UFSC + `UfscReferenceImportJob` (dicionario + Referências) | TASK-12-01 | F1.5-02 |
+| STORY-12-02 | **TASK-12-03** | [Core] `LediCatalogSyncJob` — 13 dicionários ficha HTML/XSD | TASK-12-01, TASK-01-03 | F1.5-03 |
+| STORY-12-03 | **TASK-12-04** | [Core] `SigtapImportJob` — competência mensal DATASUS | TASK-12-01 | F1.5-06 |
+| STORY-12-03 | **TASK-12-05** | [Core] `PublishReferenceReleaseJob` + `recurring.yml` + Kafka | TASK-12-02, TASK-12-03, TASK-12-04 | F1.5-05 |
+| STORY-12-04 | **TASK-12-06** | [Core] API `GET /api/v1/reference/*` + OpenAPI + ETag | TASK-12-01 | F1.5-04 |
+| STORY-12-04 | **TASK-12-07** | [Gestão] Stimulus autocompletes CIAP/CID/SIGTAP (prep Fase 6) | TASK-12-06 | F6-prep |
+
+**Mapeamento legado:** `TASK-01-08`…`TASK-01-13` / `TASK-02-08` renumerados para `TASK-12-01`…`TASK-12-07`.
+
+**Gate EPIC-12:** imports rodam em CI com fixtures em `vendor/reference/`; release publicada com checksum; `GET /reference/manifest` retorna versão; `catalog-fields` todo → completed.
+
+**Consumidores downstream:**
+
+| Épico | Uso |
+|-------|-----|
+| EPIC-09 | Validação server-side + walk-in web (combos, catálogo completo) |
+| EPIC-08 | Pacote `reference_data` em `mobile-shared` (SQLite sync) |
+| EPIC-06/07 | Opcional: domínios imunobiológico/CATMAT em campanhas (já no Postgres) |
+
+---
+
 #### EPIC-02 — CidadãoBR Saúde Gestão — Admin Municipal (Fase 2)
 
 | Story | Task | Título | Depends | Legacy |
@@ -2568,7 +2811,12 @@ Cada história agrupa uma ou mais **Tasks**. Na exportação CSV, `parent_id` da
 
 ---
 
-#### EPIC-04 — CidadãoBR Saúde — MVP Cidadão (Fase 3)
+#### EPIC-04 — CidadãoBR Saúde — Portal cidadão (Fase 3 API · Fase 8 App)
+
+| Fase | Tasks | Entrega |
+|------|-------|---------|
+| **3** | TASK-04-01 .. TASK-04-05 | Schema, auth JWT, slots, consultas, carteira vacinal, agendar vacina — **Rails + OpenAPI** |
+| **8** | TASK-04-06, TASK-04-07 | App Flutter `cidadaobr-citizen` (depende de `cidadaobr-mobile-shared`) |
 
 | Story | Task | Título | Depends | Legacy |
 |-------|------|--------|---------|--------|
@@ -2580,10 +2828,12 @@ Cada história agrupa uma ou mais **Tasks**. Na exportação CSV, `parent_id` da
 | STORY-04-02 | **TASK-04-06** | [Cidadão] CidadãoBR Saúde — App shell Minha UBS — consultas | TASK-04-02 | F3-08 |
 | STORY-04-03 | **TASK-04-07** | [Cidadão] CidadãoBR Saúde — Carteira vacinal e agendar vacina | TASK-04-04 | F3-12 |
 
-**TASK-04-06** — [Cidadão] CidadãoBR Saúde — App shell Minha UBS — consultas
+**TASK-04-06** — [Cidadão] CidadãoBR Saúde — App shell Minha UBS — consultas **(Fase 8)**
 - **SUB-04-06-01** — [Cidadão] CidadãoBR Saúde — Scaffold repo `cidadaobr-citizen` + dependência `cidadaobr-mobile-shared`
 - **SUB-04-06-02** — [Cidadão] CidadãoBR Saúde — Login CPF e home Minha UBS
 - **SUB-04-06-03** — [Cidadão] CidadãoBR Saúde — E2E agendar consulta
+
+**Gate Fase 8 (Citizen):** Fases 3–7 concluídas; OpenAPI taggeada; `mobile-shared` publicado.
 
 ---
 
@@ -2663,7 +2913,9 @@ Cada história agrupa uma ou mais **Tasks**. Na exportação CSV, `parent_id` da
 
 ---
 
-#### EPIC-08 — CidadãoBR Saúde Campo — App Profissional (Fase 5–6)
+#### EPIC-08 — CidadãoBR Saúde Campo — App Profissional (**Fase 8**)
+
+APIs Field (`TASK-08-01`, `TASK-08-02`, `TASK-08-07`) podem ser entregues **antes**, nas Fases 5–6, no repo `cidadaobr` — consumidas pela web de testes e, depois, pelo app. Tasks **FIELD-*** (shell, formulários, sync, roteiro) ficam todas na **Fase 8**.
 
 | Story | Task | Título | Depends | Legacy |
 |-------|------|--------|---------|--------|
@@ -2693,11 +2945,22 @@ Cada história agrupa uma ou mais **Tasks**. Na exportação CSV, `parent_id` da
 
 ---
 
-#### EPIC-09 — CidadãoBR Saúde — LEDI Completo e PEC (Fase 6)
+**Gate Fase 8 (Field):** EPIC-07 web (rotas publicadas) + APIs Field estáveis; `mobile-shared` + PEC draft testável.
+
+---
+
+#### EPIC-09 — CidadãoBR Saúde — LEDI Completo e PEC (Fase 6 Core · Fase 8 Field UI)
+
+**Pré-requisito Fase 6:** **EPIC-12** concluído (catálogo completo, domínios combos, API `/reference/*`) — especialmente para TASK-09-08 walk-in e validação de fichas.
+
+| Fase | Tasks | Entrega |
+|------|-------|---------|
+| **6** | TASK-09-01..03, 09-06, 09-08, 09-09 | Adapters, PEC, FCC, campanha animal web, walk-in web, regras eSB/eMulti |
+| **8** | TASK-09-04, 09-05, 09-07 | Telas Field multirão, acamados, vacinação animal |
 
 | Story | Task | Título | Depends | Legacy |
 |-------|------|--------|---------|--------|
-| STORY-09-01 | **TASK-09-01** | [Core] CidadãoBR Saúde — Adapters LEDI restantes FAO…FCC | EPIC-08 | F6-01 |
+| STORY-09-01 | **TASK-09-01** | [Core] CidadãoBR Saúde — Adapters LEDI restantes FAO…FCC | EPIC-01 | F6-01 |
 | STORY-09-02 | **TASK-09-02** | [Core] CidadãoBR Saúde — shared_care_cases evoluções | TASK-09-01 | F6-04 |
 | STORY-09-02 | **TASK-09-03** | [Core] CidadãoBR Saúde — Integração PEC produção | EPIC-01 | F6-05 |
 | STORY-09-01 | **TASK-09-04** | [Campo] CidadãoBR Saúde Campo — FIELD-05 Multirão FAI FAO FP FV FAC | TASK-09-01 | F6-02 |
@@ -2709,7 +2972,12 @@ Cada história agrupa uma ou mais **Tasks**. Na exportação CSV, `parent_id` da
 
 ---
 
-#### EPIC-10 — CidadãoBR Saúde — Cidadão Plus (Fase 6)
+#### EPIC-10 — CidadãoBR Saúde — Cidadão Plus (Fase 6 API · Fase 8 App UI)
+
+| Fase | Tasks | Entrega |
+|------|-------|---------|
+| **6** | TASK-10-01, 10-02 | Schema + APIs panic, teleconsulta, medicamentos |
+| **8** | TASK-10-03, 10-04, 10-05 | Telas Flutter meds, pânico, tele |
 
 | Story | Task | Título | Depends | Legacy |
 |-------|------|--------|---------|--------|
@@ -2734,6 +3002,21 @@ Cada história agrupa uma ou mais **Tasks**. Na exportação CSV, `parent_id` da
 
 ---
 
+### Fase 8 — Apps Mobile (repos Flutter)
+
+**Ordem de execução:**
+
+1. **TASK-MOBILE-01** — Repo `cidadaobr-mobile-shared`: gerar `api_client` do OpenAPI; pacote `auth`; CI próprio.
+2. **EPIC-08** — App `cidadaobr-field` (offline, fichas, rotas, kit) — depende de APIs Field + campanhas web.
+3. **EPIC-04** (TASK-04-06/07) — App `cidadaobr-citizen` (consultas + vacinas).
+4. **EPIC-09/10 UI** — FIELD-05/06/07 e CITIZEN-03/04/05 no app correspondente.
+
+**Não bloqueia piloto municipal:** gestores usam web; profissionais podem registrar via web/PEC até Field existir; cidadão agenda via recepção web até Citizen existir.
+
+**Script:** `doc/mobile/bootstrap_sibling_repos.sh` — executar no **início da Fase 8**, não no Sprint 5.
+
+---
+
 ### Matriz módulo × épico × canal
 
 > Todas as tabelas de task dos épicos **00–11** incluem coluna **Story** alinhada ao [catálogo STORY-*](#catálogo-de-histórias-story).
@@ -2744,11 +3027,11 @@ Cada história agrupa uma ou mais **Tasks**. Na exportação CSV, `parent_id` da
 | Core LEDI | EPIC-01 | STORY-01-01..03 | [Core] |
 | Gestão — Admin | EPIC-02 | STORY-02-01..03 | [Gestão] |
 | Gestão — Agendamentos | EPIC-03 | STORY-03-01 | [Gestão] |
-| Cidadão MVP | EPIC-04 | STORY-04-01..03 | [Cidadão] |
+| Cidadão — API (F3) + App (F8) | EPIC-04 | STORY-04-01..03 | [Cidadão] |
 | Gestão — Indicadores | EPIC-05 | STORY-05-01..02 | [Gestão] |
 | Gestão — Estoque/Campanhas | EPIC-06 | STORY-06-01..02 | [Gestão] |
 | Gestão — Rotas | EPIC-07 | STORY-07-01..04 | [Gestão] |
-| Campo — App | EPIC-08 | STORY-08-01..04 | [Campo] |
+| Campo — App (F8) | EPIC-08 | STORY-08-01..04 | [Campo] |
 | Transversal LEDI/PEC | EPIC-09 | STORY-09-01..04 | Core + Campo + Gestão |
 | Cidadão Plus | EPIC-10 | STORY-10-01..03 | [Cidadão] |
 | Core IA + Gestão relatórios | EPIC-11 | STORY-11-01..03 | [Core] + [Gestão] |
@@ -2834,17 +3117,19 @@ Cada história agrupa uma ou mais **Tasks**. Na exportação CSV, `parent_id` da
 ### Checklist por épico (executivo)
 
 - [x] **EPIC-00** CidadãoBR Saúde — Core Plataforma  
-- [x] **EPIC-01** CidadãoBR Saúde — Core LEDI (PEC produção = Fase 6)  
+- [x] **EPIC-01** CidadãoBR Saúde — Core LEDI (PEC produção = Fase 6; catálogo automático = **EPIC-12**)  
+- [ ] **EPIC-12** Dados de Referência MS/LEDI — sync UFSC + SIGTAP → Postgres + API `/reference/*` (S8–S9)  
 - [x] **EPIC-02** CidadãoBR Saúde Gestão — Admin Municipal  
 - [x] **EPIC-03** CidadãoBR Saúde Gestão — Agendamentos UBS  
-- [~] **EPIC-04** CidadãoBR Saúde — MVP Cidadão (API ok; Flutter em `cidadaobr-citizen` pendente)  
-- [~] **EPIC-05** CidadãoBR Saúde Gestão — Indicadores 3.493 (em andamento)  
-- [x] **EPIC-06** CidadãoBR Saúde Gestão — Estoque e Campanhas (MVP: catálogo, lotes, wizard público-alvo, provisionamento + evento rejected)
-- [x] **EPIC-07** CidadãoBR Saúde Gestão — Rotas e Provisionamento (MVP: schema grupo L, BuildCampaignTargetList, GenerateVisitRoutes, preview rollup)
-- [x] **EPIC-08** CidadãoBR Saúde Campo — App Profissional (MVP monólito: API-FIELD campanhas/rotas; Flutter em repo irmão — ver docs/commercial/cidadaobr-field-mvp-api.md)
-- [ ] **EPIC-09** CidadãoBR Saúde — LEDI Completo e PEC  
-- [ ] **EPIC-10** CidadãoBR Saúde — Cidadão Plus  
-- [ ] **EPIC-11** CidadãoBR Saúde — Core IA e Produção  
+- [~] **EPIC-04** CidadãoBR Saúde — Portal cidadão (**Fase 3 API** ok; **app Flutter = Fase 8**)  
+- [x] **EPIC-05** CidadãoBR Saúde Gestão — Indicadores 3.493 (MVP Fase 4; repasse ilustrativo)  
+- [~] **EPIC-06** CidadãoBR Saúde Gestão — Estoque e Campanhas (kickoff web)  
+- [~] **EPIC-07** CidadãoBR Saúde Gestão — Rotas e Provisionamento (kickoff web)  
+- [ ] **EPIC-08** CidadãoBR Saúde Campo — App Profissional (**Fase 8**; APIs Field no monólito)  
+- [ ] **EPIC-09** CidadãoBR Saúde — LEDI Completo e PEC (Fase 6 core; Field UI Fase 8)  
+- [ ] **EPIC-10** CidadãoBR Saúde — Cidadão Plus (Fase 6 API; app UI Fase 8)  
+- [ ] **EPIC-11** CidadãoBR Saúde — Core IA e Produção (Fase 7)  
+- [ ] **Fase 8** — `mobile-shared` + `cidadaobr-citizen` + `cidadaobr-field`
 
 ---
 
@@ -2860,6 +3145,8 @@ Cada história agrupa uma ou mais **Tasks**. Na exportação CSV, `parent_id` da
 ---
 
 ## Referências rápidas por ficha LEDI
+
+Documentação central: [Estrutura dos arquivos](https://integracao.esusaps.bridge.ufsc.tech/ledi/documentacao/estrutura_arquivos/index.html) · [Dicionário de domínios](https://integracao.esusaps.bridge.ufsc.tech/ledi/documentacao/referencias/dicionario.html)
 
 | Sigla | Dicionário |
 |-------|------------|

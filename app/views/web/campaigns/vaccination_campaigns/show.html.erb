@@ -12,6 +12,16 @@
   </div>
 
   <div class="mb-6 rounded-lg border border-slate-200 bg-white p-6 text-sm">
+    <h3 class="mb-3 font-semibold"><%= t("cidadaobr.campaigns.vaccination_wizard.title") %></h3>
+    <ol class="list-decimal space-y-1 pl-5">
+      <li class="<%= @campaign.persisted? ? 'text-emerald-700' : '' %>"><%= t("cidadaobr.campaigns.vaccination_wizard.step_define") %></li>
+      <li class="<%= @provisioning&.status == 'approved' ? 'text-emerald-700' : '' %>"><%= t("cidadaobr.campaigns.vaccination_wizard.step_provisioning") %></li>
+      <li class="<%= @campaign.campaign_targets.any? ? 'text-emerald-700' : '' %>"><%= t("cidadaobr.campaigns.vaccination_wizard.step_targets") %></li>
+      <li class="<%= @campaign.status == 'active' ? 'text-emerald-700' : '' %>"><%= t("cidadaobr.campaigns.vaccination_wizard.step_publish") %></li>
+    </ol>
+  </div>
+
+  <div class="mb-6 rounded-lg border border-slate-200 bg-white p-6 text-sm">
     <p><strong><%= VaccinationCampaign.human_attribute_name(:health_facility_id) %>:</strong> <%= @campaign.health_facility.name %></p>
     <p><strong><%= ImmunobiologicalProduct.model_name.human %>:</strong> <%= @campaign.immunobiological_product.name %></p>
     <p><strong><%= VaccinationCampaign.human_attribute_name(:target_doses) %>:</strong> <%= @campaign.target_doses %></p>

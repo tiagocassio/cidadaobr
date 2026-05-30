@@ -17,3 +17,23 @@ production:
     class: PublishOutboxMessagesJob
     queue: default
     schedule: every minute
+  ufsc_reference_import:
+    class: UfscReferenceImportJob
+    queue: default
+    schedule: at 3am on day 1
+  ledi_catalog_sync:
+    class: LediCatalogSyncJob
+    queue: default
+    schedule: at 4am on day 1
+  sigtap_import:
+    class: SigtapImportJob
+    queue: default
+    schedule: at 5am on day 5
+  publish_reference_release:
+    class: PublishReferenceReleaseJob
+    queue: default
+    schedule: at 6am on day 1
+  publish_reference_release_sigtap:
+    class: PublishReferenceReleaseJob
+    queue: default
+    schedule: at 6am on day 5

@@ -57,7 +57,7 @@ module Routing
                 )
                 routes_created += 1
 
-                ordered = order_stops_nearest_neighbor(chunk)
+                ordered = Routing::OrderVisitRouteStops.call(chunk)
                 ordered.each_with_index do |target, stop_index|
                   household = target.household || household_for(target.citizen)
                   VisitRouteStop.create!(
@@ -92,45 +92,6 @@ module Routing
 
         def household_for(citizen)
           citizen.household_members.order(:created_at).first&.household
-        end
-
-        def order_stops_nearest_neighbor(targets)
-          return targets if targets.size <= 1
-
-          remaining = targets.dup
-          ordered = [ remaining.shift ]
-          current_point = location_for(ordered.last)
-
-          until remaining.empty?
-            next_target = remaining.min_by do |target|
-              point = location_for(target)
-              point && current_point ? haversine_km(current_point, point) : Float::INFINITY
-            end
-            ordered << next_target
-            remaining.delete(next_target)
-            current_point = location_for(next_target) || current_point
-          end
-
-          ordered
-        end
-
-        def location_for(target)
-          household = target.household || household_for(target.citizen)
-          return unless household&.location
-
-          [ household.location.y, household.location.x ]
-        end
-
-        def haversine_km(a, b)
-          lat1, lon1 = a
-          lat2, lon2 = b
-          rad = Math::PI / 180.0
-          dlat = (lat2 - lat1) * rad
-          dlon = (lon2 - lon1) * rad
-          lat1 *= rad
-          lat2 *= rad
-          h = Math.sin(dlat / 2)**2 + Math.cos(lat1) * Math.cos(lat2) * Math.sin(dlon / 2)**2
-          6371.0 * 2 * Math.asin(Math.sqrt(h))
         end
       end
     end

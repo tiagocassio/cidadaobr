@@ -2,29 +2,74 @@
   <%= link_to t("cidadaobr.campaigns.back"), web_campaigns_home_visit_campaign_path(@campaign), class: "text-sm text-slate-600 underline" %>
   <h2 class="mt-2 mb-6 text-2xl font-bold"><%= t("cidadaobr.campaigns.home_visit.preview_provisioning") %></h2>
 
-  <div class="mb-4">
+  <div class="mb-4 flex flex-wrap gap-2">
     <%= button_to t("cidadaobr.campaigns.home_visit.calculate_provisioning"), calculate_provisioning_web_campaigns_home_visit_campaign_path(@campaign), method: :post, class: "rounded bg-slate-800 px-3 py-2 text-sm font-semibold text-white" %>
+    <% if @rollup&.status.in?(%w[calculated blocked]) %>
+      <%= button_to t("cidadaobr.campaigns.home_visit.reserve_provisioning"), reserve_provisioning_web_campaigns_home_visit_campaign_path(@campaign, all_routes: true), method: :post, class: "rounded bg-amber-700 px-3 py-2 text-sm font-semibold text-white" %>
+    <% end %>
   </div>
 
   <div class="rounded-lg border border-slate-200 bg-white p-6 text-sm">
     <% if @rollup.present? %>
       <p class="mb-4"><%= t("cidadaobr.campaigns.provisioning_status") %>: <strong><%= @rollup.status %></strong></p>
-      <table class="min-w-full">
-        <thead>
-          <tr class="text-left">
-            <th class="py-2"><%= t("cidadaobr.campaigns.home_visit.item") %></th>
-            <th class="py-2"><%= t("cidadaobr.campaigns.home_visit.quantity") %></th>
-          </tr>
-        </thead>
-        <tbody>
-          <% @rollup.totals_json.each do |line| %>
-            <tr class="border-t">
-              <td class="py-2"><%= line["label"] %></td>
-              <td class="py-2"><%= line["quantity_required"] %> <%= line["unit"] %></td>
+
+      <% editable = @rollup.status.in?(%w[calculated blocked]) %>
+      <% if editable %>
+        <%= form_with url: update_provisioning_web_campaigns_home_visit_campaign_path(@campaign), method: :patch, class: "space-y-4" do %>
+          <table class="min-w-full">
+            <thead>
+              <tr class="text-left">
+                <th class="py-2"><%= t("cidadaobr.campaigns.home_visit.item") %></th>
+                <th class="py-2"><%= t("cidadaobr.campaigns.home_visit.quantity_required") %></th>
+                <th class="py-2"><%= t("cidadaobr.campaigns.home_visit.quantity_available") %></th>
+                <th class="py-2"><%= t("cidadaobr.campaigns.home_visit.deficit") %></th>
+              </tr>
+            </thead>
+            <tbody>
+              <% @rollup.totals_json.each_with_index do |line, index| %>
+                <tr class="border-t <%= line['deficit'].to_i.positive? ? 'bg-red-50' : '' %>">
+                  <td class="py-2">
+                    <%= line["label"] %>
+                    <%= hidden_field_tag "totals[#{index}][key]", line["key"] %>
+                    <%= hidden_field_tag "totals[#{index}][label]", line["label"] %>
+                    <%= hidden_field_tag "totals[#{index}][unit]", line["unit"] %>
+                    <%= hidden_field_tag "totals[#{index}][supply_item_code]", line["supply_item_code"] %>
+                    <%= hidden_field_tag "totals[#{index}][immunobiological_product_id]", line["immunobiological_product_id"] %>
+                  </td>
+                  <td class="py-2">
+                    <%= number_field_tag "totals[#{index}][quantity_required]", line["quantity_required"], min: 0, class: "w-24 rounded border border-slate-300 px-2 py-1" %>
+                    <%= line["unit"] %>
+                  </td>
+                  <td class="py-2"><%= line["quantity_available"] || "—" %></td>
+                  <td class="py-2"><%= line["deficit"].to_i.positive? ? line["deficit"] : "—" %></td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+          <%= submit_tag t("cidadaobr.campaigns.home_visit.save_provisioning"), class: "rounded border border-slate-300 px-3 py-2 text-sm" %>
+        <% end %>
+      <% else %>
+        <table class="min-w-full">
+          <thead>
+            <tr class="text-left">
+              <th class="py-2"><%= t("cidadaobr.campaigns.home_visit.item") %></th>
+              <th class="py-2"><%= t("cidadaobr.campaigns.home_visit.quantity_required") %></th>
+              <th class="py-2"><%= t("cidadaobr.campaigns.home_visit.quantity_available") %></th>
+              <th class="py-2"><%= t("cidadaobr.campaigns.home_visit.deficit") %></th>
             </tr>
-          <% end %>
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            <% @rollup.totals_json.each do |line| %>
+              <tr class="border-t">
+                <td class="py-2"><%= line["label"] %></td>
+                <td class="py-2"><%= line["quantity_required"] %> <%= line["unit"] %></td>
+                <td class="py-2"><%= line["quantity_available"] || "—" %></td>
+                <td class="py-2"><%= line["deficit"].to_i.positive? ? line["deficit"] : "—" %></td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      <% end %>
     <% else %>
       <p class="mb-4 text-slate-600"><%= t("cidadaobr.campaigns.home_visit.provisioning_not_calculated") %></p>
       <table class="min-w-full">

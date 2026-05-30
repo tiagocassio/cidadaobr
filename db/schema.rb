@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_05_28_160000) do
+ActiveRecord::Schema[8.1].define(version: 2026_05_29_130000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
@@ -332,7 +332,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_28_160000) do
     t.uuid "municipality_id", null: false
     t.decimal "quantity_on_hand", precision: 12, scale: 3, default: "0.0", null: false
     t.datetime "updated_at", null: false
-    t.index ["health_facility_id", "immunobiological_product_id", "expires_on"], name: "index_immunobiological_lots_on_facility_product_expires"
+    t.index ["expires_on"], name: "index_immunobiological_lots_on_expires_on"
     t.index ["health_facility_id", "immunobiological_product_id", "lot_number"], name: "index_immunobiological_lots_on_facility_product_lot", unique: true
   end
 
@@ -347,7 +347,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_28_160000) do
     t.index ["municipality_id", "code"], name: "index_immunobiological_products_on_municipality_code", unique: true
   end
 
-  create_table "indicator_catalogs", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+  create_table "indicator_catalog", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.boolean "active", default: true, null: false
     t.string "code", null: false
     t.datetime "created_at", null: false
@@ -358,7 +358,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_28_160000) do
     t.string "periodicity", default: "quarterly", null: false
     t.string "team_kind"
     t.datetime "updated_at", null: false
-    t.index ["code"], name: "index_indicator_catalogs_on_code", unique: true
+    t.index ["code"], name: "index_indicator_catalog_on_code", unique: true
   end
 
   create_table "indicator_rules", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -414,7 +414,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_28_160000) do
     t.index ["status"], name: "index_ledi_batches_on_status"
   end
 
-  create_table "ledi_field_catalogs", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+  create_table "ledi_field_catalog", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.datetime "created_at", null: false
     t.string "data_type", null: false
     t.string "field_path", null: false
@@ -424,7 +424,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_28_160000) do
     t.string "record_type", null: false
     t.boolean "required", default: false, null: false
     t.datetime "updated_at", null: false
-    t.index ["record_type", "field_path", "ledi_version"], name: "index_ledi_field_catalogs_on_type_path_version", unique: true
+    t.index ["record_type", "field_path", "ledi_version"], name: "index_ledi_field_catalog_on_type_path_version", unique: true
   end
 
   create_table "ledi_validation_rules", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -492,6 +492,53 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_28_160000) do
     t.string "reason"
     t.datetime "starts_at", null: false
     t.datetime "updated_at", null: false
+  end
+
+  create_table "reference_data_releases", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.string "checksum", null: false
+    t.datetime "created_at", null: false
+    t.string "ledi_version", null: false
+    t.jsonb "manifest_json", default: {}, null: false
+    t.datetime "published_at", null: false
+    t.string "release_key", null: false
+    t.string "sigtap_competence"
+    t.datetime "updated_at", null: false
+    t.index ["published_at"], name: "index_reference_data_releases_on_published_at"
+    t.index ["release_key"], name: "index_reference_data_releases_on_release_key", unique: true
+  end
+
+  create_table "reference_domain_entries", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.boolean "active", default: true, null: false
+    t.string "code", null: false
+    t.datetime "created_at", null: false
+    t.string "domain_key", null: false
+    t.string "label", null: false
+    t.jsonb "payload_json", default: {}, null: false
+    t.datetime "updated_at", null: false
+    t.index ["domain_key", "code"], name: "index_reference_domain_entries_on_domain_code", unique: true
+    t.index ["domain_key"], name: "index_reference_domain_entries_on_domain_key"
+  end
+
+  create_table "reference_domains", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.string "domain_key", null: false
+    t.string "label"
+    t.string "source", null: false
+    t.datetime "updated_at", null: false
+    t.index ["domain_key"], name: "index_reference_domains_on_domain_key", unique: true
+  end
+
+  create_table "reference_import_runs", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.text "error_message"
+    t.datetime "finished_at"
+    t.string "job_name", null: false
+    t.integer "records_imported", default: 0, null: false
+    t.string "source_path"
+    t.datetime "started_at", null: false
+    t.string "status", default: "running", null: false
+    t.datetime "updated_at", null: false
+    t.index ["job_name", "started_at"], name: "index_reference_import_runs_on_job_name_and_started_at"
   end
 
   create_table "roles", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -734,7 +781,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_28_160000) do
   add_foreign_key "household_animals", "households"
   add_foreign_key "immunobiological_lots", "health_facilities"
   add_foreign_key "immunobiological_lots", "immunobiological_products"
-  add_foreign_key "indicator_rules", "indicator_catalogs"
+  add_foreign_key "indicator_rules", "indicator_catalog"
   add_foreign_key "micro_areas", "care_teams"
   add_foreign_key "micro_areas", "municipalities"
   add_foreign_key "stock_balances", "health_facilities"

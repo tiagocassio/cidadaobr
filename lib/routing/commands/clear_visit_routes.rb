@@ -3,10 +3,19 @@
 module Routing
   module Commands
     class ClearVisitRoutes
-      Result = Data.define(:routes_removed, :targets_reset)
+      Result = Data.define(:routes_removed, :targets_reset, :message)
 
       class << self
         def call(campaign:, route_date:)
+          routes = campaign.visit_routes.where(route_date: route_date)
+          if routes.joins(:visit_route_provisioning).where(visit_route_provisionings: { status: "dispatched" }).exists?
+            return Result.new(
+              0,
+              0,
+              I18n.t("cidadaobr.campaigns.home_visit.flash.clear_routes_dispatched")
+            )
+          end
+
           ActiveRecord::Base.transaction do
             clear!(campaign: campaign, route_date: route_date)
           end
@@ -20,6 +29,7 @@ module Routing
             .pluck(:campaign_target_id)
           routes_removed = routes.count
 
+          Inventory::Commands::ReleaseReservedSupplies.call_for_routes(routes: routes)
           routes.destroy_all
           targets_reset = 0
           if target_ids.any?
@@ -34,7 +44,7 @@ module Routing
 
           sync_provisioning!(campaign) if sync_provisioning
 
-          Result.new(routes_removed, targets_reset)
+          Result.new(routes_removed, targets_reset, nil)
         end
 
         def sync_provisioning!(campaign)

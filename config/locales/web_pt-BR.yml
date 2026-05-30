@@ -218,6 +218,8 @@ pt-BR:
       slot_hint: "O horário da consulta é definido pela vaga selecionada."
       book: "Agendar"
       reception_title: "Fila — recepção"
+      walk_in_title: "Encaixe / walk-in"
+      walk_in_submit: "Registrar acolhimento"
       utilization_title: "Ocupação e absenteísmo"
       utilization_subtitle: "Consultas e vagas no período selecionado"
       utilization_report: "Relatório ocupação"
@@ -257,6 +259,7 @@ pt-BR:
         slot: "Vaga (data e horário)"
       flash:
         booked: "Consulta agendada."
+        walk_in_booked: "Encaixe registrado na fila de recepção."
         check_in: "Check-in realizado."
         check_in_failed: "Não foi possível fazer check-in."
         completed: "Atendimento concluído."

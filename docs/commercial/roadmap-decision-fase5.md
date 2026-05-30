@@ -21,9 +21,9 @@
 
 | Trilha | EPIC / TASK | Quando priorizar | Esforço relativo |
 |--------|-------------|------------------|------------------|
-| **Operação de massa** | EPIC-06 → EPIC-07 → EPIC-08 | Piloto pede campanha, visita domiciliar, app campo | Grande (Fase 5 padrão no plano) |
+| **Operação de massa** | EPIC-06 → EPIC-07 → EPIC-09 (web) | Piloto pede campanha, visita domiciliar, PEC | Grande (Fases 5–6 web) |
 | **Credibilidade financeira** | TASK-05-07, EPIC-11 (SIAPS) | Secretário exige “número igual ao MS” | Médio — pode correr em paralelo |
-| **Canal cidadão** | EPIC-04 / Sprint 5 | Proposta comercial exige app munícipe | Médio — API já existe |
+| **Apps mobile** | **Fase 8** — mobile-shared, Citizen, Field | Lojas / profissionais de campo / autogestão cidadão | Grande — **após Fases 5–7 web** |
 
 ---
 
@@ -44,7 +44,7 @@ Marque a opção escolhida e atualize o [plano mestre](../padrão_ledi_e-sus_4f0
 - [x] **Opção A — Fase 5 (EPIC-06):** `phase-5-field-campaigns` → `in_progress`
 - [ ] **Opção B — Credibilidade (TASK-05-07 + EPIC-11):** documentar ADR ou epic dedicado
 - [ ] **Opção C — Paralelo:** EPIC-06 in_progress + TASK-05-07 em sprint paralelo
-- [ ] **Opção D — Cidadão primeiro:** EPIC-04 antes de EPIC-06
+- [ ] **Opção D — Mobile first:** ~~EPIC-04 antes de EPIC-06~~ **descartada (2026-05-29)** — apps Flutter só na **Fase 8**
 
 **Decisão registrada:** Opção A — iniciar EPIC-06 (estoque + campanhas de vacinação) como trilha padrão pós-gate Fase 4; TASK-05-07 e SIAPS permanecem paralelos opcionais.  
 **Data:** 2026-05-28  

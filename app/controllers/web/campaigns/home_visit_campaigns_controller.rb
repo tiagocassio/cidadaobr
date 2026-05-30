@@ -4,9 +4,15 @@ module Web
   module Campaigns
     class HomeVisitCampaignsController < BaseController
       before_action :require_facility_or_municipality!
-      before_action :require_facility_or_municipality_write!, only: %i[new create build_targets generate_routes clear_routes publish_routes calculate_provisioning]
+      before_action :require_facility_or_municipality_write!, only: %i[
+        new create build_targets generate_routes clear_routes publish_routes
+        calculate_provisioning reserve_provisioning update_provisioning dispatch_supplies
+      ]
       before_action :set_form_collections, only: %i[new create]
-      before_action :set_campaign, only: %i[show build_targets generate_routes clear_routes publish_routes preview_provisioning calculate_provisioning]
+      before_action :set_campaign, only: %i[
+        show build_targets generate_routes clear_routes publish_routes preview_provisioning
+        calculate_provisioning reserve_provisioning update_provisioning dispatch_supplies route_map
+      ]
 
       def index
         @pagy, @campaigns = pagy(
@@ -16,12 +22,15 @@ module Web
 
       def show
         @targets_count = @campaign.campaign_targets.count
-        @routes = @campaign.visit_routes.includes(:care_team).order(:route_date, :sequence_number)
+        @routes = @campaign.visit_routes.includes(:care_team, :visit_route_provisioning).order(:route_date, :sequence_number)
         @provisioning = @campaign.home_visit_campaign_provisioning
         @route_date, @route_date_invalid = parse_route_date_with_validation
         flash.now[:alert] = t("cidadaobr.campaigns.home_visit.flash.invalid_route_date") if @route_date_invalid
         @route_dates = @campaign.visit_routes.distinct.order(:route_date).pluck(:route_date)
         @routes_for_date = @routes.select { |route| route.route_date == @route_date }
+        @team_progress = Campaigns::VisitRouteProgress.by_team(campaign: @campaign, route_date: @route_date)
+        @campaign_progress = Campaigns::VisitRouteProgress.for_campaign(campaign: @campaign, route_date: @route_date)
+        @phase5_ready = phase5_gate_ready?
       end
 
       def new
@@ -95,6 +104,12 @@ module Web
         end
 
         result = Routing::Commands::ClearVisitRoutes.call(campaign: @campaign, route_date: route_date)
+        if result.message.present?
+          redirect_to web_campaigns_home_visit_campaign_path(@campaign, route_date: route_date.iso8601),
+                      alert: result.message
+          return
+        end
+
         redirect_to web_campaigns_home_visit_campaign_path(@campaign),
                     notice: t(
                       "cidadaobr.campaigns.home_visit.flash.routes_cleared",
@@ -134,6 +149,91 @@ module Web
                     notice: t("cidadaobr.campaigns.home_visit.flash.provisioning_calculated")
       end
 
+      def reserve_provisioning
+        route_date, invalid = reserve_scope_route_date
+        if invalid
+          redirect_to preview_provisioning_web_campaigns_home_visit_campaign_path(@campaign),
+                      alert: t("cidadaobr.campaigns.home_visit.flash.invalid_route_date")
+          return
+        end
+
+        result = Inventory::Commands::ReserveVisitRouteSupplies.call(campaign: @campaign, route_date: route_date)
+        if result.blocked
+          redirect_to preview_provisioning_web_campaigns_home_visit_campaign_path(@campaign),
+                      alert: result.message
+          return
+        end
+
+        redirect_to preview_provisioning_web_campaigns_home_visit_campaign_path(@campaign),
+                    notice: t(
+                      "cidadaobr.campaigns.home_visit.flash.provisioning_reserved",
+                      count: result.routes_reserved
+                    )
+      end
+
+      def update_provisioning
+        totals = params.require(:totals).map do |line|
+          line.permit(:key, :label, :quantity_required, :unit, :supply_item_code, :immunobiological_product_id).to_h
+        end
+        Inventory::Commands::UpdateCampaignProvisioning.call(campaign: @campaign, totals: totals)
+        redirect_to preview_provisioning_web_campaigns_home_visit_campaign_path(@campaign),
+                    notice: t("cidadaobr.campaigns.home_visit.flash.provisioning_updated")
+      rescue ArgumentError
+        redirect_to preview_provisioning_web_campaigns_home_visit_campaign_path(@campaign),
+                    alert: t("cidadaobr.campaigns.home_visit.flash.provisioning_update_failed")
+      end
+
+      def dispatch_supplies
+        route_date, invalid = parse_route_date_with_validation
+        if invalid
+          redirect_to web_campaigns_home_visit_campaign_path(@campaign),
+                      alert: t("cidadaobr.campaigns.home_visit.flash.invalid_route_date")
+          return
+        end
+
+        care_team = scoped_care_teams.find_by(id: params.require(:care_team_id))
+        unless care_team && @campaign.visit_routes.exists?(route_date: route_date, care_team_id: care_team.id)
+          redirect_to web_campaigns_home_visit_campaign_path(@campaign, route_date: route_date.iso8601),
+                      alert: t("cidadaobr.campaigns.home_visit.flash.invalid_care_team")
+          return
+        end
+
+        result = Inventory::Commands::DispatchTeamSupplyKit.call(
+          campaign: @campaign,
+          care_team: care_team,
+          dispatch_date: route_date
+        )
+        if result.message.present?
+          redirect_to web_campaigns_home_visit_campaign_path(@campaign, route_date: route_date.iso8601),
+                      alert: result.message
+          return
+        end
+
+        redirect_to web_campaigns_home_visit_campaign_path(@campaign, route_date: route_date.iso8601),
+                    notice: t("cidadaobr.campaigns.home_visit.flash.supplies_dispatched")
+      end
+
+      def route_map
+        route_date, @route_date_invalid = parse_route_date_with_validation
+        @routes = @campaign.visit_routes
+          .where(route_date: route_date)
+          .includes(visit_route_stops: { citizen: { households: [] }, household: [] })
+          .order(:sequence_number)
+        @map_markers = @routes.flat_map do |route|
+          route.visit_route_stops.sort_by(&:stop_order).filter_map do |stop|
+            household = stop.household || stop.citizen.household_members.order(:created_at).first&.household
+            next unless household&.location
+
+            {
+              lat: household.location.y,
+              lng: household.location.x,
+              label: "#{route.care_team.name} · parada #{stop.stop_order}",
+              route_id: route.id
+            }
+          end
+        end
+      end
+
       private
 
       def scoped_campaigns
@@ -171,6 +271,35 @@ module Web
         [ Date.iso8601(params[:route_date]), false ]
       rescue Date::Error
         [ Date.current, true ]
+      end
+
+      def reserve_scope_route_date
+        return [ nil, false ] if ActiveModel::Type::Boolean.new.cast(params[:all_routes])
+
+        parse_route_date_with_validation
+      end
+
+      def phase5_gate_ready?
+        return false unless @campaign.campaign_targets.exists?
+
+        published_routes = @campaign.visit_routes.where(status: "published")
+        return false if published_routes.none?
+
+        return false unless @campaign.home_visit_campaign_provisioning&.status.in?(%w[reserved dispatched])
+
+        return false unless published_routes.all? do |route|
+          route.visit_route_provisioning&.status.in?(%w[reserved dispatched])
+        end
+
+        published_routes.distinct.pluck(:care_team_id, :route_date).all? do |team_id, date|
+          TeamSupplyDispatch.exists?(
+            municipality_id: @campaign.municipality_id,
+            health_facility_id: @campaign.health_facility_id,
+            care_team_id: team_id,
+            dispatch_date: date,
+            status: "dispatched"
+          )
+        end
       end
     end
   end

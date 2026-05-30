@@ -71,18 +71,96 @@ module Inventory
 
         blocked = totals.values.any? do |line|
           available = available_for_line(campaign: campaign, line: line)
-          line["quantity_required"] > available
+          line["quantity_available"] = available
+          line["deficit"] = [ line["quantity_required"].to_i - available, 0 ].max
+          line["deficit"].positive?
         end
 
         record = HomeVisitCampaignProvisioning.find_or_initialize_by(home_visit_campaign: campaign)
+        existing_status = record.status
+        status = if blocked
+          "blocked"
+        elsif existing_status.in?(%w[reserved dispatched])
+          existing_status
+        else
+          "calculated"
+        end
         record.assign_attributes(
           municipality: campaign.municipality,
           health_facility: campaign.health_facility,
           totals_json: totals.values,
-          status: blocked ? "blocked" : "calculated"
+          status: status
         )
         record.save!
         record
+      end
+
+      def rollup_status!(campaign:)
+        record = campaign.home_visit_campaign_provisioning
+        return unless record
+
+        totals = record.totals_json.map do |line|
+          line = line.stringify_keys
+          available = available_for_line(campaign: campaign, line: line)
+          line.merge(
+            "quantity_available" => available,
+            "deficit" => [ line["quantity_required"].to_i - available, 0 ].max
+          )
+        end
+
+        blocked = totals.any? { |line| line["deficit"].to_i.positive? }
+        status = if blocked
+          "blocked"
+        elsif record.status.in?(%w[reserved dispatched])
+          record.status
+        else
+          "calculated"
+        end
+
+        record.update!(totals_json: totals, status: status)
+        record
+      end
+
+      def apply_campaign_totals_to_routes!(campaign:, totals:)
+        routes = campaign.visit_routes.includes(:visit_route_provisioning, :visit_route_stops).to_a
+        total_stops = routes.sum { |route| route.visit_route_stops.size }
+        return if total_stops.zero?
+
+        totals = totals.map(&:stringify_keys)
+        lines_by_route = routes.index_with { [] }
+
+        totals.each do |line|
+          total_qty = line["quantity_required"].to_i
+          remaining = total_qty
+
+          routes.each_with_index do |route, index|
+            stop_count = route.visit_route_stops.size
+            scaled = if index == routes.size - 1
+              remaining
+            else
+              share = (total_qty * stop_count / total_stops).floor
+              remaining -= share
+              share
+            end
+
+            lines_by_route[route] << {
+              "key" => line["key"],
+              "label" => line["label"],
+              "quantity_required" => scaled,
+              "unit" => line["unit"],
+              "supply_item_code" => line["supply_item_code"],
+              "immunobiological_product_id" => line["immunobiological_product_id"]
+            }
+          end
+        end
+
+        routes.each do |route|
+          provisioning = route.visit_route_provisioning
+          next if provisioning.blank?
+          next if provisioning.status.in?(%w[reserved dispatched])
+
+          provisioning.update!(lines_json: lines_by_route[route], status: "calculated")
+        end
       end
 
       def persist_route!(route:)

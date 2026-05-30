@@ -182,12 +182,27 @@ RSpec.describe "Web stock and campaigns", type: :request do
       campaign = nil
       route = nil
       with_tenant(membership) do
-        campaign = create(:home_visit_campaign, municipality: municipality, health_facility: facility, status: "targets_built")
+        product = create(:immunobiological_product, municipality: municipality)
+        create(
+          :immunobiological_lot,
+          municipality: municipality,
+          health_facility: facility,
+          immunobiological_product: product,
+          quantity_on_hand: 100
+        )
+        campaign = create(
+          :home_visit_campaign,
+          municipality: municipality,
+          health_facility: facility,
+          status: "targets_built",
+          target_audience_definition: { "immunobiological_product_id" => product.id }
+        )
         team = create(:care_team, municipality: municipality, health_facility: facility)
         citizen = create(:citizen, municipality: municipality, health_facility: facility, care_team: team)
         create(:campaign_target, municipality: municipality, health_facility: facility, campaign: campaign, citizen: citizen)
         Routing::Commands::GenerateVisitRoutes.call(campaign: campaign, route_date: Date.current)
         route = campaign.visit_routes.first
+        Inventory::Commands::ReserveVisitRouteSupplies.call(campaign: campaign)
       end
 
       post publish_routes_web_campaigns_home_visit_campaign_path(campaign)

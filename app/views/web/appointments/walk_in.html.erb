@@ -1,0 +1,20 @@
+<section>
+  <%= link_to t("cidadaobr.appointments.back"), reception_web_appointments_path(facility_scope_params), class: "text-sm text-slate-600 underline" %>
+  <h2 class="mt-2 mb-6 text-2xl font-bold"><%= t("cidadaobr.appointments.walk_in_title") %></h2>
+
+  <%= form_with model: @appointment, url: walk_in_web_appointments_path(facility_scope_params), method: :post, class: "space-y-4" do |form| %>
+    <div>
+      <%= form.label :citizen_id, class: "block text-sm font-medium" %>
+      <%= form.collection_select :citizen_id, @citizens, :id, :full_name, { prompt: true }, class: "mt-1 w-full rounded border border-slate-300 px-3 py-2" %>
+    </div>
+    <div>
+      <%= form.label :appointment_service_type_id, class: "block text-sm font-medium" %>
+      <%= form.collection_select :appointment_service_type_id, @service_types, :id, :name, { prompt: true }, class: "mt-1 w-full rounded border border-slate-300 px-3 py-2" %>
+    </div>
+    <div>
+      <%= form.label :consultation_room_id, class: "block text-sm font-medium" %>
+      <%= form.collection_select :consultation_room_id, @rooms, :id, :name, { prompt: true }, class: "mt-1 w-full rounded border border-slate-300 px-3 py-2" %>
+    </div>
+    <%= form.submit t("cidadaobr.appointments.walk_in_submit"), class: "rounded bg-slate-800 px-4 py-2 text-sm font-semibold text-white" %>
+  <% end %>
+</section>

@@ -1,0 +1,17 @@
+<section>
+  <%= link_to t("cidadaobr.campaigns.home_visit.back"), web_campaigns_home_visit_campaign_path(@campaign), class: "text-sm text-slate-600 underline" %>
+  <h2 class="mt-2 mb-6 text-2xl font-bold"><%= t("cidadaobr.campaigns.home_visit.route_map_title") %></h2>
+
+  <% if @map_markers.any? %>
+    <div class="mb-4 rounded-lg border border-slate-200 bg-white p-4 text-sm">
+      <p class="mb-2 font-medium"><%= t("cidadaobr.campaigns.home_visit.route_map_stops", count: @map_markers.size) %></p>
+      <ul class="max-h-96 divide-y overflow-y-auto">
+        <% @map_markers.each do |marker| %>
+          <li class="py-2"><%= marker[:label] %> — <%= marker[:lat].round(5) %>, <%= marker[:lng].round(5) %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% else %>
+    <p class="text-sm text-slate-600"><%= t("cidadaobr.campaigns.home_visit.route_map_empty") %></p>
+  <% end %>
+</section>

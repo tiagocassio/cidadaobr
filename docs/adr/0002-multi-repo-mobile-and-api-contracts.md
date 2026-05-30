@@ -11,10 +11,10 @@ CidadãoBR Saúde ships three client surfaces: municipal web (Hotwire in `cidada
 ## Decision
 
 - **Polyrepo (Option A):** keep `cidadaobr` as API + web only.
-- Sibling repositories:
+- Sibling repositories (**entrega Fase 8**, após web/API Fases 0–7):
   - `cidadaobr-mobile-shared` — Dart packages (`api_client` from OpenAPI, shared tokens later).
-  - `cidadaobr-citizen` — Flutter citizen app (EPIC-04).
-  - `cidadaobr-field` — Flutter field app (EPIC-08, later).
+  - `cidadaobr-citizen` — Flutter citizen app (EPIC-04 app + EPIC-10 UI).
+  - `cidadaobr-field` — Flutter field app (EPIC-08 + EPIC-09 Field UI).
 - **Contract SSOT:** `doc/api/openapi.v1.yaml` in `cidadaobr`, versioned with git tags `openapi-x.y.z`.
 - **Web gestão (Hotwire)** reception actions such as `POST /web/appointments/:id/no_show` are intentionally **not** in OpenAPI v1; v1 targets citizen/field JSON under `/api/v1/`.
 - Mobile pins OpenAPI version when generating the HTTP client.
