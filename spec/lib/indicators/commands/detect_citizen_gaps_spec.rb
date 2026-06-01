@@ -192,7 +192,10 @@ RSpec.describe Indicators::DetectCitizenGaps do
         record = persist_clinical_record!(
           citizen: citizen,
           record_type: "FAI",
-          payload_json: { "dumDaGestante" => dum_date.iso8601 },
+          payload_json: {
+            "dumDaGestante" => dum_date.iso8601,
+            "atendimentos_individuais" => [ { "tipo" => "consulta" } ]
+          },
           encounter_at: prenatal_at
         )
         record.update_column(:encounter_at, nil)

@@ -9,11 +9,13 @@
 
 | Marco | Status |
 |-------|--------|
-| Motor 17 indicadores (B1–M2) | Entregue |
+| Motor 17 indicadores (B1–M2) | Entregue (MVP + packs EPIC-05b) |
 | Painel gestor + gaps + ranking | Entregue |
+| Cobertura normativa BPs (≥90%) | **Done** (48/53 `done` — [matriz](docs/indicators/methodology-coverage-matrix.md), gate ADR-0005) |
 | Repasse em R$ | **Ilustrativo** (TASK-05-07 pendente) |
 | `phase-4-indicators` | completed no plano mestre |
-| `phase-5-field-campaigns` | **in_progress** — Opção A (EPIC-06 kickoff) |
+| `phase-4b-methodology` | **completed** — gate ADR-0005 (48/53 `done`); onda 2: CVAT mensal, C2-E, C7-B/C, import V_SAT |
+| `phase-5-field-campaigns` | **in_progress** — Opção A (EPIC-06/07) |
 
 ---
 

@@ -20,12 +20,16 @@
       "flag": "pregnant"
     },
     "numerator": {
-      "type": "visit_count_gte",
+      "type": "puerperium_visit",
       "record_types": [
         "FVD"
       ],
-      "within_months": 3,
-      "minimum_count": 1
+      "days_after_delivery": 42,
+      "minimum_count": 1,
+      "predicate": {
+        "type": "present",
+        "field_path": "visit_reasons"
+      }
     }
   }
 }

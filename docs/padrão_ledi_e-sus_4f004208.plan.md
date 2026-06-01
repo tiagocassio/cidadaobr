@@ -1,6 +1,6 @@
 ---
 name: Padrão LEDI e-SUS
-overview: "CidadãoBR Saúde — APS municipal LEDI + 17 indicadores. Marca CidadãoBR; vertentes futuras Segurança, Educação, Ouvidoria. RLS + chaves hierárquicas. Backlog EPIC→STORY→TASK→SUB. Rails 8 + PG 18 + Kafka + ES/CQRS. Código en-US; UI pt-BR."
+overview: "CidadãoBR Saúde — APS municipal LEDI + 17 indicadores. Fases 0–4 MVP concluídas; Fase 4b (metodologia 3493) completed (gate ADR-0005); Fase 5 em curso. Flutter exclusivamente Fase 8. Marca CidadãoBR; RLS + Kafka + ES/CQRS. Código en-US; UI pt-BR."
 todos:
   - id: fix-ledi-version
     content: Definir versão LEDI alvo e obter Thrift/XSD oficiais
@@ -58,7 +58,7 @@ todos:
     status: completed
   - id: painel-gestor
     content: "Painel municipal projeção de repasse, ranking equipes e fila de pendências por indicador"
-    status: partial
+    status: completed
   - id: code-conventions-en
     content: "Lint/naming en-US: models, tables, columns, events, Kafka topics, services, Stimulus controllers"
     status: completed
@@ -72,16 +72,16 @@ todos:
     content: "Isolamento MVP: PostgreSQL RLS + chaves hierárquicas + user_municipality_memberships (sem DB/schema por UBS)"
     status: completed
   - id: schema-campaigns-stock
-    content: "Campanhas vacinação; provisionamento insumo x capacidade sala x UBS"
-    status: pending
+    content: "Campanhas vacinação; provisionamento insumo x capacidade sala x UBS (schema + CRUD web; wizard multi-step pendente)"
+    status: partial
   - id: schema-home-visit-routing
-    content: "Grupo L: visit_routes, route_stops, buildings, target_audience, TSP"
-    status: pending
+    content: "Grupo L: visit_routes, route_stops, buildings, target_audience, TSP (schema + generate MVP; mapa/TSP pendente)"
+    status: partial
   - id: schema-route-provisioning
-    content: "visit_route_provisionings, supply_items, team_supply_dispatches, consumo por parada"
-    status: pending
+    content: "visit_route_provisionings, supply_items, team_supply_dispatches, consumo por parada (schema + reserve/dispatch parcial)"
+    status: partial
   - id: web-admin-modules
-    content: "Módulos web Hotwire: indicadores, CRUD gestão, agenda — ok; estoque/campanhas = Fase 5"
+    content: "Módulos web Hotwire: indicadores, CRUD gestão, agenda, estoque/campanhas CRUD — ok; wizard/mapa/romaneio = Fase 5"
     status: partial
   - id: schema-appointments
     content: "Agendamentos UBS: appointments, service_types, slots; CQRS calendar projection; vínculo encounters"
@@ -102,7 +102,10 @@ todos:
     content: "Fase 3: EPIC-03 + EPIC-04 API — agenda web + APIs /api/v1/citizen (sem Flutter)"
     status: partial
   - id: phase-4-indicators
-    content: "Fase 4: EPIC-05 (TASK-05-01..08) — DSL B1–B6/M1–M2 + metodologia 3493; repasse ilustrativo (ADR-0003)"
+    content: "Fase 4: EPIC-05 MVP (TASK-05-01..07) — painel, gaps, DSL piloto; repasse ilustrativo (ADR-0003)"
+    status: completed
+  - id: phase-4b-methodology
+    content: "Fase 4b: EPIC-05b (TASK-05-08) — 48 packs Portaria 3493, DSL v1 C2–C7 BPs, scoring MS, matriz cobertura (ADR-0005)"
     status: completed
   - id: phase-5-field-campaigns
     content: "Fase 5: EPIC-06 + EPIC-07 — estoque, campanhas e rotas (web gestão only)"
@@ -527,9 +530,20 @@ Ponto de partida para o time. Detalhe tarefa a tarefa no plano de execução do 
 
 ---
 
-## Status do repositório (2026-05-29)
+## Status do repositório (2026-05-30)
 
 Atualizar ao fechar cada sprint do [roteiro imediato](#roteiro-de-execução-imediato-sprints-17).
+
+**Commit de referência:** `main` @ `8725e29` — metodologia Portaria 3493 (EPIC-05b).
+
+### Superfície por fase (regra mobile)
+
+| Fases | Superfície | Flutter |
+|-------|------------|---------|
+| **0–7** | Monólito Rails + **web gestão** + APIs JSON (`/api/v1/citizen`, `/api/v1/field`) | **Não** — nenhuma task de Fase 2–7 exige app mobile |
+| **8** | Repos `cidadaobr-mobile-shared`, `cidadaobr-citizen`, `cidadaobr-field` | **Sim** — TASK-04-06/07, EPIC-08, EPIC-10 UI |
+
+Sprint 5 (bootstrap repos Flutter) foi **adiado para Fase 8**. Histórias EPIC-04 que mencionam “celular” referem-se à **API Fase 3** (testável via OpenAPI/Postman) até o app existir.
 
 ### Roteiro imediato S1–S7
 
@@ -542,10 +556,12 @@ Atualizar ao fechar cada sprint do [roteiro imediato](#roteiro-de-execução-ime
 | S5 | Adiado → Fase 8 | Script bootstrap repos; apps Flutter fora do roteiro web |
 | S6 | Concluído (MVP) | DSL C1–C7 + V_* + CVAT; Kafka `appointment.noshow` |
 | S7 | Concluído (MVP) | Painel X/N, ranking equipes, gaps por indicador, projeção ilustrativa |
+| S7b | Concluído | EPIC-05b — 48 packs, `MethodologyPackLoader`, DSL C2–C7 BPs, ADR-0005, matriz ~68% `done` |
+| S7c | Concluído | EPIC-05b gate — 12 BPs fechados; matriz **48/53 `done` (~90,6%)**; V_SAT `external`; TASK-05-08 Done |
 | S8 | Pendente | EPIC-12 — schema M + import UFSC + `LediCatalogSyncJob` |
 | S9 | Pendente | EPIC-12 — SIGTAP + release + `recurring.yml` + API `/reference/*` |
 
-**Gate Fase 5:** `phase-4-indicators` concluído com DSL **B1–B6** / **M1–M2** e pack `lib/indicators/methodology/3493-2024/packs/`; repasse permanece ilustrativo até Portaria — ver [ADR-0003](docs/adr/0003-epic05-mvp-scope.md).
+**Gate Fase 5:** `phase-4-indicators` + infra EPIC-05b (packs exportados) concluídos; repasse permanece ilustrativo — [ADR-0003](docs/adr/0003-epic05-mvp-scope.md). Cobertura normativa ≥90% = [ADR-0005](docs/adr/0005-methodology-coverage.md) + [matriz](docs/indicators/methodology-coverage-matrix.md) (EPIC-05b, não bloqueia Fase 5).
 
 **Kafka dev:** `bin/kafka_create_topics` (inclui `appointment.noshow`).
 
@@ -554,30 +570,43 @@ Atualizar ao fechar cada sprint do [roteiro imediato](#roteiro-de-execução-ime
 | EPIC-00 | Concluído | RLS, CQRS, Kafka, auth |
 | EPIC-01 | Concluído (MVP) | LEDI 7.4.0; catálogo seed manual; catálogo automático = **EPIC-12** |
 | EPIC-12 | Pendente (S8–S9) | Sync UFSC + SIGTAP → Postgres; **paralelo** EPIC-06/07; gate EPIC-09 |
-| EPIC-02 | Concluído | Ops web; cross-UBS reforçado em specs |
-| EPIC-03 | Concluído | No-show + relatório ocupação/absenteísmo |
-| EPIC-04 | Parcial (API) | APIs + OpenAPI na Fase 3; **app Flutter = Fase 8** |
-| EPIC-05 | MVP entregue (Fase 4) | ADR-0003; DSL B1–B6/M1–M2; repasse ilustrativo |
-| EPIC-06 | Em andamento | Estoque + campanha vacina (web) |
-| EPIC-07 | Em andamento | Rotas + provisionamento (web) |
+| EPIC-02 | Concluído | Ops web **only** (Fase 2); cross-UBS reforçado em specs — **sem Flutter** |
+| EPIC-03 | Concluído | No-show + relatório ocupação/absenteísmo (web gestão) |
+| EPIC-04 | Parcial (API F3) | TASK-04-01..05 na Fase 3; **TASK-04-06/07 = Fase 8** (app Flutter) |
+| EPIC-05 | Concluído (MVP F4) | ADR-0003; painel, gaps, DSL piloto; repasse ilustrativo |
+| EPIC-05b | Concluído | ADR-0005 gate; 48 packs + resolvers; matriz **48/53 `done` (~90,6%)**; TASK-05-08 Done |
+| EPIC-06 | Em andamento (~80%) | Schema I + CRUD estoque/vacina + `ProvisioningValidator`; wizard multi-step pendente |
+| EPIC-07 | Em andamento (~55%) | Schema L + rotas MVP + reserve/dispatch commands; mapa/TSP/romaneio UI pendente |
 | EPIC-08 | Pendente (Fase 8) | App Campo — após web/API Fases 5–7 |
 
 | Task | Status |
 |------|--------|
 | TASK-05-01 Schema H | Done |
-| TASK-05-02 Seed 17 | Done — CVAT + V_* + C1–C7 + B1–B6/M1–M2 `dsl_v1` + `source_ref` |
-| TASK-05-03 Motor DSL | Partial — `citizens_age_lte`; V_SAT proxy |
-| TASK-05-04 Recálculo Kafka | Done — `appointment.no_show` → `appointment.noshow` |
-| TASK-05-05 WEB-IND-01 | Done (MVP) — score X/N |
-| TASK-05-06 WEB-IND-02 | Done (MVP) — drill-down, ranking, filtro gaps |
+| TASK-05-02 Seed 17 | Done — loader fino; SOT em `methodology_pack_definitions.rb` |
+| TASK-05-03 Motor DSL | Partial — resolvers C2–C7/V_* expandidos; V_SAT real = import externo |
+| TASK-05-04 Recálculo Kafka | Done |
+| TASK-05-05 WEB-IND-01 | Done (MVP) |
+| TASK-05-06 WEB-IND-02 | Done (MVP) |
 | TASK-05-07 Projeção repasse | Partial — pesos ilustrativos + disclaimer |
-| TASK-05-08 Regras eSF | Done — C1–C7; B1–B6/M1–M2 via DSL v1 |
+| TASK-05-08 Cobertura BPs | **Done** — gate ADR-0005 (48/53 `done`); onda 2: CVAT mensal, C2-E, C7-B/C, import V_SAT ([matriz](docs/indicators/methodology-coverage-matrix.md)) |
+| TASK-06-01 Schema I | Done |
+| TASK-06-02 ProvisioningValidator | Done (MVP) |
+| TASK-06-03 WEB-STOCK-01 | Partial — CRUD lotes/produtos |
+| TASK-06-04 WEB-CAMP-01 | Partial — CRUD campanha; wizard multi-step pendente |
+| TASK-07-01 Schema L | Done |
+| TASK-07-02 BuildCampaignTargetList | Done (MVP) |
+| TASK-07-03 Preview provisionamento | Partial |
+| TASK-07-04 GenerateVisitRoutes | Partial — nearest-neighbor MVP; TSP PostGIS pendente |
+| TASK-07-05 ReserveVisitRouteSupplies | Partial — command existe; gate publish + specs E2E pendentes |
+| TASK-07-06 WEB-CAMP-06 | Pendente |
+| TASK-07-07 DispatchTeamSupplyKit | Partial — command existe; WEB-STOCK-02 romaneio pendente |
+| TASK-07-08 WEB-CAMP-03 mapa | Pendente |
 
 ---
 
 ## Roteiro de continuação (S10+)
 
-**Onde estamos (2026-05-29):** Sprints S1–S7 concluídos (Fases 0–4). **Fase 5 em curso** — EPIC-06 ~75% e EPIC-07 ~40% no código (schema e comandos base prontos; reserva FEFO, romaneio, mapa e dashboards pendentes). EPIC-12 documentado (S8–S9), ainda não implementado. Mobile = Fase 8.
+**Onde estamos (2026-05-30):** Sprints S1–S7 + S7b + **S7c** concluídos (Fases 0–4 MVP + **Fase 4b gate ADR-0005** em `main`). **Fase 5 em curso** — EPIC-06 ~80% e EPIC-07 ~55% (schema, CRUD, commands reserve/dispatch; mapa, TSP, wizard vacina e romaneio pendentes). EPIC-12 (S8–S9) não iniciado. **Mobile = exclusivamente Fase 8** — nenhuma entrega Flutter nas Fases 2–7.
 
 **Objetivo imediato:** fechar **Gate Fase 5** (campanha domiciliar operável na web gestão) e, em paralelo opcional, avançar **EPIC-12** antes da Fase 6 clínica.
 
@@ -655,10 +684,10 @@ Rodar **entre S10–S12** se houver capacidade (1 dev part-time) ou **bloquear a
 
 | Item | Épico | Nota |
 |------|-------|------|
-| TASK-05-03 motor DSL | EPIC-05 | Completar `citizens_age_lte`, V_SAT real |
+| TASK-05-08 onda 2 BPs | EPIC-05b | CVAT mensal, C2-E calendário, C7-B/C, import V_SAT — ver [matriz](docs/indicators/methodology-coverage-matrix.md) |
 | TASK-05-07 repasse | EPIC-05 | Coeficientes oficiais quando Portaria fechar |
 | ADR-0004 | EPIC-12 | Fontes UFSC + DATASUS |
-| EPIC-04 API gaps | EPIC-04 | Completar endpoints citizen pendentes do OpenAPI |
+| EPIC-04 API gaps | EPIC-04 | Completar endpoints citizen pendentes do OpenAPI (Fase 3; app Flutter = Fase 8) |
 
 ### Alocação sugerida (time pequeno)
 
@@ -668,12 +697,14 @@ Rodar **entre S10–S12** se houver capacidade (1 dev part-time) ou **bloquear a
 | **Dev B (opcional)** | EPIC-12 S8–S9 | EPIC-10 APIs |
 | **Solo** | S10→S11→S12 EPIC-07; depois S8→S9 EPIC-12; só então S13 Fase 6 | — |
 
-### Próximo passo concreto (começar amanhã)
+### Próximo passo concreto (Fase 5)
 
-1. Branch `TASK-07-05/reserve-visit-route-supplies`
-2. Implementar `lib/inventory/commands/reserve_visit_route_supplies.rb` (FEFO, `stock_movements`, idempotência)
-3. Wire em `HomeVisitCampaignsController#calculate_provisioning` / publish gate
-4. Spec de integração + atualizar status TASK-07-05 nesta seção ao merge
+1. Branch `TASK-07-08/web-camp-map-wizard` (ou TASK-07-06 conforme prioridade PO)
+2. Wire E2E: público-alvo → `GenerateVisitRoutes` → publish → `ReserveVisitRouteSupplies` → `DispatchTeamSupplyKit`
+3. WEB-CAMP-03 mapa PostGIS + TASK-06-04 wizard vacina multi-step
+4. Specs request + atualizar checklist piloto; marcar EPIC-06/07 concluídos no [checklist executivo](#checklist-por-épico-executivo)
+
+**Paralelo opcional:** EPIC-05b onda 2 (CVAT mensal, C2-E, C7-B/C, import V_SAT) ou EPIC-12 S8–S9 antes da Fase 6 clínica.
 
 ---
 
@@ -2495,7 +2526,8 @@ flowchart LR
   p1[Fase 1 LEDI Core]
   p2[Fase 2 Ops Web]
   p3[Fase 3 Schedule APIs]
-  p4[Fase 4 Indicators]
+  p4[Fase 4 Indicators MVP]
+  p4b[Fase 4b Methodology]
   p5[Fase 5 Campaigns Web]
   p6[Fase 6 LEDI PEC Plus API]
   p7[Fase 7 AI SIAPS]
@@ -2505,7 +2537,9 @@ flowchart LR
   p2 --> p3
   p2 --> p4
   p3 --> p5
+  p4 --> p4b
   p4 --> p5
+  p4b --> p5
   p5 --> p6
   p6 --> p7
   p7 --> p8
@@ -2517,7 +2551,8 @@ flowchart LR
 | **1** | LEDI Core | Ingestão e validação fichas; cadastro | — |
 | **2** | Ops + Web base | UBS, equipes, cidadãos, domicílio | Web gestão |
 | **3** | Scheduling + Citizen API | Agenda web + `/api/v1/citizen` | Web agenda |
-| **4** | Indicators | 17 indicadores, gaps, painel gestor | Web indicadores |
+| **4** | Indicators MVP | 17 indicadores, gaps, painel gestor | Web indicadores |
+| **4b** | Methodology coverage | 48 packs, BPs C2–C7, audit trail, matriz cobertura | Web indicadores + docs |
 | **5** | Campaigns (web) | Campanhas, estoque, rotas, romaneio | Web campanhas |
 | **6** | LEDI/PEC + Plus API | PEC, 13 fichas outbound, panic/tele/meds **backend** | Web + APIs |
 | **7** | AI + SIAPS | Perfis, conciliação MS, produção | Web + jobs |
@@ -2580,7 +2615,8 @@ Subtask,SUB-00-01-01,TASK-00-01,EPIC-00,[Core] CidadãoBR Saúde — rails new +
 | **EPIC-02** | 2 | CidadãoBR Saúde Gestão — Admin Municipal | UBS, equipes, cidadãos, mapa, LEDI status |
 | **EPIC-03** | 3 | CidadãoBR Saúde Gestão — Agendamentos UBS | Agendamentos web staff + salas |
 | **EPIC-04** | 3 (API) / **8** (App) | CidadãoBR Saúde — Portal cidadão | Fase 3: auth, slots, vacinas API; Fase 8: app Flutter |
-| **EPIC-05** | 4 | CidadãoBR Saúde Gestão — Indicadores 3.493 | 17 indicadores, gaps, painel gestor |
+| **EPIC-05** | 4 | CidadãoBR Saúde Gestão — Indicadores 3.493 (MVP) | Painel, gaps, DSL piloto |
+| **EPIC-05b** | 4b | Cobertura Notas Metodológicas 3493 | 48 packs, BPs, matriz, ADR-0005 |
 | **EPIC-06** | 5 | CidadãoBR Saúde Gestão — Estoque e Campanhas | Estoque, campanha vacina, dia D |
 | **EPIC-07** | 5 | CidadãoBR Saúde Gestão — Rotas e Provisionamento | Público-alvo, rotas 1..N, kit insumos |
 | **EPIC-08** | **8** | CidadãoBR Saúde Campo — App Profissional | Offline, roteiro, FVD, kit equipe |
@@ -2653,10 +2689,11 @@ Cada história agrupa uma ou mais **Tasks**. Na exportação CSV, `parent_id` da
 | **STORY-02-03** | EPIC-02 | [Gestão] CidadãoBR Saúde Gestão — Monitorar envios LEDI | Como gestor, quero ver status de lotes e rejeições PEC, para corrigir envios. | TASK-02-06 |
 | **STORY-03-01** | EPIC-03 | [Gestão] CidadãoBR Saúde Gestão — Agendar na UBS (staff) | Como recepção, quero agenda por sala e profissional, para organizar atendimentos presenciais. | TASK-03-01 … TASK-03-05 |
 | **STORY-04-01** | EPIC-04 | [Cidadão] CidadãoBR Saúde — Conta do cidadão | Como cidadão, quero entrar com CPF, para acessar só meus dados. | TASK-04-01 |
-| **STORY-04-02** | EPIC-04 | [Cidadão] CidadãoBR Saúde — Agendar consulta pelo celular | Como cidadão, quero agendar consulta na Minha UBS, para não ir à fila presencial. | TASK-04-02, TASK-04-06 |
-| **STORY-04-03** | EPIC-04 | [Cidadão] CidadãoBR Saúde — Carteira vacinal e agendar vacina | Como cidadão, quero ver carteira e agendar vacinação, para manter imunização em dia. | TASK-04-03, TASK-04-04, TASK-04-05, TASK-04-07 |
-| **STORY-05-01** | EPIC-05 | [Gestão] CidadãoBR Saúde Gestão — Motor de indicadores | Como gestor, quero calcular gaps dos 17 indicadores, para antecipar repasse federal. | TASK-05-01 … TASK-05-04, TASK-05-08 |
+| **STORY-04-02** | EPIC-04 | [Cidadão] CidadãoBR Saúde — Agendar consulta pelo celular | Como cidadão, quero agendar consulta na Minha UBS, para não ir à fila presencial. | **F3:** TASK-04-02 (API). **F8:** TASK-04-06 (app Flutter) |
+| **STORY-04-03** | EPIC-04 | [Cidadão] CidadãoBR Saúde — Carteira vacinal e agendar vacina | Como cidadão, quero ver carteira e agendar vacinação, para manter imunização em dia. | **F3:** TASK-04-03..05 (API). **F8:** TASK-04-07 (app Flutter) |
+| **STORY-05-01** | EPIC-05 | [Gestão] CidadãoBR Saúde Gestão — Motor de indicadores | Como gestor, quero calcular gaps dos 17 indicadores, para antecipar repasse federal. | TASK-05-01 … TASK-05-04 |
 | **STORY-05-02** | EPIC-05 | [Gestão] CidadãoBR Saúde Gestão — Painel de desempenho | Como secretário, quero dashboard X/17 e drill-down por equipe, para priorizar ações. | TASK-05-05, TASK-05-06, TASK-05-07 |
+| **STORY-05-03** | EPIC-05b | [Core] CidadãoBR Saúde — Cobertura Notas Metodológicas 3493 | Como gestor, quero scores alinhados às BPs oficiais, para auditar conformidade SAPS. | TASK-05-08 — [matriz](docs/indicators/methodology-coverage-matrix.md) |
 | **STORY-06-01** | EPIC-06 | [Gestão] CidadãoBR Saúde Gestão — Estoque de imunobiológicos | Como almoxarife, quero controlar lotes e vencimentos, para campanhas seguras. | TASK-06-01, TASK-06-03 |
 | **STORY-06-02** | EPIC-06 | [Gestão] CidadãoBR Saúde Gestão — Campanha de vacinação | Como gestor, quero criar campanha e dia D com público-alvo, para multirão organizado. | TASK-06-02, TASK-06-04 |
 | **STORY-07-01** | EPIC-07 | [Gestão] CidadãoBR Saúde Gestão — Público-alvo visita domiciliar | Como gestor, quero definir público-alvo (ex.: 500 cidadãos), para campanhas domiciliares. | TASK-07-01, TASK-07-02 |
@@ -2848,7 +2885,11 @@ Cada história agrupa uma ou mais **Tasks**. Na exportação CSV, `parent_id` da
 | STORY-05-02 | **TASK-05-05** | [Gestão] CidadãoBR Saúde Gestão — WEB-IND-01 Dashboard X/17 | TASK-05-03 | F4-05 |
 | STORY-05-02 | **TASK-05-06** | [Gestão] CidadãoBR Saúde Gestão — WEB-IND-02 Drill-down equipe e gaps | TASK-05-05 | F4-06 |
 | STORY-05-02 | **TASK-05-07** | [Gestão] CidadãoBR Saúde Gestão — WEB-IND-03 Projeção repasse | TASK-05-05 | F4-07 |
-| STORY-05-01 | **TASK-05-08** | [Core] CidadãoBR Saúde — Expandir regras C1–C7 e V-ACOMP | TASK-05-02 | F4-08 |
+| STORY-05-01 | **TASK-05-08** | [Core] CidadãoBR Saúde — Cobertura Notas Metodológicas (EPIC-05b) | TASK-05-02 | F4-08 |
+
+**TASK-05-08** — [Core] CidadãoBR Saúde — Cobertura Notas Metodológicas 3493 **(EPIC-05b, Done — gate ADR-0005 2026-05-30)**
+- **Entregue:** `MethodologyPackDefinitions`, `MethodologyPackLoader.sync!`, 48 JSONs em `lib/indicators/methodology/3493-2024/packs/`, resolvers C2–C7 + vínculo MICI/microárea/PBF/BPC, âncora gestacional/puerpério (C3-F–J), scoring `good_practices_pct` + `linkage_aggregate` MS 0–10, `rake indicators:audit_coverage`, [ADR-0005](docs/adr/0005-methodology-coverage.md), [matriz](docs/indicators/methodology-coverage-matrix.md) **48/53 `done` (~90,6%)**
+- **Onda 2 (não bloqueia Fase 5):** CVAT média mensal quadrimestre, C2-E calendário vacinal, C7-B/C rastreamento, import V_SAT (`external`)
 
 **TASK-05-03** — [Core] CidadãoBR Saúde — Motor indicadores DSL v1
 - **SUB-05-03-01** — [Core] CidadãoBR Saúde — Regras YAML C4, C5
@@ -3028,7 +3069,8 @@ APIs Field (`TASK-08-01`, `TASK-08-02`, `TASK-08-07`) podem ser entregues **ante
 | Gestão — Admin | EPIC-02 | STORY-02-01..03 | [Gestão] |
 | Gestão — Agendamentos | EPIC-03 | STORY-03-01 | [Gestão] |
 | Cidadão — API (F3) + App (F8) | EPIC-04 | STORY-04-01..03 | [Cidadão] |
-| Gestão — Indicadores | EPIC-05 | STORY-05-01..02 | [Gestão] |
+| Gestão — Indicadores MVP (F4) | EPIC-05 | STORY-05-01..02 | [Gestão] |
+| Core — Metodologia 3493 (F4b) | EPIC-05b | STORY-05-03 | [Core] |
 | Gestão — Estoque/Campanhas | EPIC-06 | STORY-06-01..02 | [Gestão] |
 | Gestão — Rotas | EPIC-07 | STORY-07-01..04 | [Gestão] |
 | Campo — App (F8) | EPIC-08 | STORY-08-01..04 | [Campo] |
@@ -3121,10 +3163,11 @@ APIs Field (`TASK-08-01`, `TASK-08-02`, `TASK-08-07`) podem ser entregues **ante
 - [ ] **EPIC-12** Dados de Referência MS/LEDI — sync UFSC + SIGTAP → Postgres + API `/reference/*` (S8–S9)  
 - [x] **EPIC-02** CidadãoBR Saúde Gestão — Admin Municipal  
 - [x] **EPIC-03** CidadãoBR Saúde Gestão — Agendamentos UBS  
-- [~] **EPIC-04** CidadãoBR Saúde — Portal cidadão (**Fase 3 API** ok; **app Flutter = Fase 8**)  
-- [x] **EPIC-05** CidadãoBR Saúde Gestão — Indicadores 3.493 (MVP Fase 4; repasse ilustrativo)  
-- [~] **EPIC-06** CidadãoBR Saúde Gestão — Estoque e Campanhas (kickoff web)  
-- [~] **EPIC-07** CidadãoBR Saúde Gestão — Rotas e Provisionamento (kickoff web)  
+- [~] **EPIC-04** CidadãoBR Saúde — Portal cidadão (**Fase 3:** API TASK-04-01..05 ok; **Fase 8:** app Flutter TASK-04-06/07)
+- [x] **EPIC-05** CidadãoBR Saúde Gestão — Indicadores 3.493 MVP (Fase 4; repasse ilustrativo)
+- [x] **EPIC-05b** Cobertura Notas Metodológicas 3493 (48/53 BPs `done`, gate ADR-0005; [matriz](docs/indicators/methodology-coverage-matrix.md))
+- [~] **EPIC-06** CidadãoBR Saúde Gestão — Estoque e Campanhas (~80% — schema + CRUD; wizard pendente)
+- [~] **EPIC-07** CidadãoBR Saúde Gestão — Rotas e Provisionamento (~55% — commands parciais; mapa/TSP pendente)
 - [ ] **EPIC-08** CidadãoBR Saúde Campo — App Profissional (**Fase 8**; APIs Field no monólito)  
 - [ ] **EPIC-09** CidadãoBR Saúde — LEDI Completo e PEC (Fase 6 core; Field UI Fase 8)  
 - [ ] **EPIC-10** CidadãoBR Saúde — Cidadão Plus (Fase 6 API; app UI Fase 8)  

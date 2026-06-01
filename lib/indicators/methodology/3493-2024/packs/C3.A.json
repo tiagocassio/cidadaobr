@@ -25,7 +25,11 @@
         "FAI"
       ],
       "max_weeks": 12,
-      "lookback_months": 15
+      "lookback_months": 15,
+      "predicate": {
+        "type": "present",
+        "field_path": "individual_attendances"
+      }
     }
   }
 }

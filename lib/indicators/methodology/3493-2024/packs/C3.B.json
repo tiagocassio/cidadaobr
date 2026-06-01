@@ -20,12 +20,20 @@
       "flag": "pregnant"
     },
     "numerator": {
-      "type": "consult_count_gte",
+      "type": "gestational_evidence_count_gte",
+      "measure": "consult",
       "record_types": [
         "FAI"
       ],
-      "within_months": 9,
-      "minimum_count": 7
+      "minimum_count": 7,
+      "min_gestational_weeks": 0,
+      "max_gestational_weeks": 42,
+      "lookback_months": 15,
+      "active_only": false,
+      "predicate": {
+        "type": "present",
+        "field_path": "individual_attendances"
+      }
     }
   }
 }
