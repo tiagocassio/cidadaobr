@@ -1,0 +1,11 @@
+<fieldset class="mt-6 rounded-lg border border-slate-200 p-4">
+  <legend class="px-1 text-sm font-semibold"><%= t("cidadaobr.households.form.legend") %></legend>
+  <p class="mb-4 text-xs text-slate-600"><%= t("cidadaobr.households.form.citizen_hint") %></p>
+  <%= render "web/households/fields",
+        household: @household || Household.new,
+        health_facilities: @health_facilities,
+        care_teams: @care_teams,
+        micro_areas: @micro_areas,
+        show_include_toggle: true,
+        include_checked: household_form_requested? || @household&.errors&.any? || !@citizen.persisted? %>
+</fieldset>

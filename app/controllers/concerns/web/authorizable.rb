@@ -32,6 +32,11 @@ module Web
       redirect_to web_root_path, alert: t("cidadaobr.authorization.municipality_admin_only")
     end
 
+    # Explicit transaction for multi-step writes; RLS SET LOCAL is applied by TenantRlsTransactionExtension.
+    def tenant_scoped_transaction(&block)
+      ActiveRecord::Base.transaction { yield }
+    end
+
     def require_facility_or_municipality!
       return if municipality_scope? || facility_scope? || current_membership&.scope == "team"
 

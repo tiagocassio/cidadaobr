@@ -2,13 +2,16 @@
 
 module Web
   class HouseholdsController < BaseController
-    MARKERS_LIMIT = 500
+    include HouseholdFormSupport
 
-    before_action :set_household, only: :show
+    before_action :require_facility_or_municipality!
+    before_action :require_facility_or_municipality_write!, only: %i[new create edit update]
+    before_action :set_household, only: %i[show edit update]
+    before_action :set_household_form_collections, only: %i[new create edit update]
 
     def index
       @pagy, @households = pagy(
-        scoped_households.includes(:health_facility, :care_team).order(:street)
+        scoped_households.includes(:health_facility, :care_team).order(:street, :street_number)
       )
     end
 
@@ -16,6 +19,46 @@ module Web
       @household_animals = @household.household_animals.order(:species)
       @household_animal = HouseholdAnimal.new
       @citizens_for_select = scoped_citizens.order(:full_name).limit(200)
+    end
+
+    def new
+      @household = scoped_households.build
+    end
+
+    def create
+      @household = scoped_households.build
+      valid, invalid_coordinates = assign_household_from_params(@household)
+
+      if invalid_coordinates
+        @household.errors.add(:base, t("cidadaobr.households.flash.invalid_coordinates"))
+        render :new, status: :unprocessable_entity
+        return
+      end
+
+      if valid && @household.save
+        redirect_to web_household_path(@household), notice: t("cidadaobr.households.flash.created")
+      else
+        render :new, status: :unprocessable_entity
+      end
+    end
+
+    def edit
+    end
+
+    def update
+      valid, invalid_coordinates = assign_household_from_params(@household)
+
+      if invalid_coordinates
+        @household.errors.add(:base, t("cidadaobr.households.flash.invalid_coordinates"))
+        render :edit, status: :unprocessable_entity
+        return
+      end
+
+      if valid && @household.save
+        redirect_to web_household_path(@household), notice: t("cidadaobr.households.flash.updated")
+      else
+        render :edit, status: :unprocessable_entity
+      end
     end
 
     def map
@@ -49,6 +92,8 @@ module Web
 
     private
 
+    MARKERS_LIMIT = 500
+
     def set_household
       @household = scoped_households.find(params[:id])
     end
@@ -66,7 +111,9 @@ module Web
       )
       return scope.none if bbox.nil?
 
-      scope.where(scope.arel_table[:location].st_within(bbox))
+      column = "#{scope.connection.quote_table_name(scope.table_name)}.#{scope.connection.quote_column_name(:location)}"
+      sql, bind = Cidadaobr::GeoPoint.within_geography_sql(column: column, region: bbox)
+      scope.where(sql, bind)
     end
   end
 end

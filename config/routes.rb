@@ -16,7 +16,7 @@ Rails.application.routes.draw do
     resources :citizens, except: :destroy do
       resources :household_members, only: %i[create destroy], shallow: true
     end
-    resources :households, only: %i[index show] do
+    resources :households, except: :destroy do
       collection do
         get :map
         get :markers

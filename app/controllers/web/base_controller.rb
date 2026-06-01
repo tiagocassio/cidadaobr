@@ -3,6 +3,9 @@
 module Web
   class BaseController < ApplicationController
     include Authorizable
+    include TenantRlsRequestScope
+
+    helper Web::FcdFormHelper
 
     layout "web"
     before_action :authenticate!

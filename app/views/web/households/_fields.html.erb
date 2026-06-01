@@ -1,0 +1,190 @@
+<%# locals: (household:, health_facilities:, care_teams:, micro_areas:, show_include_toggle: false, include_checked: false, id_prefix: "household") %>
+<% if household.errors.any? %>
+  <div class="rounded bg-red-50 px-4 py-2 text-sm text-red-800"><%= household.errors.full_messages.to_sentence %></div>
+<% end %>
+
+<% if show_include_toggle %>
+  <label class="flex items-center gap-2 text-sm font-medium">
+    <%= check_box_tag "#{id_prefix}[include]", "1", include_checked, class: "rounded border-slate-300" %>
+    <%= t("cidadaobr.households.form.include") %>
+  </label>
+  <p class="text-xs text-slate-600"><%= t("cidadaobr.households.form.fcd_hint") %></p>
+<% end %>
+
+<div id="<%= id_prefix %>-fields-panel" class="space-y-6<%= " hidden" if show_include_toggle && !include_checked %>">
+  <fieldset class="space-y-3">
+    <legend class="text-sm font-semibold"><%= t("cidadaobr.households.form.sections.territory") %></legend>
+    <% if municipality_scope? %>
+      <div>
+        <%= label_tag "#{id_prefix}_health_facility_id", Household.human_attribute_name(:health_facility_id), class: "mb-1 block text-sm font-medium" %>
+        <%= select_tag "#{id_prefix}[health_facility_id]",
+              options_from_collection_for_select(health_facilities, :id, :name, household.health_facility_id),
+              include_blank: t("cidadaobr.common.empty"),
+              class: "w-full rounded border border-slate-300 px-3 py-2" %>
+      </div>
+    <% end %>
+    <div>
+      <%= label_tag "#{id_prefix}_care_team_id", Household.human_attribute_name(:care_team_id), class: "mb-1 block text-sm font-medium" %>
+      <%= select_tag "#{id_prefix}[care_team_id]",
+            options_from_collection_for_select(care_teams, :id, :name, household.care_team_id),
+            include_blank: t("cidadaobr.common.empty"),
+            class: "w-full rounded border border-slate-300 px-3 py-2" %>
+    </div>
+    <div>
+      <%= label_tag "#{id_prefix}_micro_area_code", Household.human_attribute_name(:micro_area_code), class: "mb-1 block text-sm font-medium" %>
+      <%= select_tag "#{id_prefix}[micro_area_code]",
+            options_for_select(
+              micro_areas.map { |ma| [ "#{ma.code} — #{ma.name}", ma.code ] },
+              household.micro_area_code
+            ),
+            include_blank: t("cidadaobr.common.empty"),
+            class: "w-full rounded border border-slate-300 px-3 py-2" %>
+    </div>
+    <label class="flex items-center gap-2 text-sm">
+      <%= check_box_tag "#{id_prefix}[outside_micro_area]", "1", household.outside_micro_area, class: "rounded border-slate-300" %>
+      <%= t("cidadaobr.households.form.outside_micro_area") %>
+    </label>
+  </fieldset>
+
+  <fieldset class="space-y-3">
+    <legend class="text-sm font-semibold"><%= t("cidadaobr.households.form.sections.property") %></legend>
+    <div>
+      <%= label_tag "#{id_prefix}_property_type", Household.human_attribute_name(:property_type), class: "mb-1 block text-sm font-medium" %>
+      <%= select_tag "#{id_prefix}[property_type]",
+            options_for_select(fcd_property_type_options, household.property_type),
+            include_blank: t("cidadaobr.common.empty"),
+            class: "w-full rounded border border-slate-300 px-3 py-2",
+            required: true %>
+    </div>
+  </fieldset>
+
+  <fieldset class="space-y-3">
+    <legend class="text-sm font-semibold"><%= t("cidadaobr.households.form.sections.address") %></legend>
+    <p class="text-xs text-slate-500"><%= t("cidadaobr.households.form.address_ledi_hint") %></p>
+    <div class="grid gap-4 sm:grid-cols-2">
+      <div class="sm:col-span-2">
+        <%= label_tag "#{id_prefix}_street", Household.human_attribute_name(:street), class: "mb-1 block text-sm font-medium" %>
+        <%= text_field_tag "#{id_prefix}[street]", household.street, required: true, class: "w-full rounded border border-slate-300 px-3 py-2" %>
+      </div>
+      <div>
+        <%= label_tag "#{id_prefix}_street_number", Household.human_attribute_name(:street_number), class: "mb-1 block text-sm font-medium" %>
+        <%= text_field_tag "#{id_prefix}[street_number]", household.street_number, class: "w-full rounded border border-slate-300 px-3 py-2" %>
+      </div>
+      <div class="flex items-end pb-2">
+        <label class="flex items-center gap-2 text-sm">
+          <%= check_box_tag "#{id_prefix}[no_street_number]", "1", household.no_street_number, class: "rounded border-slate-300" %>
+          <%= t("cidadaobr.households.form.no_street_number") %>
+        </label>
+      </div>
+      <div>
+        <%= label_tag "#{id_prefix}_complement", Household.human_attribute_name(:complement), class: "mb-1 block text-sm font-medium" %>
+        <%= text_field_tag "#{id_prefix}[complement]", household.complement, class: "w-full rounded border border-slate-300 px-3 py-2" %>
+      </div>
+      <div>
+        <%= label_tag "#{id_prefix}_neighborhood", Household.human_attribute_name(:neighborhood), class: "mb-1 block text-sm font-medium" %>
+        <%= text_field_tag "#{id_prefix}[neighborhood]", household.neighborhood, class: "w-full rounded border border-slate-300 px-3 py-2" %>
+      </div>
+      <div>
+        <%= label_tag "#{id_prefix}_postal_code", Household.human_attribute_name(:postal_code), class: "mb-1 block text-sm font-medium" %>
+        <%= text_field_tag "#{id_prefix}[postal_code]", household.postal_code, class: "w-full rounded border border-slate-300 px-3 py-2" %>
+      </div>
+      <div class="sm:col-span-2">
+        <%= label_tag "#{id_prefix}_reference_point", Household.human_attribute_name(:reference_point), class: "mb-1 block text-sm font-medium" %>
+        <%= text_field_tag "#{id_prefix}[reference_point]", household.reference_point, class: "w-full rounded border border-slate-300 px-3 py-2" %>
+      </div>
+      <div>
+        <%= label_tag "#{id_prefix}_contact_phone", Household.human_attribute_name(:contact_phone), class: "mb-1 block text-sm font-medium" %>
+        <%= text_field_tag "#{id_prefix}[contact_phone]", household.contact_phone, class: "w-full rounded border border-slate-300 px-3 py-2" %>
+      </div>
+      <div>
+        <%= label_tag "#{id_prefix}_residence_phone", Household.human_attribute_name(:residence_phone), class: "mb-1 block text-sm font-medium" %>
+        <%= text_field_tag "#{id_prefix}[residence_phone]", household.residence_phone, class: "w-full rounded border border-slate-300 px-3 py-2" %>
+      </div>
+    </div>
+  </fieldset>
+
+  <fieldset class="space-y-3">
+    <legend class="text-sm font-semibold"><%= t("cidadaobr.households.form.sections.coordinates") %></legend>
+    <div class="grid gap-4 sm:grid-cols-2">
+      <div>
+        <%= label_tag "#{id_prefix}_latitude", t("cidadaobr.households.form.latitude"), class: "mb-1 block text-sm font-medium" %>
+        <%= number_field_tag "#{id_prefix}[latitude]",
+              household.coordinates&.dig(:lat) || params.dig(id_prefix, :latitude),
+              step: "any",
+              class: "w-full rounded border border-slate-300 px-3 py-2" %>
+      </div>
+      <div>
+        <%= label_tag "#{id_prefix}_longitude", t("cidadaobr.households.form.longitude"), class: "mb-1 block text-sm font-medium" %>
+        <%= number_field_tag "#{id_prefix}[longitude]",
+              household.coordinates&.dig(:lng) || params.dig(id_prefix, :longitude),
+              step: "any",
+              class: "w-full rounded border border-slate-300 px-3 py-2" %>
+      </div>
+    </div>
+    <p class="text-xs text-slate-500"><%= t("cidadaobr.households.form.coordinates_hint") %></p>
+  </fieldset>
+
+  <fieldset class="space-y-3">
+    <legend class="text-sm font-semibold"><%= t("cidadaobr.households.form.sections.housing_conditions") %></legend>
+    <p class="text-xs text-slate-500"><%= t("cidadaobr.households.form.condicao_moradia_hint") %></p>
+    <div class="grid gap-4 sm:grid-cols-2">
+      <% Cidadaobr::LediFcdOptions::HOUSING_CONDITION_FIELDS.each_key do |field| %>
+        <div>
+          <%= label_tag "#{id_prefix}_housing_conditions_#{field}", t("cidadaobr.households.form.housing_conditions.#{field}"), class: "mb-1 block text-sm font-medium" %>
+          <%= select_tag "#{id_prefix}[housing_conditions][#{field}]",
+                options_for_select(
+                  fcd_housing_condition_options(field),
+                  household_housing_condition_value(household, field)
+                ),
+                include_blank: t("cidadaobr.common.empty"),
+                class: "w-full rounded border border-slate-300 px-3 py-2" %>
+        </div>
+      <% end %>
+      <div>
+        <%= label_tag "#{id_prefix}_housing_conditions_nu_moradores", t("cidadaobr.households.form.housing_conditions.nu_moradores"), class: "mb-1 block text-sm font-medium" %>
+        <%= text_field_tag "#{id_prefix}[housing_conditions][nu_moradores]",
+              household.housing_conditions["nu_moradores"],
+              class: "w-full rounded border border-slate-300 px-3 py-2" %>
+      </div>
+      <div>
+        <%= label_tag "#{id_prefix}_housing_conditions_nu_comodos", t("cidadaobr.households.form.housing_conditions.nu_comodos"), class: "mb-1 block text-sm font-medium" %>
+        <%= text_field_tag "#{id_prefix}[housing_conditions][nu_comodos]",
+              household.housing_conditions["nu_comodos"],
+              class: "w-full rounded border border-slate-300 px-3 py-2" %>
+      </div>
+    </div>
+  </fieldset>
+
+  <fieldset class="space-y-3">
+    <legend class="text-sm font-semibold"><%= t("cidadaobr.households.form.sections.animals") %></legend>
+    <label class="flex items-center gap-2 text-sm">
+      <%= check_box_tag "#{id_prefix}[animals_on_premises]", "1", household.animals_on_premises, class: "rounded border-slate-300" %>
+      <%= t("cidadaobr.households.form.animals_on_premises") %>
+    </label>
+  </fieldset>
+
+  <% if show_include_toggle %>
+    <fieldset class="space-y-2">
+      <legend class="text-sm font-semibold"><%= t("cidadaobr.households.form.sections.family") %></legend>
+      <label class="flex items-center gap-2 text-sm">
+        <%= check_box_tag "#{id_prefix}[family_reference]", "1",
+              ActiveModel::Type::Boolean.new.cast(params.dig(id_prefix, :family_reference)),
+              class: "rounded border-slate-300" %>
+        <%= t("cidadaobr.households.form.family_reference") %>
+      </label>
+    </fieldset>
+  <% end %>
+</div>
+
+<% if show_include_toggle %>
+  <script>
+    (function () {
+      var toggle = document.querySelector('input[name="<%= id_prefix %>[include]"]');
+      var panel = document.getElementById("<%= id_prefix %>-fields-panel");
+      if (!toggle || !panel) return;
+      toggle.addEventListener("change", function () {
+        panel.classList.toggle("hidden", !toggle.checked);
+      });
+    })();
+  </script>
+<% end %>

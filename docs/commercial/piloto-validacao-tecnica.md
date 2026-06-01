@@ -63,4 +63,9 @@ Cidadaobr::TenantContext.with(tenant) do
 end
 ```
 
-Operações tenant-scoped devem rodar dentro de `ActiveRecord::Base.transaction` para que políticas RLS reconheçam o escopo (`SET LOCAL`).
+RLS na aplicação:
+
+- **Leituras:** `TenantScopeMiddleware` + `TenantContext.with` → `SET app.current_*` (sessão).
+- **Escritas:** qualquer `ActiveRecord::Base.transaction` (inclui `#save`) reaplica `SET LOCAL` via `config/initializers/tenant_rls_transaction.rb`.
+- **Console:** sempre `Cidadaobr::TenantContext.with(tenant) { ... }`.
+- **Teste:** usuário `postgres` ignora RLS — use `cidadaobr_app` em development ou veja `spec/models/tenant_rls_spec.rb`.

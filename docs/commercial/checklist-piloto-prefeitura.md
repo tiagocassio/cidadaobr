@@ -38,6 +38,19 @@
 
 ---
 
+## Fase 5 — Campanhas e rotas (web gestão)
+
+Validação técnica automatizada: `bundle exec rspec spec/requests/web/stock_and_campaigns_spec.rb spec/lib/inventory/reserve_visit_route_supplies_spec.rb`
+
+- [ ] **Campanha domiciliar:** público-alvo → gerar rotas → calcular/reservar provisionamento → publicar rotas → despachar kit (UI)
+- [ ] **Campanha vacinação:** wizard 4 passos → aprovar provisionamento → publicar (UI)
+- [ ] Romaneio de insumos (`/web/stock/team_supply_dispatches`) conferido com gestor UBS
+- [ ] Mapa de rotas (`route_map`) usado para revisar paradas do dia
+
+Logins seed: ver [piloto-validacao-tecnica.md](piloto-validacao-tecnica.md).
+
+---
+
 ## Semana 7–12 — Uso e resultado
 
 - [ ] Reunião quinzenal gestor + CidadãoBR: indicadores vermelhos e plano de ação

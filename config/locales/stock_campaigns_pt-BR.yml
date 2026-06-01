@@ -62,6 +62,7 @@ pt-BR:
         created_provisioning_blocked: "Campanha criada, mas provisionamento bloqueado — revise estoque ou capacidade."
         updated: "Campanha atualizada."
         targets_built: "%{count} alvos adicionados ao público-alvo."
+        targets_built_empty: "Nenhum cidadão novo no público-alvo (%{eligible} elegíveis com os filtros atuais). Revise idade, equipes e microáreas — cidadão em microárea exige vínculo em domicílio (FCD) com o mesmo código de microárea."
         publish_blocked: "Provisionamento precisa estar aprovado antes de publicar."
         build_targets_blocked: "Conclua o provisionamento no assistente antes de gerar alvos."
         active_campaign_locked: "Campanha publicada não pode ser alterada pelo assistente."

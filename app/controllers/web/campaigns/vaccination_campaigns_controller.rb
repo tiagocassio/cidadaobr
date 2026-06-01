@@ -3,6 +3,7 @@
 module Web
   module Campaigns
     class VaccinationCampaignsController < BaseController
+      include BuildTargetsRedirect
       WIZARD_STEPS = 4
       STEP1_ATTRS = %w[
         name health_facility_id immunobiological_product_id consultation_room_id
@@ -155,8 +156,7 @@ module Web
           end
 
           result = ::Campaigns::Commands::BuildCampaignTargetList.call(campaign: @campaign)
-          redirect_to wizard_web_campaigns_vaccination_campaign_path(@campaign, step: 4),
-                      notice: t("cidadaobr.campaigns.flash.targets_built", count: result.created_count)
+          redirect_after_build_targets!(result, wizard_web_campaigns_vaccination_campaign_path(@campaign, step: 4))
         else
           redirect_to wizard_web_campaigns_vaccination_campaign_path(@campaign, step: 1)
         end
@@ -181,8 +181,7 @@ module Web
         end
 
         result = ::Campaigns::Commands::BuildCampaignTargetList.call(campaign: @campaign)
-        redirect_to web_campaigns_vaccination_campaign_path(@campaign),
-                    notice: t("cidadaobr.campaigns.flash.targets_built", count: result.created_count)
+        redirect_after_build_targets!(result, web_campaigns_vaccination_campaign_path(@campaign))
       end
 
       def publish

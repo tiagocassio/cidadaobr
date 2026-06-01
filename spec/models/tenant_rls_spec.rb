@@ -3,6 +3,12 @@
 require "rails_helper"
 
 RSpec.describe "Tenant RLS isolation", type: :model do
+  before do
+    bypasses = ActiveRecord::Base.connection.select_value(
+      "SELECT rolbypassrls FROM pg_roles WHERE rolname = current_user"
+    )
+    skip "DB role bypasses RLS (use cidadaobr_app in test, not postgres superuser)" if bypasses == true || bypasses == "t"
+  end
   let(:municipality) { create(:municipality) }
   let(:facility_a) { create(:health_facility, municipality: municipality, name: "UBS A") }
   let(:facility_b) { create(:health_facility, municipality: municipality, name: "UBS B") }

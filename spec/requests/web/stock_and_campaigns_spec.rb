@@ -336,6 +336,62 @@ RSpec.describe "Web stock and campaigns", type: :request do
       expect(response.body).to include("visit-route-map")
     end
 
+    it "completes domiciliary gate flow via HTTP" do
+      campaign = nil
+      team = nil
+      with_tenant(membership) do
+        product = create(:immunobiological_product, municipality: municipality)
+        create(
+          :immunobiological_lot,
+          municipality: municipality,
+          health_facility: facility,
+          immunobiological_product: product,
+          quantity_on_hand: 100
+        )
+        team = create(:care_team, municipality: municipality, health_facility: facility)
+        household = create(:household, municipality: municipality, health_facility: facility, care_team: team)
+        citizen = create(:citizen, municipality: municipality, health_facility: facility, care_team: team)
+        create(:household_member, household: household, citizen: citizen)
+        campaign = create(
+          :home_visit_campaign,
+          municipality: municipality,
+          health_facility: facility,
+          status: "draft",
+          target_audience_definition: { "immunobiological_product_id" => product.id }
+        )
+      end
+      campaign = with_tenant(membership) { campaign }
+      team = with_tenant(membership) { team }
+
+      post build_targets_web_campaigns_home_visit_campaign_path(campaign)
+      expect(response).to redirect_to(web_campaigns_home_visit_campaign_path(campaign))
+      expect(with_tenant(membership) { campaign.reload.campaign_targets.count }).to eq(1)
+
+      post generate_routes_web_campaigns_home_visit_campaign_path(campaign)
+      expect(response).to redirect_to(web_campaigns_home_visit_campaign_path(campaign))
+      expect(with_tenant(membership) { campaign.reload.visit_routes.count }).to eq(1)
+
+      post calculate_provisioning_web_campaigns_home_visit_campaign_path(campaign)
+      expect(response).to redirect_to(preview_provisioning_web_campaigns_home_visit_campaign_path(campaign))
+
+      post reserve_provisioning_web_campaigns_home_visit_campaign_path(campaign)
+      expect(response).to redirect_to(preview_provisioning_web_campaigns_home_visit_campaign_path(campaign))
+      expect(with_tenant(membership) { campaign.reload.home_visit_campaign_provisioning.status }).to eq("reserved")
+
+      post publish_routes_web_campaigns_home_visit_campaign_path(campaign)
+      expect(response).to redirect_to(web_campaigns_home_visit_campaign_path(campaign))
+      expect(with_tenant(membership) { campaign.reload.status }).to eq("scheduled")
+      expect(with_tenant(membership) { campaign.visit_routes.pluck(:status) }).to all(eq("published"))
+
+      expect {
+        post dispatch_supplies_web_campaigns_home_visit_campaign_path(campaign, care_team_id: team.id)
+      }.to change { with_tenant(membership) { TeamSupplyDispatch.count } }.by(1)
+
+      expect(response).to redirect_to(
+        web_campaigns_home_visit_campaign_path(campaign, route_date: Date.current.iso8601)
+      )
+    end
+
     it "registers supply dispatch after publish and reserve" do
       campaign = nil
       team = nil

@@ -39,6 +39,41 @@ RSpec.describe "Web citizens", type: :request do
     expect(response).to redirect_to(web_citizen_path(citizen))
   end
 
+  it "creates a citizen with domicílio and micro-area" do
+    create(:micro_area, municipality: municipality, care_team: team, code: "01")
+
+    expect {
+      post web_citizens_path, params: {
+        citizen: {
+          full_name: "João com domicílio",
+          cpf: "52998224725",
+          health_facility_id: facility.id,
+          care_team_id: team.id
+        },
+        household: {
+          include: "1",
+          street: "Rua B",
+          street_number: "20",
+          neighborhood: "Centro",
+          postal_code: "01002000",
+          micro_area_code: "01",
+          property_type: 1,
+          health_facility_id: facility.id,
+          care_team_id: team.id,
+          housing_conditions: { localizacao: 1, nu_moradores: "2" },
+          family_reference: "1"
+        }
+      }
+    }.to change {
+      with_tenant(admin_membership) { [ Citizen.count, Household.count, HouseholdMember.count ] }
+    }.by([ 1, 1, 1 ])
+
+    citizen = with_tenant(admin_membership) { Citizen.find_by!(cpf: "52998224725") }
+    household = with_tenant(admin_membership) { citizen.households.sole }
+    expect(household.micro_area_code).to eq("01")
+    expect(with_tenant(admin_membership) { citizen.household_members.sole.family_reference }).to be(true)
+  end
+
   it "updates a citizen" do
     citizen = with_tenant(admin_membership) do
       create(:citizen, municipality: municipality, health_facility: facility, care_team: team, full_name: "Ana")

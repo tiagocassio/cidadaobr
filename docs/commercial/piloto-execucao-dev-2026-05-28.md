@@ -27,6 +27,16 @@ bin/rails db:seed
 bundle exec rspec spec/lib/indicators/ spec/lib/inventory/ spec/models/indicator* spec/db/indicator_catalog_seed_spec.rb
 ```
 
+### Gate Fase 5 (campanhas — 2026-06-01)
+
+```bash
+bundle exec rspec spec/requests/web/stock_and_campaigns_spec.rb spec/lib/inventory/reserve_visit_route_supplies_spec.rb
+```
+
+Resultado esperado: **21 examples, 0 failures** (inclui E2E HTTP domiciliar + wizard vacina).
+
+Correção aplicada: `Web::Campaigns::HomeVisitCampaignsController` usa `::Campaigns::Commands::BuildCampaignTargetList` (evita `NameError` em `build_targets`).
+
 ## Checklist manual pendente (UI)
 
 Itens 1–8 de [piloto-validacao-tecnica.md](piloto-validacao-tecnica.md) requerem login web:

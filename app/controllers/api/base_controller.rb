@@ -2,6 +2,8 @@
 
 module Api
   class BaseController < Api::ApplicationController
+    include TenantRlsRequestScope
+
     before_action :authenticate_api!
 
     rescue_from ActiveRecord::RecordNotFound do

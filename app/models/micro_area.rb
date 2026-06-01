@@ -26,9 +26,38 @@ class MicroArea < ApplicationRecord
   end
 
   def located_households_count
-    return 0 if coverage.blank?
+    self.class.located_household_counts_for([ id ]).fetch(id, 0)
+  end
 
-    Household.where(municipality_id: municipality_id).within_micro_area(self).count
+  def self.located_household_counts_for(area_ids)
+    ids = Array(area_ids).compact_blank
+    counts = ids.index_with { 0 }
+    return counts if ids.empty?
+
+    covers = Cidadaobr::GeoPoint.geography_covers_sql(
+      covering: "micro_areas.coverage",
+      covered: "households.location"
+    )
+    sql = sanitize_sql_array(
+      [
+        <<~SQL.squish,
+          SELECT micro_areas.id AS micro_area_id, COUNT(households.id)::int AS cnt
+          FROM micro_areas
+          INNER JOIN households
+            ON households.municipality_id = micro_areas.municipality_id
+            AND households.location IS NOT NULL
+            AND #{covers}
+          WHERE micro_areas.id IN (?)
+            AND micro_areas.coverage IS NOT NULL
+          GROUP BY micro_areas.id
+        SQL
+        ids
+      ]
+    )
+    connection.select_all(sql).each do |row|
+      counts[row["micro_area_id"]] = row["cnt"].to_i
+    end
+    counts
   end
 
   def sync_health_facility_coverages!(health_facility_ids)

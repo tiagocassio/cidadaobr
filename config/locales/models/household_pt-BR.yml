@@ -1,8 +1,34 @@
 pt-BR:
   activerecord:
+    models:
+      household: "Domicílio"
     attributes:
       household:
         street: "Logradouro"
         street_number: "Número"
+        complement: "Complemento"
         neighborhood: "Bairro"
+        postal_code: "CEP"
+        micro_area_code: "Microárea"
         health_facility_id: "UBS"
+        care_team_id: "Equipe"
+        property_type: "Tipo de imóvel"
+        reference_point: "Ponto de referência"
+        contact_phone: "Telefone para contato"
+        residence_phone: "Telefone residencial"
+    errors:
+      models:
+        household:
+          attributes:
+            micro_area_code:
+              blank: "é obrigatória para domicílio na área de cobertura"
+            property_type:
+              blank: "é obrigatório (FCD)"
+            street:
+              blank: "é obrigatório (nome do logradouro)"
+            street_number:
+              blank: "é obrigatório quando o imóvel possui número"
+              present_when_sem_numero: "deve ficar em branco quando marcado sem número"
+          fcd_address_incomplete: "informe CEP, logradouro ou bairro (endereço local de permanência)"
+          housing_conditions:
+            invalid_code: "código inválido para %{key}"

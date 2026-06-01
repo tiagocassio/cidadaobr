@@ -21,7 +21,7 @@
             <td class="px-4 py-3"><%= area.code %></td>
             <td class="px-4 py-3"><%= area.name %></td>
             <td class="px-4 py-3"><%= area.care_team.name %></td>
-            <td class="px-4 py-3"><%= area.located_households_count %></td>
+            <td class="px-4 py-3"><%= @located_household_counts.fetch(area.id, 0) %></td>
             <td class="px-4 py-3"><%= area.health_facilities.pluck(:name).join(", ").presence || t("cidadaobr.micro_areas.empty_facilities") %></td>
             <td class="px-4 py-3 text-right">
               <%= link_to t("cidadaobr.micro_areas.edit"), edit_web_micro_area_path(area), class: "text-emerald-700 hover:underline" %>

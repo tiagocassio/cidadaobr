@@ -23,7 +23,13 @@ module Web
       @health_facility.errors.add(:latitude, t("cidadaobr.health_facilities.flash.invalid_coordinates")) if invalid_coordinates
       @health_facility.errors.add(:longitude, t("cidadaobr.health_facilities.flash.invalid_coordinates")) if invalid_coordinates
 
-      if !invalid_coordinates && @health_facility.save
+      saved = false
+      tenant_scoped_transaction do
+        saved = !invalid_coordinates && @health_facility.save
+        raise ActiveRecord::Rollback unless saved
+      end
+
+      if saved
         redirect_to web_health_facility_path(@health_facility), notice: t("cidadaobr.health_facilities.flash.created")
       else
         render :new, status: :unprocessable_entity
@@ -39,7 +45,13 @@ module Web
       @health_facility.errors.add(:latitude, t("cidadaobr.health_facilities.flash.invalid_coordinates")) if invalid_coordinates
       @health_facility.errors.add(:longitude, t("cidadaobr.health_facilities.flash.invalid_coordinates")) if invalid_coordinates
 
-      if !invalid_coordinates && @health_facility.save
+      saved = false
+      tenant_scoped_transaction do
+        saved = !invalid_coordinates && @health_facility.save
+        raise ActiveRecord::Rollback unless saved
+      end
+
+      if saved
         redirect_to web_health_facility_path(@health_facility), notice: t("cidadaobr.health_facilities.flash.updated")
       else
         render :edit, status: :unprocessable_entity

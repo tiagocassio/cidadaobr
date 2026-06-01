@@ -35,6 +35,35 @@ RSpec.describe Household do
     end
   end
 
+  describe ".within_micro_area" do
+    it "counts households inside geographic coverage polygon" do
+      team = create(:care_team, municipality: municipality, health_facility: facility)
+      micro = create(:micro_area, municipality: municipality, care_team: team, code: "01")
+      inside = Cidadaobr::GeoPoint.build(lng: -46.6333, lat: -23.5505)
+      outside = Cidadaobr::GeoPoint.build(lng: -46.0, lat: -23.0)
+
+      with_tenant(membership) do
+        in_household = Household.create!(
+          municipality: municipality,
+          health_facility: facility,
+          ibge_code: municipality.ibge_code,
+          street: "Dentro",
+          location: inside
+        )
+        Household.create!(
+          municipality: municipality,
+          health_facility: facility,
+          ibge_code: municipality.ibge_code,
+          street: "Fora",
+          location: outside
+        )
+
+        expect(Household.within_micro_area(micro)).to contain_exactly(in_household)
+        expect(micro.located_households_count).to eq(1)
+      end
+    end
+  end
+
   describe "#coordinates" do
     it "returns lat/lng hash" do
       household = Household.new(location: Cidadaobr::GeoPoint.build(lng: -46.6333, lat: -23.5505))

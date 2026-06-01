@@ -28,7 +28,7 @@ module Indicators
           micro = fcd_micro_area_code(fcd)
           address = find_section(fcd, %w[enderecoLocalPermanencia endereco_local_permanencia endereco])
           address_present = address.is_a?(Hash) && (
-            dig_any(address, %w[nuCep cep logradouro bairro]).present?
+            dig_any(address, %w[nuCep cep logradouro nome_logradouro nomeLogradouro bairro]).present?
           )
 
           micro.present? && address_present
@@ -37,12 +37,14 @@ module Indicators
         # NT 30/2025 transversal: adscrição FCI/FCD microárea (sem exigir MICI/MICDT completos).
         def microarea_linked?(citizen)
           fci = CitizenScope.latest_fci_payload(citizen)
-          fcd = latest_fcd_payload(citizen)
-          return false if fci.blank? || fcd.blank?
+          return false if fci.blank?
 
           fci_micro = fci_micro_area_code(fci)
-          fcd_micro = fcd_micro_area_code(fcd)
-          return false if fci_micro.blank? || fcd_micro.blank?
+          return false if fci_micro.blank?
+
+          fcd_micro = fcd_micro_area_code(latest_fcd_payload(citizen))
+          fcd_micro = citizen.household_members.order(:created_at).first&.household&.micro_area_code if fcd_micro.blank?
+          return false if fcd_micro.blank?
 
           normalize_micro_area(fci_micro) == normalize_micro_area(fcd_micro)
         end
@@ -61,7 +63,15 @@ module Indicators
         end
 
         def fcd_micro_area_code(payload)
-          dig_any(payload, %w[microArea micro_area codigoMicroArea codigo_micro_area])
+          return nil if payload.blank?
+
+          root = dig_any(payload, %w[microArea micro_area codigoMicroArea codigo_micro_area])
+          return root if root.present?
+
+          address = find_section(payload, %w[enderecoLocalPermanencia endereco_local_permanencia endereco])
+          return nil unless address.is_a?(Hash)
+
+          dig_any(address, %w[microArea micro_area codigoMicroArea codigo_micro_area])
         end
 
         def normalize_micro_area(value)
@@ -85,13 +95,16 @@ module Indicators
         end
 
         def latest_fcd_payload(citizen)
-          ClinicalRecord
+          record = ClinicalRecord
             .joins(:encounters)
             .where(municipality_id: citizen.municipality_id, record_type: "FCD", validation_status: "valid")
             .where(encounters: { citizen_id: citizen.id })
             .order(updated_at: :desc)
             .first
-            &.payload_json
+          return record.payload_json if record
+
+          household = citizen.household_members.order(:created_at).first&.household
+          household&.to_fcd_payload
         end
 
         def dig_any(hash, keys)

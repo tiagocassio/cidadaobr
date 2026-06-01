@@ -66,9 +66,10 @@ class RecordPlatformEvent < ApplicationCommand
 
   def with_optional_transaction(&block)
     if ActiveRecord::Base.connection.open_transactions.positive?
+      Cidadaobr::TenantRls.apply_write_scope!
       yield
     else
-      ActiveRecord::Base.transaction(&block)
+      Cidadaobr::TenantRls.write_transaction(&block)
     end
   end
 

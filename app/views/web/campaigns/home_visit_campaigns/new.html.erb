@@ -22,7 +22,10 @@
     </div>
     <div>
       <%= label_tag "home_visit_campaign_target_audience_definition_min_age", t("cidadaobr.campaigns.min_age"), class: "mb-1 block text-sm font-medium" %>
-      <%= number_field_tag "home_visit_campaign[target_audience_definition][min_age]", 60, min: 0, class: "w-full rounded border border-slate-300 px-3 py-2" %>
+      <%= number_field_tag "home_visit_campaign[target_audience_definition][min_age]",
+            @campaign.target_audience_definition["min_age"],
+            min: 0,
+            class: "w-full rounded border border-slate-300 px-3 py-2" %>
     </div>
     <%= form.submit t("cidadaobr.campaigns.home_visit.submit"), class: "rounded bg-emerald-700 px-4 py-2 font-semibold text-white" %>
   <% end %>

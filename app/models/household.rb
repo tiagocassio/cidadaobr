@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
 class Household < ApplicationRecord
+  include HouseholdFcdPayload
+
   belongs_to :municipality
   belongs_to :health_facility, optional: true
   belongs_to :care_team, optional: true
@@ -27,7 +29,9 @@ class Household < ApplicationRecord
   def self.within_micro_area(micro_area)
     return none if micro_area.coverage.blank?
 
-    where(arel_table[:location].st_within(micro_area.coverage))
+    column = "#{connection.quote_table_name(table_name)}.#{connection.quote_column_name(:location)}"
+    sql, bind = Cidadaobr::GeoPoint.within_geography_sql(column: column, region: micro_area.coverage)
+    where(sql, bind)
   end
 
   def coordinates

@@ -25,6 +25,12 @@ RSpec.describe "Web health facilities", type: :request do
     }.to change {
       with_tenant(admin_membership) { HealthFacility.count }
     }.by(1)
+
+    facility = with_tenant(admin_membership) { HealthFacility.find_by!(cnes: "7654321") }
+    expect(response).to redirect_to(web_health_facility_path(facility))
+
+    get web_health_facilities_path
+    expect(response.body).to include("UBS Teste")
   end
 
   it "stores optional coordinates on create" do

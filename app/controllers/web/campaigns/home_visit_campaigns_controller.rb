@@ -3,6 +3,7 @@
 module Web
   module Campaigns
     class HomeVisitCampaignsController < BaseController
+      include BuildTargetsRedirect
       before_action :require_facility_or_municipality!
       before_action :require_facility_or_municipality_write!, only: %i[
         new create build_targets generate_routes clear_routes publish_routes
@@ -28,8 +29,8 @@ module Web
         flash.now[:alert] = t("cidadaobr.campaigns.home_visit.flash.invalid_route_date") if @route_date_invalid
         @route_dates = @campaign.visit_routes.distinct.order(:route_date).pluck(:route_date)
         @routes_for_date = @routes.select { |route| route.route_date == @route_date }
-        @team_progress = Campaigns::VisitRouteProgress.by_team(campaign: @campaign, route_date: @route_date)
-        @campaign_progress = Campaigns::VisitRouteProgress.for_campaign(campaign: @campaign, route_date: @route_date)
+        @team_progress = ::Campaigns::VisitRouteProgress.by_team(campaign: @campaign, route_date: @route_date)
+        @campaign_progress = ::Campaigns::VisitRouteProgress.for_campaign(campaign: @campaign, route_date: @route_date)
         @phase5_ready = phase5_gate_ready?
       end
 
@@ -61,9 +62,8 @@ module Web
       end
 
       def build_targets
-        result = Campaigns::Commands::BuildCampaignTargetList.call(campaign: @campaign)
-        redirect_to web_campaigns_home_visit_campaign_path(@campaign),
-                    notice: t("cidadaobr.campaigns.flash.targets_built", count: result.created_count)
+        result = ::Campaigns::Commands::BuildCampaignTargetList.call(campaign: @campaign)
+        redirect_after_build_targets!(result, web_campaigns_home_visit_campaign_path(@campaign))
       end
 
       def generate_routes

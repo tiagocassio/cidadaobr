@@ -64,5 +64,19 @@ module Cidadaobr
       ])
       factory.polygon(ring)
     end
+
+    # Geography columns use ST_Covers (polygon covers point); ST_Within is geometry-only.
+    def within_geography_sql(column:, region:)
+      return nil if region.blank?
+
+      wkt = region.respond_to?(:as_text) ? region.as_text : region.to_s
+
+      [ "ST_Covers(ST_GeogFromText(?)::geography, #{column})", wkt ]
+    end
+
+    # Column-to-column geography coverage (e.g. micro_areas.coverage covers households.location).
+    def geography_covers_sql(covering:, covered:)
+      "ST_Covers(#{covering}, #{covered})"
+    end
   end
 end

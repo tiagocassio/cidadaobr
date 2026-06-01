@@ -1,7 +1,8 @@
 # Decisão de roadmap — pós-piloto Fase 4
 
-**Status:** Opção A registrada — EPIC-06 (estoque + campanhas) em andamento (maio/2026)  
-**Gate técnico:** Fase 4 concluída — ver [ADR-0003](../adr/0003-epic05-mvp-scope.md)
+**Status:** Opção A — Fase 5 (EPIC-06/07) em andamento; gate E2E campanhas pendente (jun/2026)  
+**Plano mestre:** [padrão_ledi_e-sus_4f004208.plan.md](../padrão_ledi_e-sus_4f004208.plan.md) — commit ref `25bd047`  
+**Gate técnico Fase 4/4b:** concluído — [ADR-0003](../adr/0003-epic05-mvp-scope.md), [ADR-0005](../adr/0005-methodology-coverage.md)
 
 ---
 
@@ -11,48 +12,40 @@
 |-------|--------|
 | Motor 17 indicadores (B1–M2) | Entregue (MVP + packs EPIC-05b) |
 | Painel gestor + gaps + ranking | Entregue |
-| Cobertura normativa BPs (≥90%) | **Done** (48/53 `done` — [matriz](docs/indicators/methodology-coverage-matrix.md), gate ADR-0005) |
-| Repasse em R$ | **Ilustrativo** (TASK-05-07 pendente) |
-| `phase-4-indicators` | completed no plano mestre |
-| `phase-4b-methodology` | **completed** — gate ADR-0005 (48/53 `done`); onda 2: CVAT mensal, C2-E, C7-B/C, import V_SAT |
-| `phase-5-field-campaigns` | **in_progress** — Opção A (EPIC-06/07) |
+| Cobertura normativa BPs | **52/53 `done`** — [matriz](../indicators/methodology-coverage-matrix.md); 1 `partial` (C2.E) |
+| V_SAT (satisfação) | Entregue — `TeamSatisfactionSurveyScore` + `ImportSatisfactionSurvey` |
+| Repasse em R$ | **Ilustrativo** (TASK-05-07) |
+| `phase-4-indicators` | completed |
+| `phase-4b-methodology` | completed |
+| `phase-5-field-campaigns` | **in_progress** — wizard vacina + mapa + reserve/dispatch no código; **gate E2E** pendente |
+| EPIC-12 (referência MS) | **partial** — jobs + API `/reference/*`; release versionada pendente |
 
 ---
 
 ## Trilhas disponíveis
 
-| Trilha | EPIC / TASK | Quando priorizar | Esforço relativo |
-|--------|-------------|------------------|------------------|
-| **Operação de massa** | EPIC-06 → EPIC-07 → EPIC-09 (web) | Piloto pede campanha, visita domiciliar, PEC | Grande (Fases 5–6 web) |
-| **Credibilidade financeira** | TASK-05-07, EPIC-11 (SIAPS) | Secretário exige “número igual ao MS” | Médio — pode correr em paralelo |
-| **Apps mobile** | **Fase 8** — mobile-shared, Citizen, Field | Lojas / profissionais de campo / autogestão cidadão | Grande — **após Fases 5–7 web** |
+| Trilha | EPIC / TASK | Quando priorizar | Esforço |
+|--------|-------------|------------------|---------|
+| **Operação de massa** | EPIC-06 → EPIC-07 → gate F5 → EPIC-09 | Piloto: campanha, visita, PEC | Grande |
+| **Dados de referência** | EPIC-12 S8–S9 | Antes de Fase 6 clínica (combos) | Médio — pode paralelizar gate F5 |
+| **Credibilidade financeira** | TASK-05-07, EPIC-11 | Secretário exige número = MS | Médio — paralelo |
+| **Apps mobile** | Fase 8 | Após Fases 5–7 web | Grande |
 
 ---
 
-## Recomendação alinhada ao plano mestre
+## Decisão registrada
 
-Após piloto validado com checklist ([checklist-piloto-prefeitura.md](checklist-piloto-prefeitura.md)):
+- [x] **Opção A — Fase 5:** `phase-5-field-campaigns` → `in_progress` (2026-05-28)
+- [ ] **Opção B — Credibilidade:** TASK-05-07 + EPIC-11
+- [ ] **Opção C — Paralelo:** EPIC-06/07 + TASK-05-07
+- [ ] **Opção D — Mobile first:** descartada — Flutter só Fase 8
 
-1. **Default técnico:** iniciar **EPIC-06** (estoque + campanha vacina) — próximo bloco sequencial em [plano mestre](../padrão_ledi_e-sus_4f004208.plan.md) (STORY-06-01, STORY-06-02).
-2. **Paralelo opcional:** TASK-05-07 (coeficientes oficiais de repasse) se houver pressão comercial por credibilidade financeira.
-3. **Não bloquear Fase 5** por SIAPS — trilhas são independentes após gate Fase 4.
+**Próximo passo:** validar gate Fase 5 (campanha domiciliar + vacina E2E, specs, checklist piloto).
 
 ---
 
-## Ação quando decidir
+## Limitações MVP (EPIC-06/07)
 
-Marque a opção escolhida e atualize o [plano mestre](../padrão_ledi_e-sus_4f004208.plan.md):
-
-- [x] **Opção A — Fase 5 (EPIC-06):** `phase-5-field-campaigns` → `in_progress`
-- [ ] **Opção B — Credibilidade (TASK-05-07 + EPIC-11):** documentar ADR ou epic dedicado
-- [ ] **Opção C — Paralelo:** EPIC-06 in_progress + TASK-05-07 em sprint paralelo
-- [ ] **Opção D — Mobile first:** ~~EPIC-04 antes de EPIC-06~~ **descartada (2026-05-29)** — apps Flutter só na **Fase 8**
-
-**Decisão registrada:** Opção A — iniciar EPIC-06 (estoque + campanhas de vacinação) como trilha padrão pós-gate Fase 4; TASK-05-07 e SIAPS permanecem paralelos opcionais.  
-**Data:** 2026-05-28  
-**Responsável:** PO (default técnico alinhado ao plano mestre)
-
-### Limitações MVP (EPIC-06)
-
-- **Provisionamento de vacina:** aprovação desconta doses já comprometidas por outras campanhas `provisioning_approved`/`scheduled`/`active` no mesmo imunobiológico e unidade, mas **não reserva nem decrementa estoque físico** — reserva dura e baixa no ato da aplicação ficam para pós-MVP.
-- **Campanha domiciliar:** rollup de provisionamento roda na geração/publicação de rotas; publicação exige status `calculated` (rollup recente). Campanhas só vão para `scheduled` quando não restam rotas em rascunho.
+- **Vacina:** aprovação desconta doses comprometidas em outras campanhas; **não reserva nem baixa estoque físico** no MVP.
+- **Domiciliar:** rollup na publicação de rotas; campanha `scheduled` só sem rotas em rascunho.
+- **Rotas:** nearest-neighbor + clustering PostGIS; TSP ótimo pós-gate.

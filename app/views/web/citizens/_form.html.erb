@@ -1,7 +1,7 @@
 <section>
   <h2 class="mb-6 text-2xl font-bold"><%= @citizen.persisted? ? (@citizen.full_name.presence || t("cidadaobr.citizens.fallback_name")) : t("cidadaobr.citizens.new_title") %></h2>
 
-  <%= form_with model: [:web, @citizen], class: "max-w-xl space-y-4 rounded-lg border border-slate-200 bg-white p-6" do |form| %>
+  <%= form_with model: [:web, @citizen], class: "max-w-3xl space-y-4 rounded-lg border border-slate-200 bg-white p-6" do |form| %>
     <% if @citizen.errors.any? %>
       <div class="rounded bg-red-50 px-4 py-2 text-sm text-red-800"><%= @citizen.errors.full_messages.to_sentence %></div>
     <% end %>
@@ -40,6 +40,9 @@
       <%= form.label :care_team_id, class: "mb-1 block text-sm font-medium" %>
       <%= form.collection_select :care_team_id, @care_teams, :id, :name, { include_blank: t("cidadaobr.common.empty") }, class: "w-full rounded border border-slate-300 px-3 py-2" %>
     </div>
+
+    <%= render "household_fields" %>
+
     <%= form.submit t("cidadaobr.common.save"), class: "rounded bg-emerald-700 px-4 py-2 font-semibold text-white" %>
   <% end %>
 </section>

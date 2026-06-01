@@ -1,7 +1,12 @@
 <section>
-  <div class="mb-6 flex items-center justify-between">
+  <div class="mb-6 flex flex-wrap items-center justify-between gap-2">
     <h2 class="text-2xl font-bold"><%= t("cidadaobr.households.index_title") %></h2>
-    <%= link_to t("cidadaobr.households.view_map"), map_web_households_path, class: "rounded border border-slate-300 px-4 py-2 text-sm" %>
+    <div class="flex gap-2">
+      <% if municipality_scope? || facility_scope? %>
+        <%= link_to t("cidadaobr.households.new"), new_web_household_path, class: "rounded bg-emerald-700 px-4 py-2 text-sm font-semibold text-white" %>
+      <% end %>
+      <%= link_to t("cidadaobr.households.view_map"), map_web_households_path, class: "rounded border border-slate-300 px-4 py-2 text-sm" %>
+    </div>
   </div>
 
   <div class="overflow-hidden rounded-lg border border-slate-200 bg-white">
@@ -11,6 +16,7 @@
           <th class="px-4 py-3"><%= t("cidadaobr.households.table.address") %></th>
           <th class="px-4 py-3"><%= t("cidadaobr.households.table.neighborhood") %></th>
           <th class="px-4 py-3"><%= Household.human_attribute_name(:health_facility_id) %></th>
+          <th class="px-4 py-3"><%= t("cidadaobr.households.table.micro_area") %></th>
           <th class="px-4 py-3"><%= t("cidadaobr.households.table.geo") %></th>
           <th class="px-4 py-3"></th>
         </tr>
@@ -21,6 +27,7 @@
             <td class="px-4 py-3"><%= [household.street, household.street_number].compact.join(", ") %></td>
             <td class="px-4 py-3"><%= household.neighborhood %></td>
             <td class="px-4 py-3"><%= household.health_facility&.name %></td>
+            <td class="px-4 py-3"><%= household.micro_area_code.presence || t("cidadaobr.common.empty") %></td>
             <td class="px-4 py-3"><%= household.location.present? ? t("cidadaobr.common.yes") : t("cidadaobr.common.empty") %></td>
             <td class="px-4 py-3 text-right">
               <%= link_to t("cidadaobr.common.view"), web_household_path(household), class: "text-emerald-700 hover:underline" %>

@@ -24,6 +24,9 @@
         <% @household_members.each do |member| %>
           <li class="flex items-center justify-between gap-2">
             <%= link_to [member.household.street, member.household.street_number].compact.join(", "), web_household_path(member.household), class: "text-emerald-700 hover:underline" %>
+            <% if member.household.micro_area_code.present? %>
+              <span class="text-slate-500">· <%= Household.human_attribute_name(:micro_area_code) %> <%= member.household.micro_area_code %></span>
+            <% end %>
             <% if municipality_scope? || facility_scope? %>
               <%= button_to t("cidadaobr.common.remove"), web_household_member_path(member), method: :delete, class: "text-red-700 hover:underline", form: { data: { turbo_confirm: t("cidadaobr.common.confirm_remove_link") } } %>
             <% end %>

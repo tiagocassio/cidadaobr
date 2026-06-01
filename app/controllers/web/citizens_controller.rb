@@ -2,6 +2,8 @@
 
 module Web
   class CitizensController < BaseController
+    include HouseholdFormSupport
+
     before_action :require_facility_or_municipality!
     before_action :require_facility_or_municipality_write!, only: %i[new create edit update]
     before_action :set_citizen, only: %i[show edit update]
@@ -23,26 +25,36 @@ module Web
 
     def new
       @citizen = scoped_citizens.build
+      @household = build_household_for_form
     end
 
     def create
       @citizen = scoped_citizens.build(citizen_params)
       @citizen.municipality = current_municipality
 
-      if @citizen.save
-        redirect_to web_citizen_path(@citizen), notice: t("cidadaobr.citizens.flash.created")
+      saved = save_citizen_with_optional_household! { @citizen.save }
+
+      if saved
+        notice = @household ? t("cidadaobr.citizens.flash.created_with_household") : t("cidadaobr.citizens.flash.created")
+        redirect_to web_citizen_path(@citizen), notice: notice
       else
+        repopulate_household_form! if household_form_requested?
         render :new, status: :unprocessable_entity
       end
     end
 
     def edit
+      @household = Household.new
     end
 
     def update
-      if @citizen.update(citizen_params)
-        redirect_to web_citizen_path(@citizen), notice: t("cidadaobr.citizens.flash.updated")
+      saved = save_citizen_with_optional_household! { @citizen.update(citizen_params) }
+
+      if saved
+        notice = @household ? t("cidadaobr.citizens.flash.updated_with_household") : t("cidadaobr.citizens.flash.updated")
+        redirect_to web_citizen_path(@citizen), notice: notice
       else
+        repopulate_household_form! if household_form_requested?
         render :edit, status: :unprocessable_entity
       end
     end
@@ -54,8 +66,7 @@ module Web
     end
 
     def set_form_collections
-      @health_facilities = scoped_health_facilities.order(:name)
-      @care_teams = scoped_care_teams.includes(:health_facility).order(:name)
+      set_household_form_collections
     end
 
     def citizen_params

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_05_31_120100) do
+ActiveRecord::Schema[8.1].define(version: 2026_06_01_124135) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
@@ -306,17 +306,25 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_31_120100) do
   end
 
   create_table "households", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.boolean "animals_on_premises", default: false, null: false
     t.uuid "care_team_id"
     t.uuid "clinical_record_id"
     t.string "complement"
+    t.string "contact_phone"
     t.datetime "created_at", null: false
     t.uuid "health_facility_id"
+    t.jsonb "housing_conditions", default: {}, null: false
     t.string "ibge_code", null: false
     t.st_point "location", geographic: true
     t.string "micro_area_code"
     t.uuid "municipality_id", null: false
     t.string "neighborhood"
+    t.boolean "no_street_number", default: false, null: false
+    t.boolean "outside_micro_area", default: false, null: false
     t.string "postal_code"
+    t.integer "property_type"
+    t.string "reference_point"
+    t.string "residence_phone"
     t.string "street"
     t.string "street_number"
     t.datetime "updated_at", null: false

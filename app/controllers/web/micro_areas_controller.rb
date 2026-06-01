@@ -12,6 +12,7 @@ module Web
         .includes(:care_team, :health_facilities)
         .order(:code)
       @pagy, @micro_areas = pagy(micro_areas)
+      @located_household_counts = MicroArea.located_household_counts_for(@micro_areas.map(&:id))
     end
 
     def new

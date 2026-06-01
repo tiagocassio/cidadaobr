@@ -84,7 +84,9 @@ pt-BR:
       select_household: "Selecionar domicílio"
       flash:
         created: "Cidadão cadastrado com sucesso."
+        created_with_household: "Cidadão e domicílio cadastrados com sucesso."
         updated: "Cidadão atualizado com sucesso."
+        updated_with_household: "Cidadão atualizado e domicílio vinculado com sucesso."
       sex_options:
         female: "Feminino"
         male: "Masculino"
@@ -93,6 +95,9 @@ pt-BR:
     households:
       index_title: "Domicílios"
       show_title: "Domicílio"
+      new: "Novo domicílio"
+      new_title: "Novo domicílio"
+      edit_title: "Editar domicílio"
       map_title: "Mapa de domicílios"
       view_map: "Ver mapa"
       members: "Membros"
@@ -101,9 +106,48 @@ pt-BR:
       add_animal: "Adicionar animal"
       select_citizen: "Selecionar cidadão"
       species_placeholder: "Espécie"
+      form:
+        legend: "Cadastro domiciliar e territorial (FCD)"
+        include: "Cadastrar domicílio (FCD) para este cidadão"
+        citizen_hint: "Campos alinhados à ficha FCD do LEDI/e-SUS APS. A microárea da campanha usa o código do domicílio."
+        fcd_hint: "Equivalente à ficha de Cadastro Domiciliar e Territorial (MICDT)."
+        address_ledi_hint: "Endereço local de permanência — exige logradouro e (CEP ou bairro)."
+        condicao_moradia_hint: "Condições de moradia (CondicaoMoradia na FCD)."
+        outside_micro_area: "Domicílio fora da área de cobertura da microárea"
+        no_street_number: "Sem número (stSemNumero)"
+        animals_on_premises: "Existem animais no domicílio"
+        latitude: "Latitude (FCD)"
+        longitude: "Longitude (FCD)"
+        coordinates_hint: "Coordenadas geográficas do domicílio (latitude/longitude na raiz da FCD)."
+        family_reference: "Cidadão é responsável familiar (FamiliaRow)"
+        sections:
+          territory: "Território e vínculo"
+          property: "Tipo de imóvel"
+          address: "Endereço local de permanência"
+          coordinates: "Geolocalização"
+          housing_conditions: "Condições de moradia"
+          animals: "Animais no domicílio"
+          family: "Família"
+        housing_conditions:
+          localizacao: "Localização"
+          tipo_domicilio: "Tipo de domicílio"
+          situacao_moradia_posse_terra: "Situação de moradia / posse da terra"
+          tipo_acesso_domicilio: "Tipo de acesso ao domicílio"
+          material_paredes: "Material predominante das paredes"
+          abastecimento_agua: "Abastecimento de água"
+          agua_consumo: "Água para consumo"
+          forma_escoamento_banheiro: "Forma de escoamento do banheiro"
+          destino_lixo: "Destino do lixo"
+          nu_moradores: "Nº de moradores"
+          nu_comodos: "Nº de cômodos"
+      flash:
+        created: "Domicílio cadastrado com sucesso."
+        updated: "Domicílio atualizado com sucesso."
+        invalid_coordinates: "Coordenadas inválidas."
       table:
         address: "Endereço"
         neighborhood: "Bairro"
+        micro_area: "Microárea"
         geo: "Geo"
     household_members:
       flash:
