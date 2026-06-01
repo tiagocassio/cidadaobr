@@ -8,7 +8,7 @@ gem "propshaft"
 # Use postgresql as the database for Active Record
 gem "pg", "~> 1.1"
 gem "activerecord-postgis", "~> 0.5.1"
-gem "pagy", "~> 9.0"
+gem "pagy", "~> 43.5"
 # Use the Puma web server [https://github.com/puma/puma]
 gem "puma", ">= 5.0"
 # Bundle and transpile JavaScript [https://github.com/rails/jsbundling-rails]
