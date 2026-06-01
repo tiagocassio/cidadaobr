@@ -4,7 +4,13 @@ require "rails_helper"
 
 RSpec.describe Routing::Commands::GenerateVisitRoutes do
   let(:municipality) { create(:municipality) }
-  let(:facility) { create(:health_facility, municipality: municipality) }
+  let(:facility) do
+    create(
+      :health_facility,
+      municipality: municipality,
+      location: Cidadaobr::GeoPoint.build(lng: -46.6333, lat: -23.5505)
+    )
+  end
   let(:team) { create(:care_team, municipality: municipality, health_facility: facility) }
   let(:membership) { create(:user_municipality_membership, municipality: municipality, scope: "municipality") }
 
@@ -57,6 +63,35 @@ RSpec.describe Routing::Commands::GenerateVisitRoutes do
 
       expect(result.unassigned_count).to eq(1)
       expect(result.stops_created).to eq(1)
+    end
+  end
+
+  it "returns a message when the facility has no location" do
+    with_tenant(membership) do
+      facility_without_location = create(:health_facility, municipality: municipality)
+      campaign = create(:home_visit_campaign, municipality: municipality, health_facility: facility_without_location, status: "targets_built")
+      citizen = create(:citizen, municipality: municipality, health_facility: facility_without_location, care_team: team)
+      create(:campaign_target, municipality: municipality, health_facility: facility_without_location, campaign: campaign, citizen: citizen)
+
+      result = described_class.call(campaign: campaign, route_date: Date.current)
+
+      expect(result.routes_created).to eq(0)
+      expect(result.message).to be_present
+    end
+  end
+
+  it "returns no message when the facility has no location and no routable targets" do
+    with_tenant(membership) do
+      facility_without_location = create(:health_facility, municipality: municipality)
+      campaign = create(:home_visit_campaign, municipality: municipality, health_facility: facility_without_location, status: "targets_built")
+      unassigned = create(:citizen, municipality: municipality, health_facility: facility_without_location, care_team: nil)
+      create(:campaign_target, municipality: municipality, health_facility: facility_without_location, campaign: campaign, citizen: unassigned)
+
+      result = described_class.call(campaign: campaign, route_date: Date.current)
+
+      expect(result.routes_created).to eq(0)
+      expect(result.message).to be_nil
+      expect(result.unassigned_count).to eq(1)
     end
   end
 end

@@ -173,6 +173,43 @@ module Indicators
 
         def linkage_aggregate_score(expression:, citizens:, quadrimester:, reference_date:, care_team_id:, care_team: nil)
           care_team ||= CareTeam.find_by(id: care_team_id) if care_team_id.present?
+
+          if expression["linkage_monthly_average"]
+            monthly_scores = monthly_reference_dates(quadrimester, reference_date).map do |month_end|
+              compute_linkage_aggregate_score(
+                expression: expression,
+                citizens: citizens,
+                quadrimester: quadrimester,
+                reference_date: month_end,
+                care_team_id: care_team_id,
+                care_team: care_team,
+                skip_sat_bonus: true
+              )
+            end
+            base_score = (monthly_scores.sum / monthly_scores.size.to_f).round(2)
+            return apply_linkage_sat_bonus(
+              expression: expression,
+              base_score: base_score,
+              citizens: citizens,
+              quadrimester: quadrimester,
+              reference_date: reference_date,
+              care_team_id: care_team_id,
+              care_team: care_team,
+              ms_scale: expression["score_scale"] == "ms_0_10"
+            )
+          end
+
+          compute_linkage_aggregate_score(
+            expression: expression,
+            citizens: citizens,
+            quadrimester: quadrimester,
+            reference_date: reference_date,
+            care_team_id: care_team_id,
+            care_team: care_team
+          )
+        end
+
+        def compute_linkage_aggregate_score(expression:, citizens:, quadrimester:, reference_date:, care_team_id:, care_team: nil, skip_sat_bonus: false)
           components = expression.fetch("linkage_components")
           ms_scale = expression["score_scale"] == "ms_0_10"
           weighted_sum = 0.0
@@ -205,6 +242,7 @@ module Indicators
           end
 
           base_score = weighted_sum.round(2)
+          return base_score if skip_sat_bonus
 
           apply_linkage_sat_bonus(
             expression: expression,
@@ -216,6 +254,18 @@ module Indicators
             care_team: care_team,
             ms_scale: ms_scale
           )
+        end
+
+        def monthly_reference_dates(quadrimester, reference_date)
+          range = Indicators::Quadrimester.range_for(quadrimester)
+          dates = []
+          cursor = range.begin.end_of_month
+          while cursor <= range.end
+            dates << cursor if range.cover?(cursor)
+            cursor = cursor.next_month.end_of_month
+          end
+          dates = [ reference_date ] if dates.empty?
+          dates
         end
 
         def team_indicator_rules(code, care_team_id: nil, care_team: nil, require_team: false)
@@ -244,10 +294,29 @@ module Indicators
         def apply_linkage_sat_bonus(expression:, base_score:, citizens:, quadrimester:, reference_date:, care_team_id:, ms_scale:, care_team: nil)
           bonus_config = expression["linkage_sat_bonus"]
           return base_score unless bonus_config.is_a?(Hash)
-          return base_score if bonus_config["external_until_import"]
+
+          team = care_team || CareTeam.find_by(id: care_team_id)
+          month_ends = monthly_reference_dates(quadrimester, reference_date)
+          import_available = team && TeamSatisfactionSurveyScore
+            .where(care_team_id: team.id, reference_month: month_ends.map { |d| d.beginning_of_month.to_date })
+            .exists?
+          return base_score if bonus_config["external_until_import"] && !import_available
 
           code = bonus_config.fetch("code")
           max_bonus = bonus_config.fetch("max_bonus", 1.0).to_f
+
+          if import_available && team
+            monthly_scores = month_ends.filter_map do |month_end|
+              TeamSatisfactionSurveyScore.score_for_month(care_team: team, reference_date: month_end)
+            end
+            return base_score if monthly_scores.empty?
+
+            sat_normalized = monthly_scores.sum / monthly_scores.size / 10.0
+            bonus = (sat_normalized * max_bonus).round(2)
+            max_total = ms_scale ? 10.0 : 100.0
+            return [ base_score + bonus, max_total ].min.round(2)
+          end
+
           resolved = child_indicator_team_score(
             code: code,
             citizens: citizens,

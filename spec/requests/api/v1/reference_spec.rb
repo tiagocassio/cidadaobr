@@ -33,4 +33,21 @@ RSpec.describe "Reference API", type: :request do
     expect(response).to have_http_status(:ok)
     expect(response.parsed_body["entries"].size).to be >= 1
   end
+
+  it "loads vendor reference fixtures when present" do
+    expect(Reference::DomainSeedImporter.source_path.to_s).to include("vendor/reference/domains.yml")
+
+    get "/api/v1/reference/domains/sigtap_procedure", headers: headers
+
+    expect(response).to have_http_status(:ok)
+    codes = response.parsed_body["entries"].map { |entry| entry["code"] }
+    expect(codes).to include("0301100039")
+  end
+
+  it "returns ledi catalog fields" do
+    get "/api/v1/reference/ledi/catalog", headers: headers
+
+    expect(response).to have_http_status(:ok)
+    expect(response.parsed_body).to include("ledi_version", "fields")
+  end
 end

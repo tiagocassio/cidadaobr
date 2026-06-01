@@ -4,7 +4,13 @@ require "rails_helper"
 
 RSpec.describe "Web stock and campaigns", type: :request do
   let(:municipality) { create(:municipality) }
-  let(:facility) { create(:health_facility, municipality: municipality) }
+  let(:facility) do
+    create(
+      :health_facility,
+      municipality: municipality,
+      location: Cidadaobr::GeoPoint.build(lng: -46.6333, lat: -23.5505)
+    )
+  end
   let(:other_facility) { create(:health_facility, municipality: municipality, cnes: "2999999", name: "UBS B") }
   let(:membership) do
     create(:user_municipality_membership, municipality: municipality, scope: "municipality", role_code: "municipal_admin")
@@ -92,7 +98,7 @@ RSpec.describe "Web stock and campaigns", type: :request do
   end
 
   describe "vaccination campaigns" do
-    it "creates a campaign and runs provisioning" do
+    it "creates a campaign via wizard step 1 and redirects to audience step" do
       with_tenant(membership) do
         create(
           :immunobiological_lot,
@@ -112,16 +118,67 @@ RSpec.describe "Web stock and campaigns", type: :request do
             campaign_kind: "human_immunization",
             starts_on: Date.current,
             ends_on: Date.current + 6.days,
-            target_doses: 200,
-            room_capacity_per_day: 50,
-            target_audience_definition: { min_age: 60 }
+            room_capacity_per_day: 50
           }
         }
       }.to change { with_tenant(membership) { VaccinationCampaign.count } }.by(1)
 
       campaign = with_tenant(membership) { VaccinationCampaign.order(:created_at).last }
-      expect(response).to redirect_to(web_campaigns_vaccination_campaign_path(campaign))
-      expect(with_tenant(membership) { campaign.supply_provisioning.status }).to eq("approved")
+      expect(response).to redirect_to(wizard_web_campaigns_vaccination_campaign_path(campaign, step: 2))
+      expect(with_tenant(membership) { campaign.supply_provisioning }).to be_nil
+    end
+
+    it "completes wizard steps through provisioning approval" do
+      with_tenant(membership) do
+        create(
+          :immunobiological_lot,
+          municipality: municipality,
+          health_facility: facility,
+          immunobiological_product: product,
+          quantity_on_hand: 500
+        )
+        @campaign = create(
+          :vaccination_campaign,
+          municipality: municipality,
+          health_facility: facility,
+          immunobiological_product: product,
+          target_doses: 100,
+          room_capacity_per_day: 50,
+          status: "draft",
+          target_audience_definition: { "min_age" => 60 }
+        )
+      end
+      campaign = with_tenant(membership) { @campaign }
+
+      patch update_wizard_web_campaigns_vaccination_campaign_path(campaign, step: 2), params: {
+        vaccination_campaign: { target_doses: 100, target_audience_definition: { min_age: 60, max_age: 80 } }
+      }
+      expect(response).to redirect_to(wizard_web_campaigns_vaccination_campaign_path(campaign, step: 3))
+      expect(with_tenant(membership) { campaign.reload.target_audience_definition["wizard_audience_saved"] }).to be(true)
+
+      patch update_wizard_web_campaigns_vaccination_campaign_path(campaign, step: 3)
+      expect(response).to redirect_to(wizard_web_campaigns_vaccination_campaign_path(campaign, step: 4))
+      expect(with_tenant(membership) { campaign.reload.supply_provisioning.status }).to eq("approved")
+    end
+
+    it "redirects deep-linked wizard steps beyond completion" do
+      campaign = nil
+      with_tenant(membership) do
+        campaign = create(
+          :vaccination_campaign,
+          municipality: municipality,
+          health_facility: facility,
+          immunobiological_product: product,
+          status: "draft",
+          target_doses: 0,
+          target_audience_definition: { "min_age" => 60 }
+        )
+      end
+      campaign = with_tenant(membership) { campaign }
+
+      get wizard_web_campaigns_vaccination_campaign_path(campaign, step: 4)
+
+      expect(response).to redirect_to(wizard_web_campaigns_vaccination_campaign_path(campaign, step: 2))
     end
 
     it "blocks publish without campaign targets" do
@@ -260,6 +317,64 @@ RSpec.describe "Web stock and campaigns", type: :request do
 
       post generate_routes_web_campaigns_home_visit_campaign_path(campaign)
       expect(with_tenant(membership) { campaign.visit_routes.count }).to eq(1)
+    end
+
+    it "renders route map with geo payload" do
+      campaign = with_tenant(membership) do
+        team = create(:care_team, municipality: municipality, health_facility: facility)
+        household = create(:household, municipality: municipality, health_facility: facility)
+        citizen = create(:citizen, municipality: municipality, health_facility: facility, care_team: team)
+        create(:household_member, household: household, citizen: citizen)
+        camp = create(:home_visit_campaign, municipality: municipality, health_facility: facility, status: "targets_built")
+        create(:campaign_target, municipality: municipality, health_facility: facility, campaign: camp, citizen: citizen)
+        Routing::Commands::GenerateVisitRoutes.call(campaign: camp, route_date: Date.current)
+        camp
+      end
+
+      get route_map_web_campaigns_home_visit_campaign_path(campaign)
+      expect(response).to have_http_status(:ok)
+      expect(response.body).to include("visit-route-map")
+    end
+
+    it "registers supply dispatch after publish and reserve" do
+      campaign = nil
+      team = nil
+      with_tenant(membership) do
+        product = create(:immunobiological_product, municipality: municipality)
+        create(
+          :immunobiological_lot,
+          municipality: municipality,
+          health_facility: facility,
+          immunobiological_product: product,
+          quantity_on_hand: 100
+        )
+        campaign = create(
+          :home_visit_campaign,
+          municipality: municipality,
+          health_facility: facility,
+          status: "targets_built",
+          target_audience_definition: { "immunobiological_product_id" => product.id }
+        )
+        team = create(:care_team, municipality: municipality, health_facility: facility)
+        citizen = create(:citizen, municipality: municipality, health_facility: facility, care_team: team)
+        create(:campaign_target, municipality: municipality, health_facility: facility, campaign: campaign, citizen: citizen)
+        Routing::Commands::GenerateVisitRoutes.call(campaign: campaign, route_date: Date.current)
+        Inventory::Commands::ReserveVisitRouteSupplies.call(campaign: campaign)
+        campaign.visit_routes.update_all(status: "published")
+        campaign.update!(status: "scheduled")
+      end
+
+      result = with_tenant(membership) do
+        Inventory::Commands::DispatchTeamSupplyKit.call(
+          campaign: campaign,
+          care_team: team,
+          dispatch_date: Date.current
+        )
+      end
+
+      expect(result.dispatch).to be_present
+      get web_stock_team_supply_dispatches_path
+      expect(response).to have_http_status(:ok)
     end
   end
 end

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_05_29_130000) do
+ActiveRecord::Schema[8.1].define(version: 2026_05_31_120100) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
@@ -250,9 +250,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_29_130000) do
     t.string "cnes", null: false
     t.datetime "created_at", null: false
     t.string "facility_service_kind", default: "primary_care", null: false
+    t.st_point "location", geographic: true
     t.uuid "municipality_id", null: false
     t.string "name", null: false
     t.datetime "updated_at", null: false
+    t.index ["location"], name: "index_health_facilities_on_location", using: :gist
     t.index ["municipality_id", "cnes"], name: "index_health_facilities_on_municipality_id_and_cnes", unique: true
     t.index ["municipality_id"], name: "index_health_facilities_on_municipality_id"
   end
@@ -630,6 +632,18 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_29_130000) do
     t.index ["care_team_id", "indicator_code", "quadrimester"], name: "index_team_indicator_results_unique", unique: true
   end
 
+  create_table "team_satisfaction_survey_scores", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "care_team_id", null: false
+    t.datetime "created_at", null: false
+    t.uuid "municipality_id", null: false
+    t.date "reference_month", null: false
+    t.decimal "score", precision: 4, scale: 2, null: false
+    t.datetime "updated_at", null: false
+    t.index ["care_team_id", "reference_month"], name: "index_team_sat_scores_on_team_and_month", unique: true
+    t.index ["care_team_id"], name: "index_team_satisfaction_survey_scores_on_care_team_id"
+    t.index ["municipality_id"], name: "index_team_satisfaction_survey_scores_on_municipality_id"
+  end
+
   create_table "team_supply_dispatches", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.uuid "care_team_id", null: false
     t.datetime "created_at", null: false
@@ -792,6 +806,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_29_130000) do
   add_foreign_key "stock_movements", "supply_items"
   add_foreign_key "team_indicator_results", "care_teams"
   add_foreign_key "team_indicator_results", "municipalities"
+  add_foreign_key "team_satisfaction_survey_scores", "care_teams"
+  add_foreign_key "team_satisfaction_survey_scores", "municipalities"
   add_foreign_key "team_supply_dispatches", "care_teams"
   add_foreign_key "user_municipality_memberships", "health_facilities"
   add_foreign_key "user_municipality_memberships", "municipalities"

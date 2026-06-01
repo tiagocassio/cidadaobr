@@ -51,12 +51,21 @@ Rails.application.routes.draw do
     namespace :stock do
       resources :immunobiological_products, except: :destroy
       resources :immunobiological_lots, only: %i[index new create]
+      resources :team_supply_dispatches, only: %i[index show]
     end
 
     namespace :campaigns do
       resources :vaccination_campaigns, only: %i[index show new create edit update] do
+        # collection: new campaign wizard (no id); member: resume wizard on existing campaign
+        collection do
+          get "wizard/:step", action: :wizard, as: :wizard, constraints: { step: /[1-4]/ }
+        end
         member do
+          get "wizard/:step", action: :wizard, as: :wizard, constraints: { step: /[1-4]/ }
+          patch "wizard/:step", action: :update_wizard, as: :update_wizard, constraints: { step: /[1-4]/ }
           get :preview_targets
+          get :preview_provisioning
+          post :calculate_provisioning
           post :build_targets
           post :publish
         end

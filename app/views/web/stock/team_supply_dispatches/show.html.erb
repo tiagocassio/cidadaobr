@@ -1,0 +1,31 @@
+<section>
+  <%= link_to t("cidadaobr.stock.dispatches.back"), web_stock_team_supply_dispatches_path, class: "text-sm text-slate-600 underline" %>
+  <h2 class="mt-2 mb-6 text-2xl font-bold"><%= t("cidadaobr.stock.dispatches.manifest_title") %></h2>
+
+  <div class="mb-6 rounded-lg border border-slate-200 bg-white p-6 text-sm">
+    <p><strong><%= TeamSupplyDispatch.human_attribute_name(:dispatch_date) %>:</strong> <%= l(@dispatch.dispatch_date) %></p>
+    <p><strong><%= CareTeam.model_name.human %>:</strong> <%= @dispatch.care_team.name %></p>
+    <p><strong><%= HealthFacility.model_name.human %>:</strong> <%= @dispatch.health_facility.name %></p>
+    <p><strong><%= TeamSupplyDispatch.human_attribute_name(:status) %>:</strong> <%= @dispatch.status %></p>
+  </div>
+
+  <div class="rounded-lg border border-slate-200 bg-white p-6">
+    <h3 class="mb-4 font-semibold"><%= t("cidadaobr.stock.dispatches.lines_title") %></h3>
+    <table class="min-w-full text-sm">
+      <thead>
+        <tr class="text-left">
+          <th class="py-2"><%= t("cidadaobr.campaigns.home_visit.item") %></th>
+          <th class="py-2"><%= t("cidadaobr.campaigns.home_visit.quantity") %></th>
+        </tr>
+      </thead>
+      <tbody>
+        <% Array(@dispatch.lines_json).each do |line| %>
+          <tr class="border-t">
+            <td class="py-2"><%= line["label"] || line["key"] %></td>
+            <td class="py-2"><%= line["quantity"] %> <%= line["unit"] %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+</section>

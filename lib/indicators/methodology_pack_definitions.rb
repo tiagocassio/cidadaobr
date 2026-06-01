@@ -28,6 +28,7 @@ module Indicators
             "skip_citizen_gaps" => true,
             "score_scale" => "ms_0_10",
             "team_score_mode" => "linkage_aggregate",
+            "linkage_monthly_average" => true,
             "linkage_components" => [
               { "code" => "V_CAD", "weight" => 3.0 },
               { "code" => "V_ACOMP", "weight" => 7.0 }
@@ -88,10 +89,10 @@ module Indicators
           code: "V_SAT", rule_code: "default", good_practice_code: "V_SAT",
           funding_component: "linkage", team_kind: "esf", display_order: 3,
           source_ref: ESF_AP_SOURCE,
-          numerator_summary: "Satisfação do usuário (pesquisa MS; external_only até import)",
+          numerator_summary: "Satisfação do usuário (import pesquisa MS)",
           expression: {
             "denominator" => ON_TEAM,
-            "numerator" => { "type" => "satisfaction_survey", "within_months" => 6, "fallback_encounter" => false, "external_only" => true }
+            "numerator" => { "type" => "satisfaction_survey", "within_months" => 6, "fallback_encounter" => false, "min_score" => 7.0 }
           }
         )
       ]
@@ -135,7 +136,7 @@ module Indicators
              "second_visit_within_months" => 6
            }),
         bp("C2", "E", 11, "Vacinação calendário infantil", base_denom,
-           { "type" => "vaccination_present", "record_types" => %w[FV], "within_months" => 24 })
+           { "type" => "vaccination_calendar", "record_types" => %w[FV], "within_months" => 24 })
       ]
     end
 
@@ -240,8 +241,15 @@ module Indicators
           "minimum_count" => 1,
           "predicate" => DslV1::LediPayloadPaths::PRENATAL_VISIT_REASONS_PREDICATE
         },
-        "K" => { "type" => "clinical_predicate", "record_types" => %w[FAO], "within_months" => 9,
-                 "predicate" => { "type" => "dental_first_consult" } }
+        "K" => {
+          "type" => "gestational_clinical_predicate",
+          "record_types" => %w[FAO],
+          "min_gestational_weeks" => 0,
+          "max_gestational_weeks" => 42,
+          "lookback_months" => 15,
+          "active_only" => false,
+          "predicate" => { "type" => "dental_first_consult" }
+        }
       }
       letters.map do |letter, numerator|
         bp("C3", letter, 12, "Gestante BP #{letter}", denom, numerator)
@@ -297,15 +305,22 @@ module Indicators
     end
 
     def c7
-      denom = { "type" => "citizens_sex_female" }
       [
-        bp("C7", "A", 16, "Rastreamento colo do útero", denom,
+        bp("C7", "A", 16, "Rastreamento colo do útero", { "type" => "citizens_sex_female" },
            { "type" => "clinical_predicate", "record_types" => %w[FAI FP], "within_months" => 36,
              "predicate" => { "type" => "procedure_present", "code" => "0201020074" } }),
-        bp("C7", "B", 16, "Rastreamento mama", denom,
+        bp("C7", "B", 16, "Rastreamento mama",
+           { "type" => "all", "clauses" => [
+             { "type" => "citizens_sex_female" },
+             { "type" => "citizens_age_between", "min_age" => 50, "max_age" => 69 }
+           ] },
            { "type" => "clinical_predicate", "record_types" => %w[FAI FP], "within_months" => 24,
              "predicate" => { "type" => "procedure_present", "code" => "0204030188" } }),
-        bp("C7", "C", 16, "Vacinação HPV", denom,
+        bp("C7", "C", 16, "Vacinação HPV",
+           { "type" => "all", "clauses" => [
+             { "type" => "citizens_sex_female" },
+             { "type" => "citizens_age_between", "min_age" => 9, "max_age" => 14 }
+           ] },
            { "type" => "vaccination_immunobiologic", "record_types" => %w[FV], "within_months" => 120, "immunobiologic" => "HPV" })
       ]
     end

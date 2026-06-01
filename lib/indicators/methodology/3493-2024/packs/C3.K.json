@@ -20,11 +20,14 @@
       "flag": "pregnant"
     },
     "numerator": {
-      "type": "clinical_predicate",
+      "type": "gestational_clinical_predicate",
       "record_types": [
         "FAO"
       ],
-      "within_months": 9,
+      "min_gestational_weeks": 0,
+      "max_gestational_weeks": 42,
+      "lookback_months": 15,
+      "active_only": false,
       "predicate": {
         "type": "dental_first_consult"
       }

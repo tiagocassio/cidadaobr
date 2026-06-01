@@ -1,0 +1,12 @@
+<%= render "wizard_nav", step: @step, campaign: @campaign, completion_step: @wizard_completion_step || 0 %>
+
+<% case @step %>
+<% when 1 %>
+  <%= render "wizard_step1", campaign: @campaign %>
+<% when 2 %>
+  <%= render "wizard_step2", campaign: @campaign, preview_count: @preview_count %>
+<% when 3 %>
+  <%= render "wizard_step3", campaign: @campaign, provisioning_result: @provisioning_result, provisioning: @provisioning %>
+<% when 4 %>
+  <%= render "wizard_step4", campaign: @campaign, targets_preview: @targets_preview %>
+<% end %>

@@ -30,6 +30,7 @@ module Indicators
           when "first_consult_by_age" then first_consult_by_age?(context, clause)
           when "first_prenatal_consult" then first_prenatal_consult?(context, clause)
           when "vaccination_present" then vaccination_present?(context, clause)
+          when "vaccination_calendar" then vaccination_calendar?(context, clause)
           when "vaccination_immunobiologic" then vaccination_immunobiologic?(context, clause)
           when "gestational_vaccination_immunobiologic" then gestational_vaccination_immunobiologic?(context, clause)
           when "gestational_clinical_predicate" then gestational_clinical_predicate?(context, clause)
@@ -91,6 +92,16 @@ module Indicators
         end
 
         def satisfaction_survey?(context, clause)
+          team = context.care_team || context.citizen.care_team
+          if team && !clause["external_only"]
+            score = TeamSatisfactionSurveyScore.best_score_for_team(
+              care_team: team,
+              quadrimester: context.quadrimester,
+              reference_date: context.reference_date
+            )
+            return score.to_f >= clause.fetch("min_score", 7.0).to_f if score
+          end
+
           return false if clause["external_only"]
 
           return false unless clause.fetch("fallback_encounter", true)
@@ -281,6 +292,28 @@ module Indicators
 
         def vaccination_present?(context, clause)
           vaccination_immunobiologic?(context, clause.merge("immunobiologic" => nil))
+        end
+
+        def vaccination_calendar?(context, clause)
+          birth = context.citizen.birth_date
+          return false unless birth
+
+          age_months = age_in_months(birth, context.reference_date)
+          return false if age_months.negative? || age_months > 24
+
+          required = VaccinationCalendar.required_immunobiologics(age_months)
+          return false if required.empty?
+
+          within_months = clause.fetch("within_months", 24).to_i
+          record_types = Array(clause.fetch("record_types", %w[FV]))
+
+          required.all? do |immuno|
+            records_in_window(context, record_types, within_months).any? do |record|
+              payloads_for_record(record, context.citizen).any? do |payload|
+                vaccination_match?(payload, immuno.downcase)
+              end
+            end
+          end
         end
 
         def vaccination_immunobiologic?(context, clause)
@@ -754,6 +787,12 @@ module Indicators
 
         def procedure_any_present?(payload, codes)
           Array(codes).any? { |code| procedure_present?(payload, code) }
+        end
+
+        def age_in_months(birth_date, reference_date)
+          months = (reference_date.year - birth_date.year) * 12 + (reference_date.month - birth_date.month)
+          months -= 1 if reference_date.day < birth_date.day
+          months
         end
       end
     end

@@ -9,4 +9,10 @@ class HealthFacility < ApplicationRecord
 
   validates :name, :facility_service_kind, :cnes, presence: true
   validates :cnes, uniqueness: { scope: :municipality_id }
+
+  def coordinates
+    return nil unless location
+
+    { lat: location.y, lng: location.x }
+  end
 end

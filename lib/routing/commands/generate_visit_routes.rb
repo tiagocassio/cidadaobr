@@ -25,6 +25,14 @@ module Routing
           unassigned_count = targets.count { |target| target.citizen.care_team_id.blank? }
           routable_targets = targets.select { |target| target.citizen.care_team_id.present? }
 
+          depot = facility_location(campaign.health_facility)
+          unless depot
+            message = if routable_targets.any?
+              I18n.t("cidadaobr.campaigns.home_visit.flash.no_facility_location")
+            end
+            return Result.new(0, 0, unassigned_count, false, message)
+          end
+
           routes_created = 0
           stops_created = 0
 
@@ -43,7 +51,8 @@ module Routing
 
             grouped.each do |care_team_id, team_targets|
               care_team = CareTeam.find(care_team_id)
-              chunks = team_targets.each_slice(max_stops_per_route).to_a
+              geo_clusters = Routing::ClusterVisitRouteTargets.call(team_targets).values
+              chunks = geo_clusters.flat_map { |cluster| cluster.each_slice(max_stops_per_route).to_a }
 
               chunks.each_with_index do |chunk, index|
                 route = VisitRoute.create!(
@@ -57,7 +66,7 @@ module Routing
                 )
                 routes_created += 1
 
-                ordered = Routing::OrderVisitRouteStops.call(chunk)
+                ordered = Routing::OrderVisitRouteStops.call(chunk, start_point: depot)
                 ordered.each_with_index do |target, stop_index|
                   household = target.household || household_for(target.citizen)
                   VisitRouteStop.create!(
@@ -92,6 +101,12 @@ module Routing
 
         def household_for(citizen)
           citizen.household_members.order(:created_at).first&.household
+        end
+
+        def facility_location(facility)
+          return unless facility&.location
+
+          [ facility.location.y, facility.location.x ]
         end
       end
     end

@@ -4,7 +4,7 @@ module Indicators
   module CoverageAudit
     EXPECTED_MATRIX_ROWS = 53
     CITIZEN_SCOPE_TYPES = %w[
-      citizens_on_team citizens_with_condition citizens_age_gte citizens_age_lte citizens_sex_female
+      citizens_on_team citizens_with_condition citizens_age_gte citizens_age_lte citizens_age_between citizens_sex_female
     ].freeze
 
     CLINICAL_EVIDENCE_TYPES = %w[
@@ -12,7 +12,7 @@ module Indicators
       clinical_predicate appointment_in_quadrimester encounter_in_window emulti_encounter_count
       mici_micdt_complete fci_updated_within contact_and_attendance satisfaction_survey
       consult_count_gte anthropometry_count_gte visit_count_gte acs_two_visit_schedule blood_pressure_count_gte
-      first_consult_by_age first_prenatal_consult vaccination_present vaccination_immunobiologic
+      first_consult_by_age first_prenatal_consult vaccination_present vaccination_calendar vaccination_immunobiologic
       gestational_vaccination_immunobiologic gestational_clinical_predicate gestational_evidence_count_gte
       puerperium_consult puerperium_visit fci_flag_present microarea_linked
     ].freeze
@@ -261,6 +261,10 @@ module Indicators
     def check_clause_type!(missing, pack, clause)
       type = clause["type"]
       ref = "#{pack.dig('catalog', 'code')}.#{pack['rule_code']}"
+      if type == "all"
+        Array(clause["clauses"]).each { |sub| walk_clause!(missing, pack, sub) }
+        return
+      end
       unless CITIZEN_SCOPE_TYPES.include?(type) || CLINICAL_EVIDENCE_TYPES.include?(type)
         missing << "#{ref}: unknown clause type #{type}"
         return

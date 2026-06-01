@@ -8,6 +8,8 @@ module Indicators
 
         def matches?(clause, context)
           case clause["type"]
+          when "all"
+            Array(clause["clauses"]).all? { |sub| matches?(sub, context) }
           when "citizens_on_team"
             citizen_on_team?(context, clause)
           when "citizens_with_condition"
@@ -16,6 +18,8 @@ module Indicators
             citizens_age_gte?(context, clause)
           when "citizens_age_lte"
             citizens_age_lte?(context, clause)
+          when "citizens_age_between"
+            citizens_age_between?(context, clause)
           when "citizens_sex_female"
             citizens_sex_female?(context)
           else
@@ -52,6 +56,13 @@ module Indicators
           return false if age.nil?
 
           age <= clause.fetch("max_age", 2).to_i
+        end
+
+        def citizens_age_between?(context, clause)
+          age = citizen_age(context)
+          return false if age.nil?
+
+          age >= clause.fetch("min_age", 0).to_i && age <= clause.fetch("max_age", 120).to_i
         end
 
         def citizen_age(context)

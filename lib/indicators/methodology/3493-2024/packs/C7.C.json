@@ -15,7 +15,17 @@
   "record_types": null,
   "expression": {
     "denominator": {
-      "type": "citizens_sex_female"
+      "type": "all",
+      "clauses": [
+        {
+          "type": "citizens_sex_female"
+        },
+        {
+          "type": "citizens_age_between",
+          "min_age": 9,
+          "max_age": 14
+        }
+      ]
     },
     "numerator": {
       "type": "vaccination_immunobiologic",

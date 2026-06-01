@@ -83,6 +83,16 @@ module Web
           redirect_to web_campaigns_home_visit_campaign_path(@campaign), alert: result.message
           return
         end
+        if result.routes_created.zero?
+          alert = result.message
+          if alert.blank? && result.unassigned_count.positive?
+            alert = t("cidadaobr.campaigns.home_visit.flash.unassigned_targets", count: result.unassigned_count)
+          end
+          if alert.present?
+            redirect_to web_campaigns_home_visit_campaign_path(@campaign), alert: alert
+            return
+          end
+        end
 
         notice = t(
           "cidadaobr.campaigns.home_visit.flash.routes_generated",
@@ -217,21 +227,50 @@ module Web
         route_date, @route_date_invalid = parse_route_date_with_validation
         @routes = @campaign.visit_routes
           .where(route_date: route_date)
-          .includes(visit_route_stops: { citizen: { households: [] }, household: [] })
+          .includes(:care_team, visit_route_stops: { citizen: { households: [] }, household: [] })
           .order(:sequence_number)
-        @map_markers = @routes.flat_map do |route|
-          route.visit_route_stops.sort_by(&:stop_order).filter_map do |stop|
+        @map_markers = []
+        @route_map_payload = @routes.filter_map do |route|
+          stops = route.visit_route_stops.sort_by(&:stop_order).filter_map do |stop|
             household = stop.household || stop.citizen.household_members.order(:created_at).first&.household
             next unless household&.location
 
-            {
+            marker = {
               lat: household.location.y,
               lng: household.location.x,
               label: "#{route.care_team.name} · parada #{stop.stop_order}",
               route_id: route.id
             }
+            @map_markers << marker
+            { lat: marker[:lat], lng: marker[:lng], label: marker[:label] }
           end
+          next if stops.empty?
+
+          { id: route.id, label: route.care_team.name, stops: stops }
         end
+        facility = @campaign.health_facility
+        if facility&.location.present?
+          @depot = { lat: facility.location.y, lng: facility.location.x, label: facility.name }
+        end
+        @map_center = route_map_default_center(facility)
+      end
+
+      def route_map_default_center(facility)
+        if facility&.location.present?
+          return { lat: facility.location.y, lng: facility.location.x }
+        end
+
+        coords = HealthFacility
+          .where(municipality_id: @campaign.municipality_id)
+          .where.not(location: nil)
+          .limit(20)
+          .filter_map(&:coordinates)
+        return nil if coords.empty?
+
+        {
+          lat: coords.sum { |point| point[:lat] } / coords.size,
+          lng: coords.sum { |point| point[:lng] } / coords.size
+        }
       end
 
       private

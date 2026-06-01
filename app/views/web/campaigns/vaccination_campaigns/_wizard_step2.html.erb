@@ -1,0 +1,47 @@
+<section>
+  <%= link_to t("cidadaobr.campaigns.back"), web_campaigns_vaccination_campaign_path(campaign), class: "text-sm text-slate-600 underline" %>
+  <h2 class="mt-2 mb-6 text-2xl font-bold"><%= t("cidadaobr.campaigns.vaccination_wizard.step_audience") %></h2>
+
+  <p class="mb-4 text-sm text-slate-600">
+    <%= t("cidadaobr.campaigns.vaccination_wizard.preview_eligible", count: preview_count) %>
+  </p>
+
+  <%= form_with url: update_wizard_web_campaigns_vaccination_campaign_path(campaign, step: 2), method: :patch, class: "max-w-xl space-y-4 rounded-lg border border-slate-200 bg-white p-6" do %>
+    <div class="grid grid-cols-2 gap-4">
+      <div>
+        <%= label_tag "vaccination_campaign_target_audience_definition_min_age", t("cidadaobr.campaigns.min_age"), class: "mb-1 block text-sm font-medium" %>
+        <%= number_field_tag "vaccination_campaign[target_audience_definition][min_age]", campaign.target_audience_definition["min_age"], min: 0, class: "w-full rounded border border-slate-300 px-3 py-2" %>
+      </div>
+      <div>
+        <%= label_tag "vaccination_campaign_target_audience_definition_max_age", t("cidadaobr.campaigns.max_age"), class: "mb-1 block text-sm font-medium" %>
+        <%= number_field_tag "vaccination_campaign[target_audience_definition][max_age]", campaign.target_audience_definition["max_age"], min: 0, class: "w-full rounded border border-slate-300 px-3 py-2" %>
+      </div>
+    </div>
+    <div>
+      <%= label_tag "vaccination_campaign_target_audience_definition_sex", t("cidadaobr.campaigns.sex"), class: "mb-1 block text-sm font-medium" %>
+      <%= select_tag "vaccination_campaign[target_audience_definition][sex]",
+            options_for_select([[t("cidadaobr.campaigns.sex_any"), ""], ["F", "F"], ["M", "M"]], campaign.target_audience_definition["sex"]),
+            class: "w-full rounded border border-slate-300 px-3 py-2" %>
+    </div>
+    <div>
+      <%= label_tag "vaccination_campaign_target_audience_definition_care_team_ids", t("cidadaobr.campaigns.care_teams"), class: "mb-1 block text-sm font-medium" %>
+      <%= hidden_field_tag "vaccination_campaign[target_audience_definition][care_team_ids][]", "" %>
+      <%= select_tag "vaccination_campaign[target_audience_definition][care_team_ids][]",
+            options_from_collection_for_select(@care_teams, :id, :name, Array(campaign.target_audience_definition["care_team_ids"])),
+            multiple: true, size: 4, class: "w-full rounded border border-slate-300 px-3 py-2" %>
+    </div>
+    <div>
+      <%= label_tag "vaccination_campaign_target_audience_definition_micro_area_codes", t("cidadaobr.campaigns.micro_areas"), class: "mb-1 block text-sm font-medium" %>
+      <%= hidden_field_tag "vaccination_campaign[target_audience_definition][micro_area_codes][]", "" %>
+      <%= select_tag "vaccination_campaign[target_audience_definition][micro_area_codes][]",
+            options_from_collection_for_select(@micro_areas, :code, :code, Array(campaign.target_audience_definition["micro_area_codes"])),
+            multiple: true, size: 4, class: "w-full rounded border border-slate-300 px-3 py-2" %>
+    </div>
+    <div>
+      <%= label_tag :target_doses, VaccinationCampaign.human_attribute_name(:target_doses), class: "mb-1 block text-sm font-medium" %>
+      <%= number_field_tag "vaccination_campaign[target_doses]", campaign.target_doses, min: 0, class: "w-full rounded border border-slate-300 px-3 py-2" %>
+    </div>
+
+    <%= submit_tag t("cidadaobr.campaigns.vaccination_wizard.continue"), class: "rounded bg-emerald-700 px-4 py-2 font-semibold text-white" %>
+  <% end %>
+</section>

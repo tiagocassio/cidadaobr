@@ -6,18 +6,24 @@ module Campaigns
       Result = Data.define(:created_count, :skipped_count)
 
       class << self
-        def preview_scope(campaign:)
-          base_scope(
-            campaign: campaign,
-            definition: campaign.target_audience_definition.to_h.stringify_keys
-          )
+        def preview_scope(campaign:, definition: nil)
+          raw = definition || campaign.target_audience_definition
+          base_scope(campaign: campaign, definition: audience_definition(raw))
+        end
+
+        def remove_stale_for!(campaign:)
+          definition = audience_definition(campaign.target_audience_definition)
+          scope = base_scope(campaign: campaign, definition: definition)
+          remove_stale_targets!(campaign: campaign, scope: scope)
         end
 
         def call(campaign:)
-          definition = campaign.target_audience_definition.to_h.stringify_keys
+          definition = audience_definition(campaign.target_audience_definition)
           scope = base_scope(campaign: campaign, definition: definition)
           created = 0
           skipped = 0
+
+          remove_stale_targets!(campaign: campaign, scope: scope)
 
           scope.find_each do |citizen|
             household = household_for(citizen)
@@ -82,6 +88,26 @@ module Campaigns
 
         def household_for(citizen)
           citizen.household_members.order(:created_at).first&.household
+        end
+
+        def remove_stale_targets!(campaign:, scope:)
+          statuses = stale_target_statuses(campaign)
+          CampaignTarget
+            .where(campaign: campaign, status: statuses)
+            .where.not(citizen_id: scope.select(:id))
+            .delete_all
+        end
+
+        def stale_target_statuses(campaign)
+          # visited/refused are kept intentionally — historical vaccination/visit outcomes.
+          return %w[pending] unless campaign.is_a?(HomeVisitCampaign)
+          return %w[pending] if campaign.visit_routes.exists?
+
+          %w[pending routed]
+        end
+
+        def audience_definition(raw)
+          raw.to_h.stringify_keys.except("wizard_audience_saved")
         end
 
         def priority_for(citizen)

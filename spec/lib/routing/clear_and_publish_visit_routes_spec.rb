@@ -4,7 +4,13 @@ require "rails_helper"
 
 RSpec.describe Routing::Commands::ClearVisitRoutes do
   let(:municipality) { create(:municipality) }
-  let(:facility) { create(:health_facility, municipality: municipality) }
+  let(:facility) do
+    create(
+      :health_facility,
+      municipality: municipality,
+      location: Cidadaobr::GeoPoint.build(lng: -46.6333, lat: -23.5505)
+    )
+  end
   let(:team) { create(:care_team, municipality: municipality, health_facility: facility) }
   let(:membership) { create(:user_municipality_membership, municipality: municipality, scope: "municipality") }
 
@@ -79,7 +85,13 @@ end
 
 RSpec.describe Routing::Commands::PublishVisitRoutes do
   let(:municipality) { create(:municipality) }
-  let(:facility) { create(:health_facility, municipality: municipality) }
+  let(:facility) do
+    create(
+      :health_facility,
+      municipality: municipality,
+      location: Cidadaobr::GeoPoint.build(lng: -46.6333, lat: -23.5505)
+    )
+  end
   let(:team) { create(:care_team, municipality: municipality, health_facility: facility) }
   let(:membership) { create(:user_municipality_membership, municipality: municipality, scope: "municipality") }
 

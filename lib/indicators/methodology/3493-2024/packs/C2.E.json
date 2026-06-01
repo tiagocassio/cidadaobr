@@ -19,7 +19,7 @@
       "max_age": 2
     },
     "numerator": {
-      "type": "vaccination_present",
+      "type": "vaccination_calendar",
       "record_types": [
         "FV"
       ],

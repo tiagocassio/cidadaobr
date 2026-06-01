@@ -1188,7 +1188,14 @@ RSpec.describe Indicators::DslV1::Evaluator do
       persist_clinical_record!(
         citizen: citizen,
         record_type: "FV",
-        payload_json: { "vacinas" => [ { "imunobiologico" => "BCG" } ] },
+        payload_json: {
+          "vacinas" => [
+            { "imunobiologico" => "BCG" },
+            { "imunobiologico" => "HEPB" },
+            { "imunobiologico" => "PENTA" },
+            { "imunobiologico" => "VIP" }
+          ]
+        },
         encounter_at: 1.month.ago
       )
     end
@@ -1220,7 +1227,14 @@ RSpec.describe Indicators::DslV1::Evaluator do
       record = persist_clinical_record!(
         citizen: citizen,
         record_type: "FV",
-        payload_json: { "vacinas" => [ { "imunobiologico" => "BCG" } ] },
+        payload_json: {
+          "vacinas" => [
+            { "imunobiologico" => "BCG" },
+            { "imunobiologico" => "HEPB" },
+            { "imunobiologico" => "PENTA" },
+            { "imunobiologico" => "VIP" }
+          ]
+        },
         encounter_at: 1.month.ago
       )
       record.update_column(:encounter_at, nil)
@@ -2516,6 +2530,103 @@ RSpec.describe Indicators::DslV1::Evaluator do
     end
 
     expect(result.in_denominator).to be(true)
+    expect(result.meets_numerator).to be(true)
+  end
+
+  it "scores C3-K when dental first consult occurs in gestational window" do
+    reference_date = Date.new(2026, 5, 30)
+    dum = reference_date - 4.months
+    consult_at = dum + 12.weeks
+
+    citizen = with_tenant(membership) do
+      create(
+        :citizen,
+        municipality: municipality,
+        health_facility: facility,
+        care_team: team,
+        birth_date: Date.new(1995, 3, 15),
+        full_name: "Gestante Odonto",
+        sex: "female"
+      )
+    end
+
+    with_tenant(membership) do
+      persist_fci_pregnant!(citizen: citizen, encounter_at: reference_date - 2.months)
+      persist_clinical_record!(
+        citizen: citizen,
+        record_type: "FAI",
+        payload_json: { "dumDaGestante" => dum.iso8601 },
+        encounter_at: dum + 1.week
+      )
+      persist_clinical_record!(
+        citizen: citizen,
+        record_type: "FAO",
+        payload_json: {
+          "atendimentos_odontologicos" => [
+            { "tipos_consulta_odonto" => [ 1 ], "cpfCidadao" => citizen.cpf }
+          ]
+        },
+        encounter_at: consult_at
+      )
+    end
+
+    result = with_tenant(membership) do
+      described_class.evaluate(
+        expression: expression_for("C3", rule_code: "K"),
+        context: Indicators::DslV1::Context.new(citizen: citizen, reference_date: reference_date)
+      )
+    end
+
+    expect(result.meets_numerator).to be(true)
+  end
+
+  it "limits C7-B denominator to women aged 50-69" do
+    young = with_tenant(membership) do
+      create(
+        :citizen,
+        municipality: municipality,
+        health_facility: facility,
+        care_team: team,
+        birth_date: Date.current - 40.years,
+        sex: "female"
+      )
+    end
+
+    result = with_tenant(membership) do
+      described_class.evaluate(
+        expression: expression_for("C7", rule_code: "B"),
+        context: Indicators::DslV1::Context.new(citizen: young, reference_date: Date.current)
+      )
+    end
+
+    expect(result.in_denominator).to be(false)
+  end
+
+  it "scores V_SAT from imported team satisfaction survey" do
+    with_tenant(membership) do
+      TeamSatisfactionSurveyScore.create!(
+        municipality: municipality,
+        care_team: team,
+        reference_month: Date.current.beginning_of_month,
+        score: 8.0
+      )
+    end
+
+    citizen = with_tenant(membership) do
+      create(:citizen, municipality: municipality, health_facility: facility, care_team: team)
+    end
+
+    result = with_tenant(membership) do
+      described_class.evaluate(
+        expression: expression_for("V_SAT"),
+        context: Indicators::DslV1::Context.new(
+          citizen: citizen,
+          care_team: team,
+          reference_date: Date.current
+        )
+      )
+    end
+
     expect(result.meets_numerator).to be(true)
   end
 end

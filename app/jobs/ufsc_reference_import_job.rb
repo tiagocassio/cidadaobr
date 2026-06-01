@@ -9,10 +9,13 @@ class UfscReferenceImportJob < ApplicationJob
       job_name: self.class.name,
       status: "running",
       started_at: Time.current,
-      source_path: Reference::DomainSeedImporter::SEED_PATH.to_s
+      source_path: Reference::DomainSeedImporter.source_path.to_s
     )
 
-    imported = Reference::DomainSeedImporter.call(source: "reference_seed")
+    imported = Reference::DomainSeedImporter.call(
+      source: "reference_seed",
+      domain_keys: %w[ciap2 cid10]
+    )
     run.finish!(status: "succeeded", records_imported: imported)
   rescue StandardError => e
     run&.finish!(status: "failed", error_message: e.message)

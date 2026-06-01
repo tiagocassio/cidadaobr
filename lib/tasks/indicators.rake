@@ -37,6 +37,26 @@ namespace :indicators do
     exit exit_code if exit_code.nonzero?
   end
 
+  desc "Import team satisfaction survey scores from CSV (MUNICIPALITY_ID, CSV_PATH)"
+  task import_satisfaction_survey: :environment do
+    municipality_id = ENV.fetch("MUNICIPALITY_ID")
+    csv_path = ENV.fetch("CSV_PATH")
+    unless File.file?(csv_path)
+      warn "CSV file not found: #{csv_path}"
+      exit 1
+    end
+
+    municipality = Municipality.find(municipality_id)
+    result = Indicators::ImportSatisfactionSurvey.from_csv(municipality: municipality, csv_path: csv_path)
+    puts "imported=#{result.imported} skipped_unknown_ine=#{result.skipped_unknown_ine} skipped_invalid=#{result.skipped_invalid}"
+  rescue KeyError => e
+    warn "Missing env: #{e.message}"
+    exit 1
+  rescue ActiveRecord::RecordNotFound => e
+    warn e.message
+    exit 1
+  end
+
   namespace :catalog do
     desc "Seed Portaria 3.493 indicator catalog (CVAT, V-*, C1–C7, B1–B6, M1–M2)"
     task seed: :environment do

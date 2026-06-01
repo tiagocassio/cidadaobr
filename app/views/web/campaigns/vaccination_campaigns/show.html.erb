@@ -3,10 +3,16 @@
   <h2 class="mt-2 mb-6 text-2xl font-bold"><%= @campaign.name %></h2>
 
   <div class="mb-6 flex flex-wrap gap-2">
-    <%= link_to t("cidadaobr.campaigns.edit_link"), edit_web_campaigns_vaccination_campaign_path(@campaign), class: "rounded border border-slate-300 px-3 py-2 text-sm" %>
+    <% unless @campaign.status == "active" %>
+      <%= link_to t("cidadaobr.campaigns.edit_link"), edit_web_campaigns_vaccination_campaign_path(@campaign), class: "rounded border border-slate-300 px-3 py-2 text-sm" %>
+    <% end %>
     <%= link_to t("cidadaobr.campaigns.preview_targets_link"), preview_targets_web_campaigns_vaccination_campaign_path(@campaign), class: "rounded border border-slate-300 px-3 py-2 text-sm" %>
-    <%= button_to t("cidadaobr.campaigns.build_targets_link"), build_targets_web_campaigns_vaccination_campaign_path(@campaign), method: :post, class: "rounded bg-slate-800 px-3 py-2 text-sm font-semibold text-white" %>
-    <% if @campaign.supply_provisioning&.status == "approved" %>
+    <% unless @campaign.status == "active" %>
+      <%= link_to t("cidadaobr.campaigns.build_targets_link"),
+            wizard_web_campaigns_vaccination_campaign_path(@campaign, step: @max_allowed_wizard_step),
+            class: "rounded bg-slate-800 px-3 py-2 text-sm font-semibold text-white" %>
+    <% end %>
+    <% if @campaign.supply_provisioning&.status == "approved" && @campaign.status != "active" %>
       <%= button_to t("cidadaobr.campaigns.publish_link"), publish_web_campaigns_vaccination_campaign_path(@campaign), method: :post, class: "rounded bg-emerald-700 px-3 py-2 text-sm font-semibold text-white" %>
     <% end %>
   </div>
@@ -14,10 +20,19 @@
   <div class="mb-6 rounded-lg border border-slate-200 bg-white p-6 text-sm">
     <h3 class="mb-3 font-semibold"><%= t("cidadaobr.campaigns.vaccination_wizard.title") %></h3>
     <ol class="list-decimal space-y-1 pl-5">
-      <li class="<%= @campaign.persisted? ? 'text-emerald-700' : '' %>"><%= t("cidadaobr.campaigns.vaccination_wizard.step_define") %></li>
-      <li class="<%= @provisioning&.status == 'approved' ? 'text-emerald-700' : '' %>"><%= t("cidadaobr.campaigns.vaccination_wizard.step_provisioning") %></li>
-      <li class="<%= @campaign.campaign_targets.any? ? 'text-emerald-700' : '' %>"><%= t("cidadaobr.campaigns.vaccination_wizard.step_targets") %></li>
-      <li class="<%= @campaign.status == 'active' ? 'text-emerald-700' : '' %>"><%= t("cidadaobr.campaigns.vaccination_wizard.step_publish") %></li>
+      <% [
+        @wizard_completion_step >= 1,
+        @wizard_completion_step >= 2,
+        @wizard_completion_step >= 3,
+        @wizard_completion_step >= 4
+      ].zip([
+        t("cidadaobr.campaigns.vaccination_wizard.step_define"),
+        t("cidadaobr.campaigns.vaccination_wizard.step_audience"),
+        t("cidadaobr.campaigns.vaccination_wizard.step_provisioning"),
+        t("cidadaobr.campaigns.vaccination_wizard.step_targets_publish")
+      ]).each do |done, label| %>
+        <li class="<%= done ? 'text-emerald-700' : '' %>"><%= label %></li>
+      <% end %>
     </ol>
   </div>
 

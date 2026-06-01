@@ -1,0 +1,48 @@
+openapi: 3.1.0
+info:
+  title: CidadãoBR Reference API
+  version: "1.0.0"
+  description: Catálogo UFSC/SIGTAP espelhado e metadados LEDI para clientes municipais.
+paths:
+  /api/v1/reference/manifest:
+    get:
+      summary: Manifesto de domínios de referência publicados
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Manifesto com checksum e ETag
+  /api/v1/reference/domains/{key}:
+    get:
+      summary: Entradas de um domínio (CIAP-2, CID-10, SIGTAP, etc.)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: key
+          in: path
+          required: true
+          schema:
+            type: string
+            example: ciap2
+      responses:
+        "200":
+          description: Lista paginada de códigos ativos
+  /api/v1/reference/ledi/catalog:
+    get:
+      summary: Catálogo de campos LEDI por versão
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: ledi_version
+          in: query
+          schema:
+            type: string
+            example: "6.3.5"
+      responses:
+        "200":
+          description: Campos LEDI indexados
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer

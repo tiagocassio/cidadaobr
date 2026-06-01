@@ -18,6 +18,17 @@
       <%= form.label :facility_service_kind, class: "mb-1 block text-sm font-medium" %>
       <%= form.select :facility_service_kind, options_for_select(health_facility_service_kind_options, @health_facility.facility_service_kind), {}, class: "w-full rounded border border-slate-300 px-3 py-2" %>
     </div>
+    <div class="grid grid-cols-2 gap-4">
+      <div>
+        <%= label_tag :health_facility_latitude, t("cidadaobr.health_facilities.latitude"), class: "mb-1 block text-sm font-medium" %>
+        <%= number_field_tag "health_facility[latitude]", @health_facility.coordinates&.dig(:lat), step: "any", class: "w-full rounded border border-slate-300 px-3 py-2" %>
+      </div>
+      <div>
+        <%= label_tag :health_facility_longitude, t("cidadaobr.health_facilities.longitude"), class: "mb-1 block text-sm font-medium" %>
+        <%= number_field_tag "health_facility[longitude]", @health_facility.coordinates&.dig(:lng), step: "any", class: "w-full rounded border border-slate-300 px-3 py-2" %>
+      </div>
+    </div>
+    <p class="text-xs text-slate-500"><%= t("cidadaobr.health_facilities.location_hint") %></p>
     <%= form.submit t("cidadaobr.common.save"), class: "rounded bg-emerald-700 px-4 py-2 font-semibold text-white" %>
   <% end %>
 </section>

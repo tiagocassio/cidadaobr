@@ -17,10 +17,10 @@ RSpec.describe Indicators::CoverageAudit do
     expect(report["bp_coverage"]).to include(
       include("indicator" => "C4", "pack_rules" => 6, "db_rules" => 6, "aligned" => true)
     )
-    expect(report["matrix_status"]["done"]).to be >= 48
-    expect(report["matrix_status"]["done_pct"]).to be >= 90.0
+    expect(report["matrix_status"]).to eq(described_class.matrix_status_summary)
     expect(report["matrix_status"]["total"]).to eq(Indicators::CoverageAudit::EXPECTED_MATRIX_ROWS)
     expect(report["matrix_status"]["total_mismatch"]).to be_nil
+    expect(report["matrix_status"]["done_pct"]).to be >= 90.0
   end
 
   it "flags empty on-disk packs as drift" do

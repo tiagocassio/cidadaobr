@@ -1,9 +1,12 @@
 <section>
-  <h2 class="mb-6 text-2xl font-bold"><%= t("cidadaobr.campaigns.new_title") %></h2>
+  <%= link_to t("cidadaobr.campaigns.back"), web_campaigns_vaccination_campaigns_path, class: "text-sm text-slate-600 underline" %>
+  <h2 class="mt-2 mb-6 text-2xl font-bold"><%= t("cidadaobr.campaigns.vaccination_wizard.step_define") %></h2>
 
-  <%= form_with model: @campaign, url: web_campaigns_vaccination_campaigns_path, class: "max-w-xl space-y-4 rounded-lg border border-slate-200 bg-white p-6" do |form| %>
-    <% if @campaign.errors.any? %>
-      <div class="rounded bg-red-50 px-4 py-2 text-sm text-red-800"><%= @campaign.errors.full_messages.to_sentence %></div>
+  <% url = campaign.persisted? ? web_campaigns_vaccination_campaign_path(campaign) : web_campaigns_vaccination_campaigns_path %>
+  <% method = campaign.persisted? ? :patch : :post %>
+  <%= form_with model: campaign, url: url, method: method, class: "max-w-xl space-y-4 rounded-lg border border-slate-200 bg-white p-6" do |form| %>
+    <% if campaign.errors.any? %>
+      <div class="rounded bg-red-50 px-4 py-2 text-sm text-red-800"><%= campaign.errors.full_messages.to_sentence %></div>
     <% end %>
 
     <div>
@@ -37,17 +40,10 @@
       </div>
     </div>
     <div>
-      <%= form.label :target_doses, class: "mb-1 block text-sm font-medium" %>
-      <%= form.number_field :target_doses, min: 0, step: 1, class: "w-full rounded border border-slate-300 px-3 py-2" %>
-    </div>
-    <div>
       <%= form.label :room_capacity_per_day, class: "mb-1 block text-sm font-medium" %>
       <%= form.number_field :room_capacity_per_day, min: 0, step: 1, class: "w-full rounded border border-slate-300 px-3 py-2" %>
     </div>
-    <div>
-      <%= label_tag "vaccination_campaign_target_audience_definition_min_age", t("cidadaobr.campaigns.min_age"), class: "mb-1 block text-sm font-medium" %>
-      <%= number_field_tag "vaccination_campaign[target_audience_definition][min_age]", @campaign.target_audience_definition["min_age"], min: 0, class: "w-full rounded border border-slate-300 px-3 py-2" %>
-    </div>
-    <%= form.submit t("cidadaobr.campaigns.submit"), class: "rounded bg-emerald-700 px-4 py-2 font-semibold text-white" %>
+
+    <%= form.submit t("cidadaobr.campaigns.vaccination_wizard.continue"), class: "rounded bg-emerald-700 px-4 py-2 font-semibold text-white" %>
   <% end %>
 </section>

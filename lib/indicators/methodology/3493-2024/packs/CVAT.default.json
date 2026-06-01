@@ -23,6 +23,7 @@
     "skip_citizen_gaps": true,
     "score_scale": "ms_0_10",
     "team_score_mode": "linkage_aggregate",
+    "linkage_monthly_average": true,
     "linkage_components": [
       {
         "code": "V_CAD",

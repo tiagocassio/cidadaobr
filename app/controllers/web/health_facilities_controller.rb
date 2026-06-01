@@ -17,10 +17,13 @@ module Web
     end
 
     def create
-      @health_facility = scoped_health_facilities.build(health_facility_params)
+      attrs, invalid_coordinates = location_attrs_from_params
+      @health_facility = scoped_health_facilities.build(attrs)
       @health_facility.municipality = current_municipality
+      @health_facility.errors.add(:latitude, t("cidadaobr.health_facilities.flash.invalid_coordinates")) if invalid_coordinates
+      @health_facility.errors.add(:longitude, t("cidadaobr.health_facilities.flash.invalid_coordinates")) if invalid_coordinates
 
-      if @health_facility.save
+      if !invalid_coordinates && @health_facility.save
         redirect_to web_health_facility_path(@health_facility), notice: t("cidadaobr.health_facilities.flash.created")
       else
         render :new, status: :unprocessable_entity
@@ -31,7 +34,12 @@ module Web
     end
 
     def update
-      if @health_facility.update(health_facility_params)
+      attrs, invalid_coordinates = location_attrs_from_params
+      @health_facility.assign_attributes(attrs)
+      @health_facility.errors.add(:latitude, t("cidadaobr.health_facilities.flash.invalid_coordinates")) if invalid_coordinates
+      @health_facility.errors.add(:longitude, t("cidadaobr.health_facilities.flash.invalid_coordinates")) if invalid_coordinates
+
+      if !invalid_coordinates && @health_facility.save
         redirect_to web_health_facility_path(@health_facility), notice: t("cidadaobr.health_facilities.flash.updated")
       else
         render :edit, status: :unprocessable_entity
@@ -44,8 +52,23 @@ module Web
       @health_facility = scoped_health_facilities.find(params[:id])
     end
 
-    def health_facility_params
-      params.require(:health_facility).permit(:name, :cnes, :facility_service_kind)
+    def location_attrs_from_params
+      permitted = params.require(:health_facility).permit(:name, :cnes, :facility_service_kind, :latitude, :longitude)
+      attrs = permitted.except(:latitude, :longitude)
+      latitude = permitted[:latitude]
+      longitude = permitted[:longitude]
+      if latitude.blank? || longitude.blank?
+        attrs[:location] = nil
+        return [ attrs, false ]
+      end
+
+      location = Cidadaobr::GeoPoint.from_payload(latitude: latitude, longitude: longitude)
+      if location
+        attrs[:location] = location
+        [ attrs, false ]
+      else
+        [ attrs, true ]
+      end
     end
   end
 end

@@ -15,6 +15,7 @@ pt-BR:
       products: "Produtos"
       campaigns: "Campanhas vacina"
       home_visit_campaigns: "Campanhas domiciliares"
+      supply_dispatches: "Romaneios"
     common:
       save: "Salvar"
       view: "Ver"
@@ -67,6 +68,10 @@ pt-BR:
       flash:
         created: "UBS cadastrada com sucesso."
         updated: "UBS atualizada com sucesso."
+        invalid_coordinates: "Latitude e longitude inválidas. Informe coordenadas WGS84 dentro do território brasileiro ou deixe os campos em branco."
+      latitude: "Latitude"
+      longitude: "Longitude"
+      location_hint: "Coordenadas opcionais da UBS (WGS84) para depot de rotas domiciliares."
     citizens:
       index_title: "Cidadãos"
       new: "Novo cidadão"
