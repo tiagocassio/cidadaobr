@@ -88,10 +88,10 @@ module Indicators
           code: "V_SAT", rule_code: "default", good_practice_code: "V_SAT",
           funding_component: "linkage", team_kind: "esf", display_order: 3,
           source_ref: ESF_AP_SOURCE,
-          numerator_summary: "Satisfação do usuário (pesquisa MS; fallback encounter 6m)",
+          numerator_summary: "Satisfação do usuário (pesquisa MS; external_only até import)",
           expression: {
             "denominator" => ON_TEAM,
-            "numerator" => { "type" => "satisfaction_survey", "within_months" => 6, "fallback_encounter" => true }
+            "numerator" => { "type" => "satisfaction_survey", "within_months" => 6, "fallback_encounter" => false, "external_only" => true }
           }
         )
       ]
@@ -142,19 +142,104 @@ module Indicators
     def c3
       denom = { "type" => "citizens_with_condition", "source" => "fci", "flag" => "pregnant" }
       letters = {
-        "A" => { "type" => "first_prenatal_consult", "record_types" => %w[FAI], "max_weeks" => 12, "lookback_months" => 15 },
-        "B" => { "type" => "consult_count_gte", "record_types" => %w[FAI], "within_months" => 9, "minimum_count" => 7 },
-        "C" => { "type" => "blood_pressure_count_gte", "record_types" => %w[FAI FP FVD], "within_months" => 9, "minimum_count" => 7 },
-        "D" => { "type" => "anthropometry_count_gte", "record_types" => %w[FAI FVD FP], "within_months" => 9, "minimum_count" => 7 },
-        "E" => { "type" => "visit_count_gte", "record_types" => %w[FVD], "within_months" => 9, "minimum_count" => 3 },
-        "F" => { "type" => "vaccination_immunobiologic", "record_types" => %w[FV], "within_months" => 9, "immunobiologic" => "dTpa" },
-        "G" => { "type" => "clinical_predicate", "record_types" => %w[FAI], "within_months" => 3,
-                 "predicate" => { "type" => "procedure_present", "code" => "0214010058" } },
-        "H" => { "type" => "clinical_predicate", "record_types" => %w[FAI], "within_months" => 9,
-                 "predicate" => { "type" => "procedure_present", "code" => "0214010058" } },
-        "I" => { "type" => "clinical_predicate", "record_types" => %w[FAI], "within_months" => 3,
-                 "predicate" => { "type" => "present", "field_path" => "individual_attendances" } },
-        "J" => { "type" => "visit_count_gte", "record_types" => %w[FVD], "within_months" => 3, "minimum_count" => 1 },
+        "A" => {
+          "type" => "first_prenatal_consult",
+          "record_types" => %w[FAI],
+          "max_weeks" => 12,
+          "lookback_months" => 15,
+          "predicate" => DslV1::LediPayloadPaths::PRENATAL_INDIVIDUAL_ATTENDANCE_PREDICATE
+        },
+        "B" => {
+          "type" => "gestational_evidence_count_gte",
+          "measure" => "consult",
+          "record_types" => %w[FAI],
+          "minimum_count" => 7,
+          "min_gestational_weeks" => 0,
+          "max_gestational_weeks" => 42,
+          "lookback_months" => 15,
+          "active_only" => false,
+          "predicate" => DslV1::LediPayloadPaths::PRENATAL_INDIVIDUAL_ATTENDANCE_PREDICATE
+        },
+        "C" => {
+          "type" => "gestational_evidence_count_gte",
+          "measure" => "blood_pressure",
+          "record_types" => %w[FAI FP FVD],
+          "minimum_count" => 7,
+          "min_gestational_weeks" => 0,
+          "max_gestational_weeks" => 42,
+          "lookback_months" => 15,
+          "active_only" => false
+        },
+        "D" => {
+          "type" => "gestational_evidence_count_gte",
+          "measure" => "anthropometry",
+          "record_types" => %w[FAI FVD FP],
+          "minimum_count" => 7,
+          "min_gestational_weeks" => 0,
+          "max_gestational_weeks" => 42,
+          "lookback_months" => 15,
+          "active_only" => false
+        },
+        "E" => {
+          "type" => "gestational_evidence_count_gte",
+          "measure" => "visit",
+          "record_types" => %w[FVD],
+          "minimum_count" => 3,
+          "min_gestational_weeks" => 0,
+          "max_gestational_weeks" => 42,
+          "lookback_months" => 15,
+          "active_only" => false,
+          "after_first_prenatal" => true,
+          "first_prenatal_predicate" => DslV1::LediPayloadPaths::PRENATAL_INDIVIDUAL_ATTENDANCE_PREDICATE,
+          "predicate" => DslV1::LediPayloadPaths::PRENATAL_VISIT_REASONS_PREDICATE
+        },
+        "F" => {
+          "type" => "gestational_vaccination_immunobiologic",
+          "record_types" => %w[FV],
+          "immunobiologic" => "dTpa",
+          "immunobiologic_code" => "57",
+          "min_gestational_weeks" => 20,
+          "max_gestational_weeks" => 42,
+          "lookback_months" => 15,
+          "active_only" => false
+        },
+        "G" => {
+          "type" => "gestational_clinical_predicate",
+          "record_types" => %w[FAI],
+          "min_gestational_weeks" => 0,
+          "max_gestational_weeks" => 13,
+          "lookback_months" => 15,
+          "active_only" => false,
+          "predicate" => {
+            "type" => "procedure_any_present",
+            "codes" => DslV1::LediPayloadPaths::PRENATAL_FIRST_TRIMESTER_PROCEDURE_CODES
+          }
+        },
+        "H" => {
+          "type" => "gestational_clinical_predicate",
+          "record_types" => %w[FAI],
+          "min_gestational_weeks" => 28,
+          "max_gestational_weeks" => 42,
+          "lookback_months" => 15,
+          "active_only" => false,
+          "predicate" => {
+            "type" => "procedure_any_present",
+            "codes" => DslV1::LediPayloadPaths::PRENATAL_THIRD_TRIMESTER_PROCEDURE_CODES
+          }
+        },
+        "I" => {
+          "type" => "puerperium_consult",
+          "record_types" => %w[FAI],
+          "days_after_delivery" => 42,
+          "predicate" => DslV1::LediPayloadPaths::PRENATAL_INDIVIDUAL_ATTENDANCE_PREDICATE
+        },
+        "J" => {
+          "type" => "puerperium_visit",
+          "record_types" => %w[FVD],
+          "days_after_delivery" => 42,
+          "minimum_count" => 1,
+          "predicate" => DslV1::LediPayloadPaths::PRENATAL_VISIT_REASONS_PREDICATE
+        },
         "K" => { "type" => "clinical_predicate", "record_types" => %w[FAO], "within_months" => 9,
                  "predicate" => { "type" => "dental_first_consult" } }
       }

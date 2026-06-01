@@ -31,6 +31,13 @@ module Indicators
           when "first_prenatal_consult" then first_prenatal_consult?(context, clause)
           when "vaccination_present" then vaccination_present?(context, clause)
           when "vaccination_immunobiologic" then vaccination_immunobiologic?(context, clause)
+          when "gestational_vaccination_immunobiologic" then gestational_vaccination_immunobiologic?(context, clause)
+          when "gestational_clinical_predicate" then gestational_clinical_predicate?(context, clause)
+          when "gestational_evidence_count_gte" then gestational_evidence_count_gte?(context, clause)
+          when "puerperium_consult" then puerperium_consult?(context, clause)
+          when "puerperium_visit" then puerperium_visit?(context, clause)
+          when "fci_flag_present" then fci_flag_present?(context, clause)
+          when "microarea_linked" then microarea_linked?(context)
           else
             false
           end
@@ -85,6 +92,7 @@ module Indicators
 
         def satisfaction_survey?(context, clause)
           return false if clause["external_only"]
+
           return false unless clause.fetch("fallback_encounter", true)
 
           encounter_in_window?(context, clause)
@@ -177,30 +185,98 @@ module Indicators
         end
 
         def first_prenatal_consult?(context, clause)
-          max_weeks = clause.fetch("max_weeks", 12).to_i
-          # lookback_months prefilters records by effective encounter date vs reference_date;
-          # 12-week gestational window is still DUM → encounter_date.
+          first_prenatal_consult_date(context, clause).present?
+        end
+
+        def first_prenatal_consult_date(context, clause)
           lookback_months = clause.fetch("lookback_months", clause.fetch("within_months", 15)).to_i
           record_types = Array(clause.fetch("record_types", %w[FAI]))
+          predicate = clause.fetch("predicate", LediPayloadPaths::PRENATAL_INDIVIDUAL_ATTENDANCE_PREDICATE)
+          dum = GestationalAnchor.latest_dum(
+            context.citizen,
+            context,
+            lookback_months: lookback_months,
+            active_only: GestationalAnchor::RETROSPECTIVE_ACTIVE_ONLY_DEFAULT
+          )
+          return nil unless dum
+
+          delivery = GestationalAnchor.delivery_for_dum(
+            context.citizen,
+            context,
+            dum,
+            lookback_months: lookback_months
+          )
           window_start = context.reference_date - lookback_months.months
+          consult_dates = clinical_records_for(context.citizen, record_types, since: window_start, context: context).filter_map do |record|
+            next unless record_matches_predicate?(record, context, predicate)
 
-          clinical_records_for(context.citizen, record_types, since: window_start, context: context).any? do |record|
             encounter_date = encounter_date_for(record, context)
-            next false unless encounter_date
+            next unless encounter_date && encounter_date >= dum
+            next if delivery && encounter_date >= delivery
 
-            payloads_for_record(record, context.citizen).any? do |payload|
-              dum = PayloadSections.dig(payload, "dumDaGestante") ||
-                    PayloadSections.dig(payload, "dum_da_gestante") ||
-                    PayloadSections.dig(payload, "dum")
-              next false if dum.blank?
-
-              dum_date = parse_date(dum)
-              next false unless dum_date
-              next false if encounter_date < dum_date
-
-              ((encounter_date - dum_date).to_i / 7.0) <= max_weeks
-            end
+            encounter_date
           end
+          return nil if consult_dates.empty?
+
+          first_consult = consult_dates.min
+          return first_consult unless clause.key?("max_weeks")
+
+          max_weeks = clause.fetch("max_weeks").to_i
+          week = GestationalAnchor.gestational_week_at(dum, first_consult)
+          week && week <= max_weeks ? first_consult : nil
+        end
+
+        def gestational_evidence_count_gte?(context, clause)
+          min_weeks = clause.fetch("min_gestational_weeks", 0).to_i
+          max_weeks = clause.fetch("max_gestational_weeks", 42).to_i
+          minimum = clause.fetch("minimum_count", 1).to_i
+          lookback_months = clause.fetch("lookback_months", 15).to_i
+          active_only = clause.fetch("active_only", GestationalAnchor::RETROSPECTIVE_ACTIVE_ONLY_DEFAULT)
+          record_types = Array(clause.fetch("record_types"))
+          measure = clause["measure"].to_s
+          return false unless GestationalAnchor::GESTATIONAL_EVIDENCE_MEASURES.include?(measure)
+
+          predicate = clause["predicate"]
+          after_first_prenatal = clause.fetch("after_first_prenatal", false)
+
+          first_prenatal_at = nil
+          if after_first_prenatal
+            first_prenatal_clause = {
+              "lookback_months" => lookback_months,
+              "record_types" => Array(clause.fetch("first_prenatal_record_types", %w[FAI])),
+              "predicate" => clause.fetch(
+                "first_prenatal_predicate",
+                LediPayloadPaths::PRENATAL_INDIVIDUAL_ATTENDANCE_PREDICATE
+              )
+            }
+            first_prenatal_clause["max_weeks"] = clause["first_prenatal_max_weeks"] if clause.key?("first_prenatal_max_weeks")
+            first_prenatal_at = first_prenatal_consult_date(context, first_prenatal_clause)
+            return false unless first_prenatal_at
+          end
+
+          records = GestationalAnchor.records_in_gestational_window(
+            context.citizen,
+            context,
+            record_types: record_types,
+            min_weeks: min_weeks,
+            max_weeks: max_weeks,
+            lookback_months: lookback_months,
+            active_only: active_only,
+            exclude_after_delivery: true
+          )
+
+          count = records.count do |record|
+            next false unless gestational_measure_present?(record, context, measure, predicate)
+
+            if after_first_prenatal
+              encounter_date = encounter_date_for(record, context)
+              next false unless encounter_date && encounter_date >= first_prenatal_at
+            end
+
+            true
+          end
+
+          count >= minimum
         end
 
         def vaccination_present?(context, clause)
@@ -217,6 +293,102 @@ module Indicators
               vaccination_match?(payload, target)
             end
           end
+        end
+
+        def gestational_vaccination_immunobiologic?(context, clause)
+          min_weeks = clause.fetch("min_gestational_weeks", 20).to_i
+          max_weeks = clause.fetch("max_gestational_weeks", 42).to_i
+          lookback_months = clause.fetch("lookback_months", 15).to_i
+          active_only = clause.fetch("active_only", GestationalAnchor::RETROSPECTIVE_ACTIVE_ONLY_DEFAULT)
+          target = clause["immunobiologic"]&.to_s&.downcase
+          record_types = Array(clause.fetch("record_types", %w[FV]))
+
+          GestationalAnchor.records_in_gestational_window(
+            context.citizen,
+            context,
+            record_types: record_types,
+            min_weeks: min_weeks,
+            max_weeks: max_weeks,
+            lookback_months: lookback_months,
+            active_only: active_only,
+            exclude_after_delivery: true
+          ).any? do |record|
+            payloads_for_record(record, context.citizen).any? do |payload|
+              vaccination_match?(payload, target, immunobiologic_code: clause["immunobiologic_code"])
+            end
+          end
+        end
+
+        def gestational_clinical_predicate?(context, clause)
+          min_weeks = clause.fetch("min_gestational_weeks", 0).to_i
+          max_weeks = clause.fetch("max_gestational_weeks", 13).to_i
+          lookback_months = clause.fetch("lookback_months", 15).to_i
+          active_only = clause.fetch("active_only", GestationalAnchor::RETROSPECTIVE_ACTIVE_ONLY_DEFAULT)
+          record_types = Array(clause["record_types"]).map(&:to_s)
+          predicate = clause.fetch("predicate", {})
+
+          GestationalAnchor.records_in_gestational_window(
+            context.citizen,
+            context,
+            record_types: record_types,
+            min_weeks: min_weeks,
+            max_weeks: max_weeks,
+            lookback_months: lookback_months,
+            active_only: active_only,
+            exclude_after_delivery: true
+          ).any? do |record|
+            record_matches_predicate?(record, context, predicate)
+          end
+        end
+
+        # C3-I: postpartum consult only — excludes parto FAI on delivery day (after_delivery: true).
+        def puerperium_consult?(context, clause)
+          days = clause.fetch("days_after_delivery", GestationalAnchor::PUERPERIUM_DAYS).to_i
+          record_types = Array(clause.fetch("record_types", %w[FAI]))
+          predicate = clause.fetch(
+            "predicate",
+            { "type" => "present", "field_path" => "individual_attendances" }
+          )
+
+          GestationalAnchor.records_in_puerperium_window(
+            context.citizen,
+            context,
+            record_types: record_types,
+            days_after_delivery: days,
+            after_delivery: true
+          ).any? do |record|
+            record_matches_predicate?(record, context, predicate)
+          end
+        end
+
+        def puerperium_visit?(context, clause)
+          days = clause.fetch("days_after_delivery", GestationalAnchor::PUERPERIUM_DAYS).to_i
+          minimum = clause.fetch("minimum_count", 1).to_i
+          record_types = Array(clause.fetch("record_types", %w[FVD]))
+          predicate = clause.fetch(
+            "predicate",
+            { "type" => "present", "field_path" => "visit_reasons" }
+          )
+
+          count = GestationalAnchor.records_in_puerperium_window(
+            context.citizen,
+            context,
+            record_types: record_types,
+            days_after_delivery: days,
+            after_delivery: true
+          ).count do |record|
+            record_matches_predicate?(record, context, predicate)
+          end
+
+          count >= minimum
+        end
+
+        def fci_flag_present?(context, clause)
+          RegistrationValidators.fci_flag_present?(context.citizen, clause.fetch("flag"))
+        end
+
+        def microarea_linked?(context)
+          RegistrationValidators.microarea_linked?(context.citizen)
         end
 
         def clinical_predicate?(context, clause)
@@ -417,13 +589,49 @@ module Indicators
           end
         end
 
-        def vaccination_match?(payload, target)
+        def vaccination_match?(payload, target, immunobiologic_code: nil)
           vacinas = payload["vacinas"] || payload["vacina"] || payload["imunobiologicos"]
           Array(vacinas).any? do |vac|
-            name = vac["imunobiologico"] || vac["nomeImunobiologico"] || vac["descricao"] || vac.to_s
+            next false unless vac.is_a?(Hash) || vac.is_a?(String)
+
+            entry = vac.is_a?(Hash) ? vac : { "imunobiologico" => vac.to_s }
+            name = entry["imunobiologico"] || entry["nomeImunobiologico"] || entry["descricao"] || entry.to_s
+            code = entry["codigoImunobiologico"] || entry["codigo_imunobiologico"] ||
+                   entry["codigoVacina"] || entry["codigo_vacina"] || entry["codigo"]
+
             next true if target.blank?
 
-            name.to_s.downcase.include?(target)
+            if immunobiologic_code.present? && vaccine_code_matches?(code, immunobiologic_code)
+              next true
+            end
+
+            strict_immunobiologic_match?(name, target, code: code)
+          end
+        end
+
+        def vaccine_code_matches?(code, expected)
+          return false if code.blank? || expected.blank?
+
+          normalize_vaccine_code(code) == normalize_vaccine_code(expected)
+        end
+
+        def normalize_vaccine_code(code)
+          code.to_s.gsub(/\D/, "").sub(/\A0+/, "")
+        end
+
+        def strict_immunobiologic_match?(name, target, code: nil)
+          normalized_name = name.to_s.downcase
+          case target.to_s.downcase
+          when "dtpa"
+            return true if code.present? && LediPayloadPaths::DTPA_VACCINE_CODES.include?(normalize_vaccine_code(code))
+
+            normalized_name.match?(/\b(d[\s\-]?tpa|tr[ií]plice bacteriana acelular)\b/i)
+          when "influenza"
+            normalized_name.match?(/\b(influenza|gripe)\b/i)
+          when "hpv"
+            normalized_name.match?(/\bhpv\b/i)
+          else
+            normalized_name.include?(target.to_s.downcase)
           end
         end
 
@@ -435,9 +643,31 @@ module Indicators
           nil
         end
 
+        def record_matches_predicate?(record, context, predicate)
+          payloads_for_record(record, context.citizen).any? do |payload|
+            predicate_matches?(predicate, payload, record_type: record.record_type)
+          end
+        end
+
+        def gestational_measure_present?(record, context, measure, predicate)
+          payloads_for_record(record, context.citizen).any? do |payload|
+            case measure
+            when "consult", "visit"
+              predicate.present? && predicate_matches?(predicate, payload, record_type: record.record_type)
+            when "blood_pressure"
+              blood_pressure_present?(payload, record.record_type)
+            when "anthropometry"
+              anthropometry_present?(payload, record.record_type)
+            else
+              false
+            end
+          end
+        end
+
         def predicate_matches?(predicate, payload, record_type:)
           case predicate["type"]
           when "procedure_present" then procedure_present?(payload, predicate.fetch("code"))
+          when "procedure_any_present" then procedure_any_present?(payload, predicate.fetch("codes"))
           when "present"
             aliases = LediPayloadPaths.payload_field_aliases(predicate.fetch("field_path"))
             PayloadSections.each_section(payload, record_type: record_type).any? do |section|
@@ -520,6 +750,10 @@ module Indicators
           PayloadSections.deep_values(payload).any? do |value|
             value.to_s.gsub(/\D/, "") == normalized
           end
+        end
+
+        def procedure_any_present?(payload, codes)
+          Array(codes).any? { |code| procedure_present?(payload, code) }
         end
       end
     end

@@ -20,12 +20,16 @@
       "flag": "pregnant"
     },
     "numerator": {
-      "type": "vaccination_immunobiologic",
+      "type": "gestational_vaccination_immunobiologic",
       "record_types": [
         "FV"
       ],
-      "within_months": 9,
-      "immunobiologic": "dTpa"
+      "immunobiologic": "dTpa",
+      "immunobiologic_code": "57",
+      "min_gestational_weeks": 20,
+      "max_gestational_weeks": 42,
+      "lookback_months": 15,
+      "active_only": false
     }
   }
 }

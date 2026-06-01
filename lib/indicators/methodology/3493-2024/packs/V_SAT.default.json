@@ -10,7 +10,7 @@
   "rule_code": "default",
   "good_practice_code": "V_SAT",
   "source_ref": "https://www.gov.br/saude/pt-br/composicao/saps/publicacoes/fichas-tecnicas/equipe-de-atencao-primaria-e-saude-da-familia",
-  "numerator_summary": "Satisfação do usuário (pesquisa MS; fallback encounter 6m)",
+  "numerator_summary": "Satisfação do usuário (pesquisa MS; external_only até import)",
   "denominator_summary": null,
   "record_types": null,
   "expression": {
@@ -20,7 +20,8 @@
     "numerator": {
       "type": "satisfaction_survey",
       "within_months": 6,
-      "fallback_encounter": true
+      "fallback_encounter": false,
+      "external_only": true
     }
   }
 }

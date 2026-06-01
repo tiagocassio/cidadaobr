@@ -20,11 +20,11 @@
       "flag": "pregnant"
     },
     "numerator": {
-      "type": "clinical_predicate",
+      "type": "puerperium_consult",
       "record_types": [
         "FAI"
       ],
-      "within_months": 3,
+      "days_after_delivery": 42,
       "predicate": {
         "type": "present",
         "field_path": "individual_attendances"

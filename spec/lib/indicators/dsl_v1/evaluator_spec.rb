@@ -27,7 +27,7 @@ RSpec.describe Indicators::DslV1::Evaluator do
     )
   end
 
-  def persist_fci!(citizen:, care_team: team, encounter_at: 1.month.ago)
+  def persist_fci!(citizen:, care_team: team, encounter_at: 1.month.ago, extra_payload: {})
     persist_clinical_record!(
       citizen: citizen,
       record_type: "FCI",
@@ -36,10 +36,11 @@ RSpec.describe Indicators::DslV1::Evaluator do
         "identificacaoUsuarioCidadao" => {
           "nome" => citizen.full_name,
           "dataNascimento" => citizen.birth_date&.iso8601,
-          "cpfCidadao" => citizen.cpf
+          "cpfCidadao" => citizen.cpf,
+          "microArea" => "01"
         },
         "dataAtualizacao" => encounter_at.iso8601
-      },
+      }.deep_merge(extra_payload.stringify_keys),
       encounter_at: encounter_at
     )
   end
@@ -82,6 +83,26 @@ RSpec.describe Indicators::DslV1::Evaluator do
       payload_json: payload_json,
       encounter_at: encounter_at
     )
+  end
+
+  def persist_prenatal_fai!(citizen:, dum:, encounter_at:, with_attendance: true, extra_payload: {})
+    payload = { "dumDaGestante" => dum.iso8601 }.merge(extra_payload.stringify_keys)
+    payload["atendimentos_individuais"] = [ { "tipo" => "consulta" } ] if with_attendance
+    persist_clinical_record!(
+      citizen: citizen,
+      record_type: "FAI",
+      payload_json: payload,
+      encounter_at: encounter_at
+    )
+  end
+
+  def evaluate_c3!(citizen:, rule_code:, reference_date: Date.current)
+    with_tenant(membership) do
+      described_class.evaluate(
+        expression: expression_for("C3", rule_code: rule_code),
+        context: Indicators::DslV1::Context.new(citizen: citizen, reference_date: reference_date)
+      )
+    end
   end
 
   it "detects incomplete registration for V_CAD" do
@@ -385,7 +406,10 @@ RSpec.describe Indicators::DslV1::Evaluator do
       persist_clinical_record!(
         citizen: citizen,
         record_type: "FAI",
-        payload_json: { "dumDaGestante" => dum_date.iso8601 },
+        payload_json: {
+          "dumDaGestante" => dum_date.iso8601,
+          "atendimentos_individuais" => [ { "tipo" => "consulta" } ]
+        },
         encounter_at: consult_date
       )
     end
@@ -422,7 +446,10 @@ RSpec.describe Indicators::DslV1::Evaluator do
       persist_clinical_record!(
         citizen: citizen,
         record_type: "FAI",
-        payload_json: { "dumDaGestante" => dum_date.iso8601 },
+        payload_json: {
+          "dumDaGestante" => dum_date.iso8601,
+          "atendimentos_individuais" => [ { "tipo" => "consulta" } ]
+        },
         encounter_at: consult_date
       )
     end
@@ -458,7 +485,10 @@ RSpec.describe Indicators::DslV1::Evaluator do
       record = persist_clinical_record!(
         citizen: citizen,
         record_type: "FAI",
-        payload_json: { "dumDaGestante" => dum_date.iso8601 },
+        payload_json: {
+          "dumDaGestante" => dum_date.iso8601,
+          "atendimentos_individuais" => [ { "tipo" => "consulta" } ]
+        },
         encounter_at: dum_date + 8.weeks
       )
       record.update_column(:encounter_at, nil)
@@ -495,7 +525,10 @@ RSpec.describe Indicators::DslV1::Evaluator do
       record = persist_clinical_record!(
         citizen: citizen,
         record_type: "FAI",
-        payload_json: { "dumDaGestante" => dum_date.iso8601 },
+        payload_json: {
+          "dumDaGestante" => dum_date.iso8601,
+          "atendimentos_individuais" => [ { "tipo" => "consulta" } ]
+        },
         encounter_at: reference_date - 1.day
       )
       record.update_column(:encounter_at, nil)
@@ -534,7 +567,10 @@ RSpec.describe Indicators::DslV1::Evaluator do
       persist_clinical_record!(
         citizen: citizen,
         record_type: "FAI",
-        payload_json: { "dumDaGestante" => dum_date.iso8601 },
+        payload_json: {
+          "dumDaGestante" => dum_date.iso8601,
+          "atendimentos_individuais" => [ { "tipo" => "consulta" } ]
+        },
         encounter_at: consult_date
       )
     end
@@ -571,6 +607,46 @@ RSpec.describe Indicators::DslV1::Evaluator do
       persist_clinical_record!(
         citizen: citizen,
         record_type: "FAI",
+        payload_json: {
+          "dumDaGestante" => dum_date.iso8601,
+          "atendimentos_individuais" => [ { "tipo" => "consulta" } ]
+        },
+        encounter_at: consult_date
+      )
+    end
+
+    result = with_tenant(membership) do
+      described_class.evaluate(
+        expression: expression_for("C3", rule_code: "A"),
+        context: Indicators::DslV1::Context.new(citizen: citizen, reference_date: reference_date)
+      )
+    end
+
+    expect(result.in_denominator).to be(true)
+    expect(result.meets_numerator).to be(true)
+  end
+
+  it "does not score C3-A when FAI after DUM lacks individual attendances" do
+    reference_date = Date.current
+    dum_date = reference_date - 3.months
+    consult_date = dum_date + 8.weeks
+    citizen = with_tenant(membership) do
+      create(
+        :citizen,
+        municipality: municipality,
+        health_facility: facility,
+        care_team: team,
+        birth_date: Date.new(1995, 3, 15),
+        full_name: "Gestante Sem Atendimento",
+        sex: "female"
+      )
+    end
+
+    with_tenant(membership) do
+      persist_fci_pregnant!(citizen: citizen, encounter_at: reference_date - 1.month)
+      persist_clinical_record!(
+        citizen: citizen,
+        record_type: "FAI",
         payload_json: { "dumDaGestante" => dum_date.iso8601 },
         encounter_at: consult_date
       )
@@ -584,6 +660,515 @@ RSpec.describe Indicators::DslV1::Evaluator do
     end
 
     expect(result.in_denominator).to be(true)
+    expect(result.meets_numerator).to be(false)
+  end
+
+  it "scores C3-B with seven prenatal consults during gestation" do
+    reference_date = Date.new(2026, 5, 30)
+    dum = reference_date - 6.months
+    citizen = with_tenant(membership) do
+      create(
+        :citizen,
+        municipality: municipality,
+        health_facility: facility,
+        care_team: team,
+        birth_date: Date.new(1995, 3, 15),
+        full_name: "Gestante Sete Consultas",
+        sex: "female"
+      )
+    end
+
+    with_tenant(membership) do
+      persist_fci_pregnant!(citizen: citizen, encounter_at: reference_date - 2.months)
+      [ 4, 8, 12, 16, 20, 24, 28 ].each do |weeks|
+        persist_prenatal_fai!(citizen: citizen, dum: dum, encounter_at: dum + weeks.weeks)
+      end
+    end
+
+    result = evaluate_c3!(citizen: citizen, rule_code: "B", reference_date: reference_date)
+
+    expect(result.in_denominator).to be(true)
+    expect(result.meets_numerator).to be(true)
+  end
+
+  it "does not score C3-B when only six consults occur during gestation" do
+    reference_date = Date.new(2026, 5, 30)
+    dum = reference_date - 6.months
+    citizen = with_tenant(membership) do
+      create(
+        :citizen,
+        municipality: municipality,
+        health_facility: facility,
+        care_team: team,
+        birth_date: Date.new(1995, 3, 15),
+        full_name: "Gestante Seis Consultas",
+        sex: "female"
+      )
+    end
+
+    with_tenant(membership) do
+      persist_fci_pregnant!(citizen: citizen, encounter_at: reference_date - 2.months)
+      [ 4, 8, 12, 16, 20, 24 ].each do |weeks|
+        persist_prenatal_fai!(citizen: citizen, dum: dum, encounter_at: dum + weeks.weeks)
+      end
+    end
+
+    result = evaluate_c3!(citizen: citizen, rule_code: "B", reference_date: reference_date)
+
+    expect(result.meets_numerator).to be(false)
+  end
+
+  it "does not score C3-B when FAI lacks individual attendances" do
+    reference_date = Date.new(2026, 5, 30)
+    dum = reference_date - 6.months
+    citizen = with_tenant(membership) do
+      create(
+        :citizen,
+        municipality: municipality,
+        health_facility: facility,
+        care_team: team,
+        birth_date: Date.new(1995, 3, 15),
+        full_name: "Gestante Consulta Sem Atendimento",
+        sex: "female"
+      )
+    end
+
+    with_tenant(membership) do
+      persist_fci_pregnant!(citizen: citizen, encounter_at: reference_date - 2.months)
+      [ 4, 8, 12, 16, 20, 24, 28 ].each do |weeks|
+        persist_prenatal_fai!(citizen: citizen, dum: dum, encounter_at: dum + weeks.weeks, with_attendance: false)
+      end
+    end
+
+    result = evaluate_c3!(citizen: citizen, rule_code: "B", reference_date: reference_date)
+
+    expect(result.meets_numerator).to be(false)
+  end
+
+  it "does not count post-delivery consults toward C3-B" do
+    reference_date = Date.new(2026, 5, 30)
+    dum = reference_date - 10.months
+    delivery = dum + 280.days
+    citizen = with_tenant(membership) do
+      create(
+        :citizen,
+        municipality: municipality,
+        health_facility: facility,
+        care_team: team,
+        birth_date: Date.new(1995, 3, 15),
+        full_name: "Gestante Pos Parto Consulta",
+        sex: "female"
+      )
+    end
+
+    with_tenant(membership) do
+      persist_fci_pregnant!(citizen: citizen, encounter_at: reference_date - 9.months)
+      [ 4, 8, 12, 16, 20, 24 ].each do |weeks|
+        persist_prenatal_fai!(citizen: citizen, dum: dum, encounter_at: dum + weeks.weeks)
+      end
+      persist_prenatal_fai!(citizen: citizen, dum: dum, encounter_at: delivery + 3.days, extra_payload: { "dataParto" => delivery.iso8601 })
+      persist_prenatal_fai!(citizen: citizen, dum: dum, encounter_at: delivery + 10.days)
+    end
+
+    result = evaluate_c3!(citizen: citizen, rule_code: "B", reference_date: reference_date)
+
+    expect(result.meets_numerator).to be(false)
+  end
+
+  it "scores C3-C with seven blood pressure measurements during gestation" do
+    reference_date = Date.new(2026, 5, 30)
+    dum = reference_date - 6.months
+    citizen = with_tenant(membership) do
+      create(
+        :citizen,
+        municipality: municipality,
+        health_facility: facility,
+        care_team: team,
+        birth_date: Date.new(1995, 3, 15),
+        full_name: "Gestante PA",
+        sex: "female"
+      )
+    end
+
+    with_tenant(membership) do
+      persist_fci_pregnant!(citizen: citizen, encounter_at: reference_date - 2.months)
+      persist_prenatal_fai!(citizen: citizen, dum: dum, encounter_at: dum + 8.weeks)
+      [ 10, 14, 18, 22, 26, 30, 34 ].each do |weeks|
+        persist_clinical_record!(
+          citizen: citizen,
+          record_type: "FAI",
+          payload_json: {
+            "medicoes" => { "pressaoArterialSistolica" => 120, "pressaoArterialDiastolica" => 80 }
+          },
+          encounter_at: dum + weeks.weeks
+        )
+      end
+    end
+
+    result = evaluate_c3!(citizen: citizen, rule_code: "C", reference_date: reference_date)
+
+    expect(result.meets_numerator).to be(true)
+  end
+
+  it "scores C3-D with seven anthropometry records during gestation" do
+    reference_date = Date.new(2026, 5, 30)
+    dum = reference_date - 6.months
+    citizen = with_tenant(membership) do
+      create(
+        :citizen,
+        municipality: municipality,
+        health_facility: facility,
+        care_team: team,
+        birth_date: Date.new(1995, 3, 15),
+        full_name: "Gestante Antropometria",
+        sex: "female"
+      )
+    end
+
+    with_tenant(membership) do
+      persist_fci_pregnant!(citizen: citizen, encounter_at: reference_date - 2.months)
+      persist_prenatal_fai!(citizen: citizen, dum: dum, encounter_at: dum + 8.weeks)
+      [ 10, 14, 18, 22, 26, 30, 34 ].each do |weeks|
+        persist_clinical_record!(
+          citizen: citizen,
+          record_type: "FAI",
+          payload_json: { "medicoes" => { "peso" => 70, "altura" => 165 } },
+          encounter_at: dum + weeks.weeks
+        )
+      end
+    end
+
+    result = evaluate_c3!(citizen: citizen, rule_code: "D", reference_date: reference_date)
+
+    expect(result.meets_numerator).to be(true)
+  end
+
+  it "scores C3-E with three ACS visits after the first prenatal consult" do
+    reference_date = Date.new(2026, 5, 30)
+    dum = reference_date - 6.months
+    first_consult = dum + 8.weeks
+    citizen = with_tenant(membership) do
+      create(
+        :citizen,
+        municipality: municipality,
+        health_facility: facility,
+        care_team: team,
+        birth_date: Date.new(1995, 3, 15),
+        full_name: "Gestante Visitas ACS",
+        sex: "female"
+      )
+    end
+
+    with_tenant(membership) do
+      persist_fci_pregnant!(citizen: citizen, encounter_at: reference_date - 2.months)
+      persist_prenatal_fai!(citizen: citizen, dum: dum, encounter_at: first_consult)
+      [ 12, 16, 20 ].each do |weeks|
+        persist_clinical_record!(
+          citizen: citizen,
+          record_type: "FVD",
+          payload_json: { "motivosVisita" => [ { "codigo" => 1 } ] },
+          encounter_at: dum + weeks.weeks
+        )
+      end
+    end
+
+    result = evaluate_c3!(citizen: citizen, rule_code: "E", reference_date: reference_date)
+
+    expect(result.meets_numerator).to be(true)
+  end
+
+  it "does not score C3-E when ACS visits occur before the first prenatal consult" do
+    reference_date = Date.new(2026, 5, 30)
+    dum = reference_date - 6.months
+    first_consult = dum + 8.weeks
+    citizen = with_tenant(membership) do
+      create(
+        :citizen,
+        municipality: municipality,
+        health_facility: facility,
+        care_team: team,
+        birth_date: Date.new(1995, 3, 15),
+        full_name: "Gestante Visitas Antes",
+        sex: "female"
+      )
+    end
+
+    with_tenant(membership) do
+      persist_fci_pregnant!(citizen: citizen, encounter_at: reference_date - 2.months)
+      [ 4, 5, 6 ].each do |weeks|
+        persist_clinical_record!(
+          citizen: citizen,
+          record_type: "FVD",
+          payload_json: { "motivosVisita" => [ { "codigo" => 1 } ] },
+          encounter_at: dum + weeks.weeks
+        )
+      end
+      persist_prenatal_fai!(citizen: citizen, dum: dum, encounter_at: first_consult)
+    end
+
+    result = evaluate_c3!(citizen: citizen, rule_code: "E", reference_date: reference_date)
+
+    expect(result.meets_numerator).to be(false)
+  end
+
+  it "does not score C3-C when only six blood pressure measurements occur during gestation" do
+    reference_date = Date.new(2026, 5, 30)
+    dum = reference_date - 6.months
+    citizen = with_tenant(membership) do
+      create(
+        :citizen,
+        municipality: municipality,
+        health_facility: facility,
+        care_team: team,
+        birth_date: Date.new(1995, 3, 15),
+        full_name: "Gestante PA Insuficiente",
+        sex: "female"
+      )
+    end
+
+    with_tenant(membership) do
+      persist_fci_pregnant!(citizen: citizen, encounter_at: reference_date - 2.months)
+      persist_prenatal_fai!(citizen: citizen, dum: dum, encounter_at: dum + 8.weeks)
+      [ 10, 14, 18, 22, 26, 30 ].each do |weeks|
+        persist_clinical_record!(
+          citizen: citizen,
+          record_type: "FAI",
+          payload_json: {
+            "medicoes" => { "pressaoArterialSistolica" => 120, "pressaoArterialDiastolica" => 80 }
+          },
+          encounter_at: dum + weeks.weeks
+        )
+      end
+    end
+
+    result = evaluate_c3!(citizen: citizen, rule_code: "C", reference_date: reference_date)
+
+    expect(result.meets_numerator).to be(false)
+  end
+
+  it "does not score C3-D when only six anthropometry records occur during gestation" do
+    reference_date = Date.new(2026, 5, 30)
+    dum = reference_date - 6.months
+    citizen = with_tenant(membership) do
+      create(
+        :citizen,
+        municipality: municipality,
+        health_facility: facility,
+        care_team: team,
+        birth_date: Date.new(1995, 3, 15),
+        full_name: "Gestante Antropometria Insuficiente",
+        sex: "female"
+      )
+    end
+
+    with_tenant(membership) do
+      persist_fci_pregnant!(citizen: citizen, encounter_at: reference_date - 2.months)
+      persist_prenatal_fai!(citizen: citizen, dum: dum, encounter_at: dum + 8.weeks)
+      [ 10, 14, 18, 22, 26, 30 ].each do |weeks|
+        persist_clinical_record!(
+          citizen: citizen,
+          record_type: "FAI",
+          payload_json: { "medicoes" => { "peso" => 70, "altura" => 165 } },
+          encounter_at: dum + weeks.weeks
+        )
+      end
+    end
+
+    result = evaluate_c3!(citizen: citizen, rule_code: "D", reference_date: reference_date)
+
+    expect(result.meets_numerator).to be(false)
+  end
+
+  it "does not score C3-E when only two ACS visits occur after the first prenatal consult" do
+    reference_date = Date.new(2026, 5, 30)
+    dum = reference_date - 6.months
+    first_consult = dum + 8.weeks
+    citizen = with_tenant(membership) do
+      create(
+        :citizen,
+        municipality: municipality,
+        health_facility: facility,
+        care_team: team,
+        birth_date: Date.new(1995, 3, 15),
+        full_name: "Gestante Duas Visitas ACS",
+        sex: "female"
+      )
+    end
+
+    with_tenant(membership) do
+      persist_fci_pregnant!(citizen: citizen, encounter_at: reference_date - 2.months)
+      persist_prenatal_fai!(citizen: citizen, dum: dum, encounter_at: first_consult)
+      [ 12, 16 ].each do |weeks|
+        persist_clinical_record!(
+          citizen: citizen,
+          record_type: "FVD",
+          payload_json: { "motivosVisita" => [ { "codigo" => 1 } ] },
+          encounter_at: dum + weeks.weeks
+        )
+      end
+    end
+
+    result = evaluate_c3!(citizen: citizen, rule_code: "E", reference_date: reference_date)
+
+    expect(result.meets_numerator).to be(false)
+  end
+
+  it "scores C3-E when first prenatal consult is after 12 weeks but three ACS visits follow" do
+    reference_date = Date.new(2026, 5, 30)
+    dum = reference_date - 6.months
+    first_consult = dum + 14.weeks
+    citizen = with_tenant(membership) do
+      create(
+        :citizen,
+        municipality: municipality,
+        health_facility: facility,
+        care_team: team,
+        birth_date: Date.new(1995, 3, 15),
+        full_name: "Gestante E Sem Teto A",
+        sex: "female"
+      )
+    end
+
+    with_tenant(membership) do
+      persist_fci_pregnant!(citizen: citizen, encounter_at: reference_date - 2.months)
+      persist_prenatal_fai!(citizen: citizen, dum: dum, encounter_at: first_consult)
+      [ 16, 20, 24 ].each do |weeks|
+        persist_clinical_record!(
+          citizen: citizen,
+          record_type: "FVD",
+          payload_json: { "motivosVisita" => [ { "codigo" => 1 } ] },
+          encounter_at: dum + weeks.weeks
+        )
+      end
+    end
+
+    a_result = evaluate_c3!(citizen: citizen, rule_code: "A", reference_date: reference_date)
+    e_result = evaluate_c3!(citizen: citizen, rule_code: "E", reference_date: reference_date)
+
+    expect(a_result.meets_numerator).to be(false)
+    expect(e_result.meets_numerator).to be(true)
+  end
+
+  it "scores C3-E when ACS visit occurs on the same day as the first prenatal consult" do
+    reference_date = Date.new(2026, 5, 30)
+    dum = reference_date - 6.months
+    first_consult = dum + 8.weeks
+    citizen = with_tenant(membership) do
+      create(
+        :citizen,
+        municipality: municipality,
+        health_facility: facility,
+        care_team: team,
+        birth_date: Date.new(1995, 3, 15),
+        full_name: "Gestante Visita Mesmo Dia",
+        sex: "female"
+      )
+    end
+
+    with_tenant(membership) do
+      persist_fci_pregnant!(citizen: citizen, encounter_at: reference_date - 2.months)
+      persist_prenatal_fai!(citizen: citizen, dum: dum, encounter_at: first_consult)
+      persist_clinical_record!(
+        citizen: citizen,
+        record_type: "FVD",
+        payload_json: { "motivosVisita" => [ { "codigo" => 1 } ] },
+        encounter_at: first_consult
+      )
+      [ 12, 16 ].each do |weeks|
+        persist_clinical_record!(
+          citizen: citizen,
+          record_type: "FVD",
+          payload_json: { "motivosVisita" => [ { "codigo" => 1 } ] },
+          encounter_at: dum + weeks.weeks
+        )
+      end
+    end
+
+    result = evaluate_c3!(citizen: citizen, rule_code: "E", reference_date: reference_date)
+
+    expect(result.meets_numerator).to be(true)
+  end
+
+  it "scores C3-E when visit reasons are nested under visitasDomiciliares" do
+    reference_date = Date.new(2026, 5, 30)
+    dum = reference_date - 6.months
+    first_consult = dum + 8.weeks
+    citizen = with_tenant(membership) do
+      create(
+        :citizen,
+        municipality: municipality,
+        health_facility: facility,
+        care_team: team,
+        birth_date: Date.new(1995, 3, 15),
+        full_name: "Gestante FVD Nested",
+        sex: "female"
+      )
+    end
+
+    with_tenant(membership) do
+      persist_fci_pregnant!(citizen: citizen, encounter_at: reference_date - 2.months)
+      persist_prenatal_fai!(citizen: citizen, dum: dum, encounter_at: first_consult)
+      [ 12, 16, 20 ].each do |weeks|
+        persist_clinical_record!(
+          citizen: citizen,
+          record_type: "FVD",
+          payload_json: {
+            "visitasDomiciliares" => [ { "motivosVisita" => [ { "codigo" => 1 } ] } ]
+          },
+          encounter_at: dum + weeks.weeks
+        )
+      end
+    end
+
+    result = evaluate_c3!(citizen: citizen, rule_code: "E", reference_date: reference_date)
+
+    expect(result.meets_numerator).to be(true)
+  end
+
+  it "does not treat postpartum FAI as the first prenatal consult for C3-E" do
+    reference_date = Date.new(2026, 5, 30)
+    dum = reference_date - 10.months
+    delivery = dum + 280.days
+    first_consult = dum + 8.weeks
+    citizen = with_tenant(membership) do
+      create(
+        :citizen,
+        municipality: municipality,
+        health_facility: facility,
+        care_team: team,
+        birth_date: Date.new(1995, 3, 15),
+        full_name: "Gestante E Puerperio Piso",
+        sex: "female"
+      )
+    end
+
+    with_tenant(membership) do
+      persist_fci_pregnant!(citizen: citizen, encounter_at: reference_date - 9.months)
+      persist_prenatal_fai!(citizen: citizen, dum: dum, encounter_at: first_consult)
+      persist_clinical_record!(
+        citizen: citizen,
+        record_type: "FAI",
+        payload_json: {
+          "dumDaGestante" => dum.iso8601,
+          "dataParto" => delivery.iso8601,
+          "atendimentos_individuais" => [ { "tipo" => "consulta" } ]
+        },
+        encounter_at: delivery + 5.days
+      )
+      [ 12, 16, 20 ].each do |weeks|
+        next if dum + weeks.weeks < first_consult
+
+        persist_clinical_record!(
+          citizen: citizen,
+          record_type: "FVD",
+          payload_json: { "motivosVisita" => [ { "codigo" => 1 } ] },
+          encounter_at: dum + weeks.weeks
+        )
+      end
+    end
+
+    result = evaluate_c3!(citizen: citizen, rule_code: "E", reference_date: reference_date)
+
     expect(result.meets_numerator).to be(true)
   end
 
@@ -780,7 +1365,10 @@ RSpec.describe Indicators::DslV1::Evaluator do
         record = persist_clinical_record!(
           citizen: citizen,
           record_type: "FAI",
-          payload_json: { "dumDaGestante" => dum_date.iso8601 },
+          payload_json: {
+          "dumDaGestante" => dum_date.iso8601,
+          "atendimentos_individuais" => [ { "tipo" => "consulta" } ]
+        },
           encounter_at: dum_date + 8.weeks
         )
         record.update_column(:encounter_at, nil)
@@ -998,7 +1586,7 @@ RSpec.describe Indicators::DslV1::Evaluator do
     end.to raise_error(Indicators::Errors::UnknownCareTeamError)
   end
 
-  it "scores V_SAT when encounter exists within six months" do
+  it "does not score V_SAT until external satisfaction import exists" do
     citizen = with_tenant(membership) do
       create(
         :citizen,
@@ -1029,7 +1617,788 @@ RSpec.describe Indicators::DslV1::Evaluator do
     end
 
     expect(result.in_denominator).to be(true)
+    expect(result.meets_numerator).to be(false)
+  end
+
+  it "validates microarea_linked when FCI and FCD microArea match" do
+    citizen = with_tenant(membership) do
+      create(
+        :citizen,
+        municipality: municipality,
+        health_facility: facility,
+        care_team: team,
+        birth_date: Date.new(1980, 1, 1),
+        full_name: "Microarea Test"
+      )
+    end
+
+    with_tenant(membership) do
+      persist_fci!(citizen: citizen)
+      persist_fcd!(citizen: citizen)
+    end
+
+    result = with_tenant(membership) do
+      described_class.evaluate(
+        expression: {
+          "version" => "dsl_v1",
+          "denominator" => { "type" => "citizens_on_team" },
+          "numerator" => { "type" => "microarea_linked" }
+        },
+        context: Indicators::DslV1::Context.new(citizen: citizen)
+      )
+    end
+
     expect(result.meets_numerator).to be(true)
+  end
+
+  it "detects PBF flag in FCI" do
+    citizen = with_tenant(membership) do
+      create(
+        :citizen,
+        municipality: municipality,
+        health_facility: facility,
+        care_team: team,
+        birth_date: Date.new(1980, 1, 1),
+        full_name: "PBF Test"
+      )
+    end
+
+    with_tenant(membership) do
+      persist_fci!(citizen: citizen, extra_payload: { "stRecebeBeneficioBolsaFamilia" => true })
+    end
+
+    result = with_tenant(membership) do
+      described_class.evaluate(
+        expression: {
+          "version" => "dsl_v1",
+          "denominator" => { "type" => "citizens_on_team" },
+          "numerator" => { "type" => "fci_flag_present", "flag" => "pbf" }
+        },
+        context: Indicators::DslV1::Context.new(citizen: citizen)
+      )
+    end
+
+    expect(result.meets_numerator).to be(true)
+  end
+
+  it "detects BPC flag in FCI" do
+    citizen = with_tenant(membership) do
+      create(
+        :citizen,
+        municipality: municipality,
+        health_facility: facility,
+        care_team: team,
+        birth_date: Date.new(1980, 1, 1),
+        full_name: "BPC Test"
+      )
+    end
+
+    with_tenant(membership) do
+      persist_fci!(citizen: citizen, extra_payload: { "stRecebeBPC" => true })
+    end
+
+    result = with_tenant(membership) do
+      described_class.evaluate(
+        expression: {
+          "version" => "dsl_v1",
+          "denominator" => { "type" => "citizens_on_team" },
+          "numerator" => { "type" => "fci_flag_present", "flag" => "bpc" }
+        },
+        context: Indicators::DslV1::Context.new(citizen: citizen)
+      )
+    end
+
+    expect(result.meets_numerator).to be(true)
+  end
+
+  it "scores C3-F when dTpa is applied from the 20th gestational week" do
+    reference_date = Date.new(2026, 5, 30)
+    dum = reference_date - 6.months
+    vaccination_at = dum + 22.weeks
+
+    citizen = with_tenant(membership) do
+      create(
+        :citizen,
+        municipality: municipality,
+        health_facility: facility,
+        care_team: team,
+        birth_date: Date.new(1995, 3, 15),
+        full_name: "Gestante dTpa",
+        sex: "female"
+      )
+    end
+
+    with_tenant(membership) do
+      persist_fci_pregnant!(citizen: citizen, encounter_at: reference_date - 2.months)
+      persist_clinical_record!(
+        citizen: citizen,
+        record_type: "FAI",
+        payload_json: { "dumDaGestante" => dum.iso8601 },
+        encounter_at: dum + 8.weeks
+      )
+      persist_clinical_record!(
+        citizen: citizen,
+        record_type: "FV",
+        payload_json: { "vacinas" => [ { "imunobiologico" => "dTpa adulto" } ] },
+        encounter_at: vaccination_at
+      )
+    end
+
+    result = with_tenant(membership) do
+      described_class.evaluate(
+        expression: expression_for("C3", rule_code: "F"),
+        context: Indicators::DslV1::Context.new(citizen: citizen, reference_date: reference_date)
+      )
+    end
+
+    expect(result.in_denominator).to be(true)
+    expect(result.meets_numerator).to be(true)
+  end
+
+  it "scores C3-F for ended pregnancy when reference_date is after delivery" do
+    reference_date = Date.new(2026, 5, 30)
+    dum = reference_date - 10.months
+    delivery = dum + 280.days
+    vaccination_at = dum + 22.weeks
+
+    citizen = with_tenant(membership) do
+      create(
+        :citizen,
+        municipality: municipality,
+        health_facility: facility,
+        care_team: team,
+        birth_date: Date.new(1995, 3, 15),
+        full_name: "Gestante dTpa Retroativa",
+        sex: "female"
+      )
+    end
+
+    with_tenant(membership) do
+      persist_fci_pregnant!(citizen: citizen, encounter_at: delivery - 1.month)
+      persist_clinical_record!(
+        citizen: citizen,
+        record_type: "FAI",
+        payload_json: { "dumDaGestante" => dum.iso8601 },
+        encounter_at: dum + 8.weeks
+      )
+      persist_clinical_record!(
+        citizen: citizen,
+        record_type: "FV",
+        payload_json: { "vacinas" => [ { "imunobiologico" => "dTpa adulto" } ] },
+        encounter_at: vaccination_at
+      )
+      persist_clinical_record!(
+        citizen: citizen,
+        record_type: "FAI",
+        payload_json: { "dataParto" => delivery.iso8601 },
+        encounter_at: delivery
+      )
+    end
+
+    result = with_tenant(membership) do
+      described_class.evaluate(
+        expression: expression_for("C3", rule_code: "F"),
+        context: Indicators::DslV1::Context.new(citizen: citizen, reference_date: reference_date)
+      )
+    end
+
+    expect(result.meets_numerator).to be(true)
+  end
+
+  it "does not score C3-F when dTpa is before the 20th gestational week" do
+    reference_date = Date.new(2026, 5, 30)
+    dum = reference_date - 6.months
+    vaccination_at = dum + 18.weeks
+
+    citizen = with_tenant(membership) do
+      create(
+        :citizen,
+        municipality: municipality,
+        health_facility: facility,
+        care_team: team,
+        birth_date: Date.new(1995, 3, 15),
+        full_name: "Gestante dTpa cedo",
+        sex: "female"
+      )
+    end
+
+    with_tenant(membership) do
+      persist_fci_pregnant!(citizen: citizen, encounter_at: reference_date - 2.months)
+      persist_clinical_record!(
+        citizen: citizen,
+        record_type: "FAI",
+        payload_json: { "dumDaGestante" => dum.iso8601 },
+        encounter_at: dum + 8.weeks
+      )
+      persist_clinical_record!(
+        citizen: citizen,
+        record_type: "FV",
+        payload_json: { "vacinas" => [ { "imunobiologico" => "dTpa adulto", "codigoImunobiologico" => "57" } ] },
+        encounter_at: vaccination_at
+      )
+    end
+
+    result = with_tenant(membership) do
+      described_class.evaluate(
+        expression: expression_for("C3", rule_code: "F"),
+        context: Indicators::DslV1::Context.new(citizen: citizen, reference_date: reference_date)
+      )
+    end
+
+    expect(result.meets_numerator).to be(false)
+  end
+
+  it "does not score C3-G when prenatal tests occur after the first trimester" do
+    reference_date = Date.new(2026, 5, 30)
+    dum = reference_date - 3.months
+    test_at = dum + 20.weeks
+
+    citizen = with_tenant(membership) do
+      create(
+        :citizen,
+        municipality: municipality,
+        health_facility: facility,
+        care_team: team,
+        birth_date: Date.new(1995, 3, 15),
+        full_name: "Gestante 2T teste",
+        sex: "female"
+      )
+    end
+
+    with_tenant(membership) do
+      persist_fci_pregnant!(citizen: citizen, encounter_at: reference_date - 2.months)
+      persist_clinical_record!(
+        citizen: citizen,
+        record_type: "FAI",
+        payload_json: {
+          "dumDaGestante" => dum.iso8601,
+          "procedimentos" => [ { "co_ms_procedimento" => "0214010040" } ]
+        },
+        encounter_at: test_at
+      )
+    end
+
+    result = with_tenant(membership) do
+      described_class.evaluate(
+        expression: expression_for("C3", rule_code: "G"),
+        context: Indicators::DslV1::Context.new(citizen: citizen, reference_date: reference_date)
+      )
+    end
+
+    expect(result.meets_numerator).to be(false)
+  end
+
+  it "scores C3-G when first-trimester prenatal tests are documented" do
+    reference_date = Date.new(2026, 5, 30)
+    dum = reference_date - 3.months
+    test_at = dum + 10.weeks
+
+    citizen = with_tenant(membership) do
+      create(
+        :citizen,
+        municipality: municipality,
+        health_facility: facility,
+        care_team: team,
+        birth_date: Date.new(1995, 3, 15),
+        full_name: "Gestante 1T",
+        sex: "female"
+      )
+    end
+
+    with_tenant(membership) do
+      persist_fci_pregnant!(citizen: citizen, encounter_at: reference_date - 2.months)
+      persist_clinical_record!(
+        citizen: citizen,
+        record_type: "FAI",
+        payload_json: {
+          "dumDaGestante" => dum.iso8601,
+          "procedimentos" => [ { "co_ms_procedimento" => "0214010040" } ]
+        },
+        encounter_at: test_at
+      )
+    end
+
+    result = with_tenant(membership) do
+      described_class.evaluate(
+        expression: expression_for("C3", rule_code: "G"),
+        context: Indicators::DslV1::Context.new(citizen: citizen, reference_date: reference_date)
+      )
+    end
+
+    expect(result.meets_numerator).to be(true)
+  end
+
+  it "scores C3-G for ended pregnancy when reference_date is after delivery" do
+    reference_date = Date.new(2026, 5, 30)
+    dum = reference_date - 10.months
+    delivery = dum + 280.days
+    test_at = dum + 10.weeks
+
+    citizen = with_tenant(membership) do
+      create(
+        :citizen,
+        municipality: municipality,
+        health_facility: facility,
+        care_team: team,
+        birth_date: Date.new(1995, 3, 15),
+        full_name: "Gestante 1T Retroativa",
+        sex: "female"
+      )
+    end
+
+    with_tenant(membership) do
+      persist_fci_pregnant!(citizen: citizen, encounter_at: delivery - 1.month)
+      persist_clinical_record!(
+        citizen: citizen,
+        record_type: "FAI",
+        payload_json: {
+          "dumDaGestante" => dum.iso8601,
+          "procedimentos" => [ { "co_ms_procedimento" => "0214010040" } ]
+        },
+        encounter_at: test_at
+      )
+      persist_clinical_record!(
+        citizen: citizen,
+        record_type: "FAI",
+        payload_json: { "dataParto" => delivery.iso8601 },
+        encounter_at: delivery
+      )
+    end
+
+    result = with_tenant(membership) do
+      described_class.evaluate(
+        expression: expression_for("C3", rule_code: "G"),
+        context: Indicators::DslV1::Context.new(citizen: citizen, reference_date: reference_date)
+      )
+    end
+
+    expect(result.meets_numerator).to be(true)
+  end
+
+  it "scores C3-H for ended pregnancy when reference_date is after delivery" do
+    reference_date = Date.new(2026, 5, 30)
+    dum = reference_date - 10.months
+    delivery = dum + 280.days
+    test_at = dum + 30.weeks
+
+    citizen = with_tenant(membership) do
+      create(
+        :citizen,
+        municipality: municipality,
+        health_facility: facility,
+        care_team: team,
+        birth_date: Date.new(1995, 3, 15),
+        full_name: "Gestante 3T Retroativa",
+        sex: "female"
+      )
+    end
+
+    with_tenant(membership) do
+      persist_fci_pregnant!(citizen: citizen, encounter_at: delivery - 1.month)
+      persist_clinical_record!(
+        citizen: citizen,
+        record_type: "FAI",
+        payload_json: {
+          "dumDaGestante" => dum.iso8601,
+          "procedimentos" => [ { "co_ms_procedimento" => "0214010058" } ]
+        },
+        encounter_at: test_at
+      )
+      persist_clinical_record!(
+        citizen: citizen,
+        record_type: "FAI",
+        payload_json: { "dataParto" => delivery.iso8601 },
+        encounter_at: delivery
+      )
+    end
+
+    result = with_tenant(membership) do
+      described_class.evaluate(
+        expression: expression_for("C3", rule_code: "H"),
+        context: Indicators::DslV1::Context.new(citizen: citizen, reference_date: reference_date)
+      )
+    end
+
+    expect(result.meets_numerator).to be(true)
+  end
+
+  it "scores C3-H when third-trimester prenatal tests are documented" do
+    reference_date = Date.new(2026, 5, 30)
+    dum = reference_date - 8.months
+    test_at = dum + 30.weeks
+
+    citizen = with_tenant(membership) do
+      create(
+        :citizen,
+        municipality: municipality,
+        health_facility: facility,
+        care_team: team,
+        birth_date: Date.new(1995, 3, 15),
+        full_name: "Gestante 3T",
+        sex: "female"
+      )
+    end
+
+    with_tenant(membership) do
+      persist_fci_pregnant!(citizen: citizen, encounter_at: reference_date - 2.months)
+      persist_clinical_record!(
+        citizen: citizen,
+        record_type: "FAI",
+        payload_json: {
+          "dumDaGestante" => dum.iso8601,
+          "procedimentos" => [ { "co_ms_procedimento" => "0214010058" } ]
+        },
+        encounter_at: test_at
+      )
+    end
+
+    result = with_tenant(membership) do
+      described_class.evaluate(
+        expression: expression_for("C3", rule_code: "H"),
+        context: Indicators::DslV1::Context.new(citizen: citizen, reference_date: reference_date)
+      )
+    end
+
+    expect(result.meets_numerator).to be(true)
+  end
+
+  it "scores C3-I and C3-J in the puerperium window after delivery" do
+    reference_date = Date.new(2026, 5, 30)
+    delivery = reference_date - 3.weeks
+    consult_at = delivery + 10.days
+
+    citizen = with_tenant(membership) do
+      create(
+        :citizen,
+        municipality: municipality,
+        health_facility: facility,
+        care_team: team,
+        birth_date: Date.new(1995, 3, 15),
+        full_name: "Puérpera",
+        sex: "female"
+      )
+    end
+
+    with_tenant(membership) do
+      persist_fci_pregnant!(citizen: citizen, encounter_at: reference_date - 4.months)
+      persist_clinical_record!(
+        citizen: citizen,
+        record_type: "FAI",
+        payload_json: { "dataParto" => delivery.iso8601 },
+        encounter_at: delivery
+      )
+      persist_clinical_record!(
+        citizen: citizen,
+        record_type: "FAI",
+        payload_json: { "atendimentos_individuais" => [ { "tipo" => "consulta" } ] },
+        encounter_at: consult_at
+      )
+      persist_clinical_record!(
+        citizen: citizen,
+        record_type: "FVD",
+        payload_json: { "motivosVisita" => [ 1 ] },
+        encounter_at: consult_at + 1.day
+      )
+    end
+
+    consult_result = with_tenant(membership) do
+      described_class.evaluate(
+        expression: expression_for("C3", rule_code: "I"),
+        context: Indicators::DslV1::Context.new(citizen: citizen, reference_date: reference_date)
+      )
+    end
+    visit_result = with_tenant(membership) do
+      described_class.evaluate(
+        expression: expression_for("C3", rule_code: "J"),
+        context: Indicators::DslV1::Context.new(citizen: citizen, reference_date: reference_date)
+      )
+    end
+
+    expect(consult_result.meets_numerator).to be(true)
+    expect(visit_result.meets_numerator).to be(true)
+  end
+
+  it "does not score C3-I when only the delivery FAI exists in puerperium" do
+    reference_date = Date.new(2026, 5, 30)
+    delivery = reference_date - 3.weeks
+
+    citizen = with_tenant(membership) do
+      create(
+        :citizen,
+        municipality: municipality,
+        health_facility: facility,
+        care_team: team,
+        birth_date: Date.new(1995, 3, 15),
+        full_name: "Puérpera sem consulta",
+        sex: "female"
+      )
+    end
+
+    with_tenant(membership) do
+      persist_fci_pregnant!(citizen: citizen, encounter_at: reference_date - 4.months)
+      persist_clinical_record!(
+        citizen: citizen,
+        record_type: "FAI",
+        payload_json: { "dataParto" => delivery.iso8601 },
+        encounter_at: delivery
+      )
+    end
+
+    result = with_tenant(membership) do
+      described_class.evaluate(
+        expression: expression_for("C3", rule_code: "I"),
+        context: Indicators::DslV1::Context.new(citizen: citizen, reference_date: reference_date)
+      )
+    end
+
+    expect(result.meets_numerator).to be(false)
+  end
+
+  it "does not score C3-I when puerperium consult occurs after 42 days" do
+    reference_date = Date.new(2026, 5, 30)
+    delivery = reference_date - 8.weeks
+    consult_at = delivery + 43.days
+
+    citizen = with_tenant(membership) do
+      create(
+        :citizen,
+        municipality: municipality,
+        health_facility: facility,
+        care_team: team,
+        birth_date: Date.new(1995, 3, 15),
+        full_name: "Puérpera tardia",
+        sex: "female"
+      )
+    end
+
+    with_tenant(membership) do
+      persist_fci_pregnant!(citizen: citizen, encounter_at: reference_date - 5.months)
+      persist_clinical_record!(
+        citizen: citizen,
+        record_type: "FAI",
+        payload_json: { "dataParto" => delivery.iso8601 },
+        encounter_at: delivery
+      )
+      persist_clinical_record!(
+        citizen: citizen,
+        record_type: "FAI",
+        payload_json: { "atendimentos_individuais" => [ { "tipo" => "consulta" } ] },
+        encounter_at: consult_at
+      )
+    end
+
+    result = with_tenant(membership) do
+      described_class.evaluate(
+        expression: expression_for("C3", rule_code: "I"),
+        context: Indicators::DslV1::Context.new(citizen: citizen, reference_date: reference_date)
+      )
+    end
+
+    expect(result.meets_numerator).to be(false)
+  end
+
+  it "does not score C3-I when puerperium FAI lacks individual attendances" do
+    reference_date = Date.new(2026, 5, 30)
+    delivery = reference_date - 3.weeks
+    consult_at = delivery + 10.days
+
+    citizen = with_tenant(membership) do
+      create(
+        :citizen,
+        municipality: municipality,
+        health_facility: facility,
+        care_team: team,
+        birth_date: Date.new(1995, 3, 15),
+        full_name: "Puérpera sem atendimento",
+        sex: "female"
+      )
+    end
+
+    with_tenant(membership) do
+      persist_fci_pregnant!(citizen: citizen, encounter_at: reference_date - 4.months)
+      persist_clinical_record!(
+        citizen: citizen,
+        record_type: "FAI",
+        payload_json: { "dataParto" => delivery.iso8601 },
+        encounter_at: delivery
+      )
+      persist_clinical_record!(
+        citizen: citizen,
+        record_type: "FAI",
+        payload_json: {},
+        encounter_at: consult_at
+      )
+    end
+
+    result = with_tenant(membership) do
+      described_class.evaluate(
+        expression: expression_for("C3", rule_code: "I"),
+        context: Indicators::DslV1::Context.new(citizen: citizen, reference_date: reference_date)
+      )
+    end
+
+    expect(result.meets_numerator).to be(false)
+  end
+
+  it "does not score C3-J when puerperium FVD lacks visit reasons" do
+    reference_date = Date.new(2026, 5, 30)
+    delivery = reference_date - 3.weeks
+    visit_at = delivery + 10.days
+
+    citizen = with_tenant(membership) do
+      create(
+        :citizen,
+        municipality: municipality,
+        health_facility: facility,
+        care_team: team,
+        birth_date: Date.new(1995, 3, 15),
+        full_name: "Puérpera sem motivo visita",
+        sex: "female"
+      )
+    end
+
+    with_tenant(membership) do
+      persist_fci_pregnant!(citizen: citizen, encounter_at: reference_date - 4.months)
+      persist_clinical_record!(
+        citizen: citizen,
+        record_type: "FAI",
+        payload_json: { "dataParto" => delivery.iso8601 },
+        encounter_at: delivery
+      )
+      persist_clinical_record!(
+        citizen: citizen,
+        record_type: "FVD",
+        payload_json: {},
+        encounter_at: visit_at
+      )
+    end
+
+    result = with_tenant(membership) do
+      described_class.evaluate(
+        expression: expression_for("C3", rule_code: "J"),
+        context: Indicators::DslV1::Context.new(citizen: citizen, reference_date: reference_date)
+      )
+    end
+
+    expect(result.meets_numerator).to be(false)
+  end
+
+  it "scores C4-E when HbA1c procedure is present" do
+    citizen = with_tenant(membership) do
+      create(
+        :citizen,
+        municipality: municipality,
+        health_facility: facility,
+        care_team: team,
+        birth_date: Date.new(1970, 1, 1),
+        full_name: "Diabético HbA1c"
+      )
+    end
+
+    with_tenant(membership) do
+      persist_fci_diabetic!(citizen: citizen, encounter_at: 1.month.ago)
+      persist_clinical_record!(
+        citizen: citizen,
+        record_type: "FAI",
+        payload_json: { "procedimentos" => [ { "co_ms_procedimento" => "0202010503" } ] },
+        encounter_at: 2.months.ago
+      )
+    end
+
+    result = with_tenant(membership) do
+      described_class.evaluate(
+        expression: expression_for("C4", rule_code: "E"),
+        context: Indicators::DslV1::Context.new(citizen: citizen, reference_date: Date.current)
+      )
+    end
+
+    expect(result.meets_numerator).to be(true)
+  end
+
+  it "scores C6-D when influenza vaccination is documented for elderly citizens" do
+    citizen = with_tenant(membership) do
+      create(
+        :citizen,
+        municipality: municipality,
+        health_facility: facility,
+        care_team: team,
+        birth_date: Date.new(1950, 1, 1),
+        full_name: "Idoso Influenza"
+      )
+    end
+
+    with_tenant(membership) do
+      persist_fci!(citizen: citizen, extra_payload: { "idoso" => true })
+      persist_clinical_record!(
+        citizen: citizen,
+        record_type: "FV",
+        payload_json: { "vacinas" => [ { "imunobiologico" => "Influenza trivalente" } ] },
+        encounter_at: 3.months.ago
+      )
+    end
+
+    result = with_tenant(membership) do
+      described_class.evaluate(
+        expression: expression_for("C6", rule_code: "D"),
+        context: Indicators::DslV1::Context.new(citizen: citizen, reference_date: Date.current)
+      )
+    end
+
+    expect(result.in_denominator).to be(true)
+    expect(result.meets_numerator).to be(true)
+  end
+
+  it "does not match dTpa via substring inside unrelated vaccine names" do
+    payload = { "vacinas" => [ { "imunobiologico" => "Vacina antidTpa placeholder" } ] }
+
+    expect(
+      Indicators::DslV1::Resolvers::ClinicalEvidence.send(:vaccination_match?, payload, "dTpa")
+    ).to be(false)
+  end
+
+  it "matches dTpa by immunobiologic code 57" do
+    payload = { "vacinas" => [ { "codigoImunobiologico" => "57", "imunobiologico" => "Outro rótulo" } ] }
+
+    expect(
+      Indicators::DslV1::Resolvers::ClinicalEvidence.send(
+        :vaccination_match?,
+        payload,
+        "dTpa",
+        immunobiologic_code: "57"
+      )
+    ).to be(true)
+  end
+
+  it "rejects MICI completion when FCI identificacao is missing required fields" do
+    citizen = with_tenant(membership) do
+      create(
+        :citizen,
+        municipality: municipality,
+        health_facility: facility,
+        care_team: team,
+        birth_date: Date.new(1980, 1, 1),
+        full_name: "Fallback Test"
+      )
+    end
+
+    with_tenant(membership) do
+      persist_clinical_record!(
+        citizen: citizen,
+        record_type: "FCI",
+        payload_json: { "identificacaoUsuarioCidadao" => { "nome" => citizen.full_name } },
+        encounter_at: 1.month.ago
+      )
+      persist_fcd!(citizen: citizen)
+    end
+
+    result = with_tenant(membership) do
+      described_class.evaluate(
+        expression: expression_for("V_CAD"),
+        context: Indicators::DslV1::Context.new(citizen: citizen)
+      )
+    end
+
+    expect(result.meets_numerator).to be(false)
   end
 
   it "scores B1 when FAO has first programmed dental consult type" do

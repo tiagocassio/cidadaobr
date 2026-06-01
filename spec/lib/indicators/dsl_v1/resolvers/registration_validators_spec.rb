@@ -145,4 +145,148 @@ RSpec.describe Indicators::DslV1::Resolvers::RegistrationValidators do
       expect(described_class.micdt_complete?(citizen.reload)).to be(true)
     end
   end
+
+  it "requires matching microArea in FCI and FCD for microarea_linked?" do
+    citizen = with_tenant(membership) do
+      create(
+        :citizen,
+        municipality: municipality,
+        health_facility: facility,
+        care_team: team,
+        birth_date: Date.new(1980, 1, 1),
+        full_name: "Microarea Mismatch"
+      )
+    end
+
+    with_tenant(membership) do
+      persist_clinical_record!(
+        citizen: citizen,
+        record_type: "FCI",
+        payload_json: {
+          "identificacaoUsuarioCidadao" => {
+            "nome" => citizen.full_name,
+            "dataNascimento" => citizen.birth_date.iso8601,
+            "cpfCidadao" => citizen.cpf,
+            "microArea" => "01"
+          },
+          "dataAtualizacao" => 1.month.ago.iso8601
+        }
+      )
+      persist_clinical_record!(
+        citizen: citizen,
+        record_type: "FCD",
+        payload_json: {
+          "microArea" => "02",
+          "enderecoLocalPermanencia" => { "nuCep" => "01310100", "logradouro" => "Av Paulista" }
+        }
+      )
+      expect(described_class.microarea_linked?(citizen.reload)).to be(false)
+    end
+  end
+
+  it "reads PBF and BPC flags from FCI" do
+    citizen = with_tenant(membership) do
+      create(
+        :citizen,
+        municipality: municipality,
+        health_facility: facility,
+        care_team: team,
+        birth_date: Date.new(1980, 1, 1),
+        full_name: "Benefícios Test"
+      )
+    end
+
+    with_tenant(membership) do
+      persist_clinical_record!(
+        citizen: citizen,
+        record_type: "FCI",
+        payload_json: {
+          "identificacaoUsuarioCidadao" => {
+            "nome" => citizen.full_name,
+            "dataNascimento" => citizen.birth_date.iso8601,
+            "cpfCidadao" => citizen.cpf
+          },
+          "stRecebeBeneficioBolsaFamilia" => true,
+          "stRecebeBPC" => false
+        }
+      )
+      expect(described_class.fci_flag_present?(citizen.reload, "pbf")).to be(true)
+      expect(described_class.fci_flag_present?(citizen.reload, "bpc")).to be(false)
+    end
+  end
+
+  it "links microarea when FCI and FCD microArea match without full MICI fields on citizen row" do
+    citizen = with_tenant(membership) do
+      create(
+        :citizen,
+        municipality: municipality,
+        health_facility: facility,
+        care_team: team,
+        birth_date: Date.new(1980, 1, 1),
+        full_name: "Microarea Linked"
+      )
+    end
+
+    with_tenant(membership) do
+      persist_clinical_record!(
+        citizen: citizen,
+        record_type: "FCI",
+        payload_json: {
+          "identificacaoUsuarioCidadao" => {
+            "nome" => citizen.full_name,
+            "dataNascimento" => citizen.birth_date.iso8601,
+            "cpfCidadao" => citizen.cpf,
+            "microArea" => "03"
+          }
+        }
+      )
+      persist_clinical_record!(
+        citizen: citizen,
+        record_type: "FCD",
+        payload_json: {
+          "microArea" => "03",
+          "enderecoLocalPermanencia" => { "nuCep" => "01310100", "logradouro" => "Av Paulista" }
+        }
+      )
+      expect(described_class.microarea_linked?(citizen.reload)).to be(true)
+    end
+  end
+
+  it "prefers microArea from FCI identificacao over conflicting root microArea" do
+    citizen = with_tenant(membership) do
+      create(
+        :citizen,
+        municipality: municipality,
+        health_facility: facility,
+        care_team: team,
+        birth_date: Date.new(1980, 1, 1),
+        full_name: "Microarea Ident Priority"
+      )
+    end
+
+    with_tenant(membership) do
+      persist_clinical_record!(
+        citizen: citizen,
+        record_type: "FCI",
+        payload_json: {
+          "microArea" => "99",
+          "identificacaoUsuarioCidadao" => {
+            "nome" => citizen.full_name,
+            "dataNascimento" => citizen.birth_date.iso8601,
+            "cpfCidadao" => citizen.cpf,
+            "microArea" => "03"
+          }
+        }
+      )
+      persist_clinical_record!(
+        citizen: citizen,
+        record_type: "FCD",
+        payload_json: {
+          "microArea" => "03",
+          "enderecoLocalPermanencia" => { "nuCep" => "01310100", "logradouro" => "Av Paulista" }
+        }
+      )
+      expect(described_class.microarea_linked?(citizen.reload)).to be(true)
+    end
+  end
 end

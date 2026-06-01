@@ -20,12 +20,25 @@
       "flag": "pregnant"
     },
     "numerator": {
-      "type": "visit_count_gte",
+      "type": "gestational_evidence_count_gte",
+      "measure": "visit",
       "record_types": [
         "FVD"
       ],
-      "within_months": 9,
-      "minimum_count": 3
+      "minimum_count": 3,
+      "min_gestational_weeks": 0,
+      "max_gestational_weeks": 42,
+      "lookback_months": 15,
+      "active_only": false,
+      "after_first_prenatal": true,
+      "first_prenatal_predicate": {
+        "type": "present",
+        "field_path": "individual_attendances"
+      },
+      "predicate": {
+        "type": "present",
+        "field_path": "visit_reasons"
+      }
     }
   }
 }

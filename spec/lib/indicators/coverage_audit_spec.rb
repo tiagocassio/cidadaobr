@@ -17,6 +17,10 @@ RSpec.describe Indicators::CoverageAudit do
     expect(report["bp_coverage"]).to include(
       include("indicator" => "C4", "pack_rules" => 6, "db_rules" => 6, "aligned" => true)
     )
+    expect(report["matrix_status"]["done"]).to be >= 48
+    expect(report["matrix_status"]["done_pct"]).to be >= 90.0
+    expect(report["matrix_status"]["total"]).to eq(Indicators::CoverageAudit::EXPECTED_MATRIX_ROWS)
+    expect(report["matrix_status"]["total_mismatch"]).to be_nil
   end
 
   it "flags empty on-disk packs as drift" do
@@ -52,5 +56,44 @@ RSpec.describe Indicators::CoverageAudit do
 
     expect(report["pack_drift"]).to include(a_string_matching(/invalid_json: broken\.json/))
     expect(report["pack_drift"]).to include(a_string_matching(/unreadable_on_disk: broken\.json/))
+  end
+
+  it "flags gestational_evidence_count_gte packs missing predicate for consult measure" do
+    pack = {
+      "catalog" => { "code" => "C3" },
+      "rule_code" => "Z",
+      "expression" => {
+        "denominator" => { "type" => "citizens_with_condition" },
+        "numerator" => {
+          "type" => "gestational_evidence_count_gte",
+          "measure" => "consult",
+          "record_types" => %w[FAI],
+          "minimum_count" => 1
+        }
+      }
+    }
+
+    missing = described_class.missing_resolvers_for([ pack ])
+
+    expect(missing).to include("C3.Z: gestational_evidence_count_gte measure consult requires predicate")
+  end
+
+  it "flags unknown gestational evidence measure" do
+    pack = {
+      "catalog" => { "code" => "C3" },
+      "rule_code" => "Z",
+      "expression" => {
+        "denominator" => { "type" => "citizens_with_condition" },
+        "numerator" => {
+          "type" => "gestational_evidence_count_gte",
+          "measure" => "typo",
+          "record_types" => %w[FAI]
+        }
+      }
+    }
+
+    missing = described_class.missing_resolvers_for([ pack ])
+
+    expect(missing).to include(a_string_matching(/unknown measure/))
   end
 end

@@ -6,14 +6,17 @@ module Indicators
       module RegistrationValidators
         module_function
 
+        # ADR-0005: MICI requires valid FCI identificacao fields — no fallback to municipal citizen columns.
         def mici_complete?(citizen)
           payload = CitizenScope.latest_fci_payload(citizen)
           return false if payload.blank?
 
           ident = find_section(payload, %w[identificacaoUsuarioCidadao identificacao_usuario_cidadao dadosIdentificacao])
-          name_present = dig_any(ident, %w[nome nomeSocial nome_social nomeCidadao]) || citizen.full_name.present?
-          birth_present = dig_any(ident, %w[dataNascimento data_nascimento]) || citizen.birth_date.present?
-          doc_present = dig_any(ident, %w[cpfCidadao cpf_cidadao cns cnsCidadao cns_cidadao]) || citizen.cpf.present?
+          return false unless ident.is_a?(Hash)
+
+          name_present = dig_any(ident, %w[nome nomeSocial nome_social nomeCidadao]).present?
+          birth_present = dig_any(ident, %w[dataNascimento data_nascimento]).present?
+          doc_present = dig_any(ident, %w[cpfCidadao cpf_cidadao cns cnsCidadao cns_cidadao]).present?
 
           name_present && birth_present && doc_present && citizen.care_team_id.present?
         end
@@ -22,13 +25,47 @@ module Indicators
           fcd = latest_fcd_payload(citizen)
           return false if fcd.blank?
 
-          micro = dig_any(fcd, %w[microArea micro_area codigoMicroArea codigo_micro_area])
+          micro = fcd_micro_area_code(fcd)
           address = find_section(fcd, %w[enderecoLocalPermanencia endereco_local_permanencia endereco])
           address_present = address.is_a?(Hash) && (
             dig_any(address, %w[nuCep cep logradouro bairro]).present?
           )
 
           micro.present? && address_present
+        end
+
+        # NT 30/2025 transversal: adscrição FCI/FCD microárea (sem exigir MICI/MICDT completos).
+        def microarea_linked?(citizen)
+          fci = CitizenScope.latest_fci_payload(citizen)
+          fcd = latest_fcd_payload(citizen)
+          return false if fci.blank? || fcd.blank?
+
+          fci_micro = fci_micro_area_code(fci)
+          fcd_micro = fcd_micro_area_code(fcd)
+          return false if fci_micro.blank? || fcd_micro.blank?
+
+          normalize_micro_area(fci_micro) == normalize_micro_area(fcd_micro)
+        end
+
+        def fci_flag_present?(citizen, flag)
+          payload = CitizenScope.latest_fci_payload(citizen)
+          return false if payload.blank?
+
+          CitizenScope.condition_truthy?(payload, flag.to_s)
+        end
+
+        def fci_micro_area_code(payload)
+          ident = find_section(payload, %w[identificacaoUsuarioCidadao identificacao_usuario_cidadao dadosIdentificacao])
+          ident_micro = ident.is_a?(Hash) ? dig_any(ident, %w[microArea micro_area codigoMicroArea codigo_micro_area]) : nil
+          ident_micro.presence || dig_any(payload, %w[microArea micro_area codigoMicroArea codigo_micro_area])
+        end
+
+        def fcd_micro_area_code(payload)
+          dig_any(payload, %w[microArea micro_area codigoMicroArea codigo_micro_area])
+        end
+
+        def normalize_micro_area(value)
+          value.to_s.strip.sub(/\A0+/, "").presence || value.to_s.strip
         end
 
         def fci_updated_at(citizen)

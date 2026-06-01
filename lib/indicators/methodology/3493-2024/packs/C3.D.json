@@ -20,14 +20,18 @@
       "flag": "pregnant"
     },
     "numerator": {
-      "type": "anthropometry_count_gte",
+      "type": "gestational_evidence_count_gte",
+      "measure": "anthropometry",
       "record_types": [
         "FAI",
         "FVD",
         "FP"
       ],
-      "within_months": 9,
-      "minimum_count": 7
+      "minimum_count": 7,
+      "min_gestational_weeks": 0,
+      "max_gestational_weeks": 42,
+      "lookback_months": 15,
+      "active_only": false
     }
   }
 }

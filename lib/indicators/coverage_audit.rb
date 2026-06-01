@@ -2,6 +2,7 @@
 
 module Indicators
   module CoverageAudit
+    EXPECTED_MATRIX_ROWS = 53
     CITIZEN_SCOPE_TYPES = %w[
       citizens_on_team citizens_with_condition citizens_age_gte citizens_age_lte citizens_sex_female
     ].freeze
@@ -12,6 +13,8 @@ module Indicators
       mici_micdt_complete fci_updated_within contact_and_attendance satisfaction_survey
       consult_count_gte anthropometry_count_gte visit_count_gte acs_two_visit_schedule blood_pressure_count_gte
       first_consult_by_age first_prenatal_consult vaccination_present vaccination_immunobiologic
+      gestational_vaccination_immunobiologic gestational_clinical_predicate gestational_evidence_count_gte
+      puerperium_consult puerperium_visit fci_flag_present microarea_linked
     ].freeze
 
     TEAM_SCORE_MODES = %w[
@@ -85,8 +88,47 @@ module Indicators
         "bp_coverage" => bp_coverage_summary(pack_by_code, db_by_code),
         "resolver_types" => resolver_types,
         "missing_resolvers" => missing_resolvers_for(packs),
-        "matrix_path" => Rails.root.join("docs/indicators/methodology-coverage-matrix.md").to_s
+        "matrix_path" => Rails.root.join("docs/indicators/methodology-coverage-matrix.md").to_s,
+        "matrix_status" => matrix_status_summary
       }
+    end
+
+    def matrix_status_summary(path = Rails.root.join("docs/indicators/methodology-coverage-matrix.md"))
+      return {} unless path.exist?
+
+      lines = path.read.lines
+      start_idx = lines.index { |line| line.start_with?("## Component II") } || 0
+      counts = Hash.new(0)
+
+      lines[start_idx..].each do |line|
+        next unless line.strip.start_with?("|")
+        next if line.include?("---|")
+        next if line.include?("Significado") || line.include?("Resumo numerador")
+
+        cells = line.split("|").map(&:strip)
+        next if cells.size < 4
+
+        status_cell = cells.reverse.find { |cell| cell.match?(/\A(done|partial|external|todo)\b/i) }
+        next unless status_cell
+
+        match = status_cell.match(/\A(done|partial|external|todo)\b/i)
+
+        counts[match[1].downcase] += 1
+      end
+
+      total = counts.values.sum
+      done = counts["done"]
+      summary = {
+        "done" => done,
+        "partial" => counts["partial"],
+        "external" => counts["external"],
+        "todo" => counts["todo"],
+        "total" => total,
+        "done_pct" => total.positive? ? ((done.to_f / total) * 100).round(1) : 0.0
+      }
+      summary["expected_total"] = EXPECTED_MATRIX_ROWS
+      summary["total_mismatch"] = true if total.positive? && total != EXPECTED_MATRIX_ROWS
+      summary
     end
 
     def load_disk_packs
@@ -219,9 +261,26 @@ module Indicators
     def check_clause_type!(missing, pack, clause)
       type = clause["type"]
       ref = "#{pack.dig('catalog', 'code')}.#{pack['rule_code']}"
-      return if CITIZEN_SCOPE_TYPES.include?(type) || CLINICAL_EVIDENCE_TYPES.include?(type)
+      unless CITIZEN_SCOPE_TYPES.include?(type) || CLINICAL_EVIDENCE_TYPES.include?(type)
+        missing << "#{ref}: unknown clause type #{type}"
+        return
+      end
 
-      missing << "#{ref}: unknown clause type #{type}"
+      validate_gestational_evidence_clause!(missing, ref, clause) if type == "gestational_evidence_count_gte"
     end
+
+    def validate_gestational_evidence_clause!(missing, ref, clause)
+      measure = clause["measure"].to_s
+      allowed = DslV1::Resolvers::GestationalAnchor::GESTATIONAL_EVIDENCE_MEASURES
+      unless allowed.include?(measure)
+        missing << "#{ref}: gestational_evidence_count_gte unknown measure #{measure.inspect}"
+      end
+
+      return unless %w[consult visit].include?(measure)
+      return if clause["predicate"].present?
+
+      missing << "#{ref}: gestational_evidence_count_gte measure #{measure} requires predicate"
+    end
+    private_class_method :validate_gestational_evidence_clause!
   end
 end

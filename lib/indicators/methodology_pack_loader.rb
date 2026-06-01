@@ -62,7 +62,7 @@ module Indicators
         code = pack.dig("catalog", "code")
         rule_code = pack.fetch("rule_code")
         path = staging.join("#{code}.#{rule_code}.json")
-        path.write(JSON.pretty_generate(pack))
+        path.write("#{JSON.pretty_generate(pack)}\n")
       end
 
       staging.glob("*.json").each do |path|

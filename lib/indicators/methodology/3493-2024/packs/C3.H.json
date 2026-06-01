@@ -20,14 +20,29 @@
       "flag": "pregnant"
     },
     "numerator": {
-      "type": "clinical_predicate",
+      "type": "gestational_clinical_predicate",
       "record_types": [
         "FAI"
       ],
-      "within_months": 9,
+      "min_gestational_weeks": 28,
+      "max_gestational_weeks": 42,
+      "lookback_months": 15,
+      "active_only": false,
       "predicate": {
-        "type": "procedure_present",
-        "code": "0214010058"
+        "type": "procedure_any_present",
+        "codes": [
+          "0214010040",
+          "0214010279",
+          "0214010058",
+          "0214010074",
+          "0214010082",
+          "0214010252",
+          "0213010780",
+          "0213010500",
+          "0202031098",
+          "0202031110",
+          "0202031179"
+        ]
       }
     }
   }

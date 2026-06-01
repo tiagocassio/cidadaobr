@@ -23,7 +23,7 @@ Pilot users need auditability: which BP is implemented, which LEDI field is miss
 
 4. **Linkage (Onda 1)** implements MICI/MICDT, FCI update window, contact+attendance counts, V_LIM tier cap, and eAP via `RuleCatalog` (eAP inherits eSF packs).
 
-5. **External data** (V-SAT survey import, SIAPS conciliation) remains a later wave and does not block LEDI-based BPs; `satisfaction_survey` uses encounter fallback until import exists.
+5. **External data** (V-SAT survey import, SIAPS conciliation) remains a later wave and does not block LEDI-based BPs. `V_SAT` pack uses `satisfaction_survey` with `external_only: true` and `fallback_encounter: false` until MS import exists; CVAT SAT bonus stays disabled via `external_until_import`.
 
 6. **Financial repasse** in `Scoring` stays illustrative; methodology scores use MS scales where specified but do not claim official Portaria repasse tables.
 
@@ -36,7 +36,8 @@ Pilot users need auditability: which BP is implemented, which LEDI field is miss
 - Seeds become a thin loader; diffs to methodology are reviewed in `methodology_pack_definitions.rb` + exported JSON + matrix, not 400-line seed files.
 - Specs and `rake indicators:audit_coverage` guard pack/DB/resolver alignment only; matrix `partial`/`todo` rows are progress tracking and do not fail the rake.
 - ADR-0003 MVP proxies are superseded for linkage and quality indicators; B/M indicators retain single-rule packs with room for LEDI field refinement.
-- TASK-05-08 is **partial** until matrix status ≥90% done per wave acceptance.
+- TASK-05-08 is **Done** (2026-05-30): matrix **48/53 `done` (~90,6%)** per ADR-0005 gate; remaining `partial`/`external` tracked in the matrix for onda 2.
+- **`mici_complete?` (EPIC-05b):** no fallback to municipal `citizens` columns — tenants must have valid FCI `identificacaoUsuarioCidadao` before V_CAD_COM scores; re-import or backfill FCI on deploy.
 
 ## References
 
