@@ -1,7 +1,8 @@
 # Decisão de roadmap — pós-piloto Fase 4
 
-**Status:** Opção A — Fase 5 (EPIC-06/07) em andamento; gate E2E campanhas pendente (jun/2026)  
-**Plano mestre:** [padrão_ledi_e-sus_4f004208.plan.md](../padrão_ledi_e-sus_4f004208.plan.md) — commit ref `25bd047`  
+**Status:** Opção A — Fase 5 (EPIC-06/07) em andamento; specs E2E ok; **gate UI piloto pendente** (jun/2026)  
+**Status consolidado:** [status-plano-2026-06.md](status-plano-2026-06.md)  
+**Plano mestre:** [padrão_ledi_e-sus_4f004208.plan.md](../padrão_ledi_e-sus_4f004208.plan.md) — HEAD `6949e68`  
 **Gate técnico Fase 4/4b:** concluído — [ADR-0003](../adr/0003-epic05-mvp-scope.md), [ADR-0005](../adr/0005-methodology-coverage.md)
 
 ---
@@ -17,7 +18,7 @@
 | Repasse em R$ | **Ilustrativo** (TASK-05-07) |
 | `phase-4-indicators` | completed |
 | `phase-4b-methodology` | completed |
-| `phase-5-field-campaigns` | **in_progress** — wizard vacina + mapa + reserve/dispatch no código; **gate E2E** pendente |
+| `phase-5-field-campaigns` | **in_progress** — código + specs gate ok (`6949e68`, 21 ex.); **piloto UI** pendente |
 | EPIC-12 (referência MS) | **partial** — jobs + API `/reference/*`; release versionada pendente |
 
 ---
@@ -40,7 +41,7 @@
 - [ ] **Opção C — Paralelo:** EPIC-06/07 + TASK-05-07
 - [ ] **Opção D — Mobile first:** descartada — Flutter só Fase 8
 
-**Próximo passo:** validar gate Fase 5 (campanha domiciliar + vacina E2E, specs, checklist piloto).
+**Próximo passo:** (1) ~~specs gate~~ ok 2026-06-01; **(2) piloto UI Fase 5**; (3) marcar EPIC-06/07 + `phase-5` completed. Paralelo: EPIC-12. PNI: onda 2 — [status-plano-2026-06.md](status-plano-2026-06.md).
 
 ---
 

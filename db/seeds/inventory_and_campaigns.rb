@@ -37,6 +37,18 @@ StockBalance.find_or_initialize_by(
   supply_item: syringe
 ).update!(quantity: 1_000)
 
+visit_kit = SupplyItem.find_or_initialize_by(municipality: municipality, code: "VISIT_KIT")
+visit_kit.assign_attributes(name: "Kit visita domiciliar", unit: "kit", active: true)
+visit_kit.save!
+
+HealthFacility.where(municipality: municipality).find_each do |facility|
+  StockBalance.find_or_initialize_by(
+    municipality: municipality,
+    health_facility: facility,
+    supply_item: visit_kit
+  ).update!(quantity: 500)
+end
+
 vaccination_room = ConsultationRoom.find_or_initialize_by(
   municipality: municipality,
   health_facility: facility_a,
@@ -48,16 +60,25 @@ vaccination_room.save!
 starts_on = Date.current
 ends_on = starts_on + 6.days
 (starts_on..ends_on).each do |date|
-  RoomCapacitySlot.find_or_create_by!(
+  slot = RoomCapacitySlot.find_by(
     municipality: municipality,
     health_facility: facility_a,
     consultation_room: vaccination_room,
-    slot_date: date,
-    starts_at: Time.zone.parse("#{date} 08:00"),
-    ends_at: Time.zone.parse("#{date} 17:00")
-  ) do |slot|
-    slot.capacity = 80
-    slot.booked_count = 0
+    slot_date: date
+  )
+  if slot
+    slot.update!(capacity: 80, booked_count: 0)
+  else
+    RoomCapacitySlot.create!(
+      municipality: municipality,
+      health_facility: facility_a,
+      consultation_room: vaccination_room,
+      slot_date: date,
+      starts_at: Time.zone.parse("#{date} 08:00"),
+      ends_at: Time.zone.parse("#{date} 17:00"),
+      capacity: 80,
+      booked_count: 0
+    )
   end
 end
 

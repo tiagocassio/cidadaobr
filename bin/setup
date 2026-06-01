@@ -32,7 +32,8 @@ FileUtils.chdir APP_ROOT do
       "POSTGRES_APP_USER" => "postgres",
       "POSTGRES_APP_PASSWORD" => "postgres",
       "POSTGRES_SCHEMA_USER" => "postgres",
-      "POSTGRES_SCHEMA_PASSWORD" => "postgres"
+      "POSTGRES_SCHEMA_PASSWORD" => "postgres",
+      "CIDADAOBR_APP_ROLE_PASSWORD" => "cidadaobr_app"
     },
     "bin/rails db:prepare"
   )

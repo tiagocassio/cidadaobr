@@ -18,8 +18,18 @@ module Routing
           routes_published = 0
 
           ActiveRecord::Base.transaction do
+            draft_routes = campaign.visit_routes
+              .where(route_date: route_date, status: "draft")
+              .includes(:visit_route_provisioning)
+              .to_a
+
+            unless draft_routes.all? { |route| route.visit_route_provisioning&.status == "reserved" }
+              message = I18n.t("cidadaobr.campaigns.home_visit.flash.publish_route_provisioning_not_reserved")
+              raise ActiveRecord::Rollback
+            end
+
             Inventory::ProvisioningValidator.lock_stock_for_home_visit!(campaign: campaign)
-            Inventory::PreviewCampaignProvisioning.rollup!(campaign: campaign)
+            Inventory::PreviewCampaignProvisioning.rollup!(campaign: campaign, route_date: route_date)
             provisioning = campaign.reload.home_visit_campaign_provisioning
             unless provisioning&.status == "reserved"
               message = if provisioning&.status == "blocked"

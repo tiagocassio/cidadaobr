@@ -575,8 +575,8 @@ Sprint 5 (bootstrap repos Flutter) **adiado para Fase 8**. “Celular” em EPIC
 | EPIC-04 | Parcial (API F3) | TASK-04-01..05; app Flutter = **Fase 8** |
 | EPIC-05 | Concluído (MVP) | Painel, gaps, DSL; repasse ilustrativo |
 | EPIC-05b | Concluído | Matriz **52/53 `done`**; V_SAT via `TeamSatisfactionSurveyScore` + import; 1 `partial` (C2.E) |
-| EPIC-06 | **~95%** | Wizard vacina + specs E2E; fix `::Campaigns::` no controller domiciliar; UI piloto pendente |
-| EPIC-07 | **~90%** | Fluxo HTTP E2E verde (targets→dispatch); mapa + romaneio; TASK-07-09 progresso pendente |
+| EPIC-06 | **~95%** | Wizard vacina + specs gate ok (`6949e68`); **piloto UI** pendente |
+| EPIC-07 | **~90%** | Fluxo HTTP E2E verde; mapa + romaneio; piloto UI + TASK-07-09 pendente |
 | EPIC-12 | **~40%** | Jobs + API reference em `main`; release versionada + gate EPIC-09 pendente |
 | EPIC-08 | Pendente (Fase 8) | App Campo |
 
@@ -597,15 +597,15 @@ Sprint 5 (bootstrap repos Flutter) **adiado para Fase 8**. “Celular” em EPIC
 | TASK-07-06 WEB-CAMP-06 | Partial — `preview_provisioning` + `update_provisioning`; UX déficit/blocked a polir |
 | TASK-07-07 DispatchTeamSupplyKit | Partial — command + `team_supply_dispatches` index/show |
 | TASK-07-08 WEB-CAMP-03 mapa | Partial — `visit_route_map_controller` + `route_map` |
-| TASK-07-09 WEB-CAMP-04 progresso | Pendente |
+| TASK-07-09 WEB-CAMP-04 progresso | Parcial — `VisitRouteProgress` + specs; polish UX opcional |
 
 ---
 
 ## Roteiro de continuação (S10+)
 
-**Onde estamos (2026-06-01):** Fases **0–4b** concluídas. **Fase 5** — funcionalidades principais de EPIC-06/07 no código (`25bd047`); falta **validar gate E2E** (piloto + specs). **EPIC-12** iniciado (jobs/API); não bloqueia fechar Fase 5, mas **bloqueia Fase 6 clínica** (combos CIAP/CID/SIGTAP). **Mobile = Fase 8** apenas.
+**Onde estamos (2026-06-01):** Fases **0–4b** concluídas (C2.E `partial` — proxy PNI; **não bloqueia**). **Fase 5** — EPIC-06/07 no código (`6949e68`); specs E2E ok; **gate UI piloto pendente**. **EPIC-12** ~40%; bloqueia Fase 6. **PNI:** calendários MS por faixa + **atualização anual versionada** (EPIC-12) — ver [status-plano-2026-06.md](docs/commercial/status-plano-2026-06.md).
 
-**Objetivo imediato:** fechar **Gate Fase 5**; em paralelo opcional, completar **EPIC-12** antes de S13 (Fase 6).
+**Objetivo imediato:** fechar **Gate Fase 5 (UI)**; paralelo **EPIC-12**; onda 2 PNI após gate F5.
 
 ### Visão por fases
 
@@ -638,11 +638,11 @@ flowchart LR
 
 | Ordem | Sprint | Task | Status | Entrega restante |
 |-------|--------|------|--------|------------------|
-| 1 | **S10** | **Gate E2E** | Pendente | Uma campanha domiciliar piloto: público-alvo → rotas publicadas → `ReserveVisitRouteSupplies` → `DispatchTeamSupplyKit` |
-| 2 | **S10** | **TASK-07-06** | Parcial | Polir WEB-CAMP-06: déficit por item, `blocked`, override manual |
-| 3 | **S10** | **TASK-06-04** | Parcial | Wizard vacina + `ProvisioningValidator` validados ponta a ponta (UI) |
-| 4 | **S10** | **Specs** | Pendente | `spec/requests/web/stock_and_campaigns_spec.rb` + reserve/dispatch verdes |
-| 5 | **S11** | **TASK-07-09** | Pendente | WEB-CAMP-04 — progresso por equipe/rota |
+| 1 | **S10** | **Gate UI piloto** | Pendente | Campanha domiciliar + vacina + romaneio + mapa na web (logins seed) |
+| 2 | **S10** | **Specs gate** | Feito (revalidar) | `stock_and_campaigns_spec` + `reserve_visit_route_supplies` — 21 examples |
+| 3 | **S10** | **TASK-07-06** | Parcial | Polir WEB-CAMP-06: déficit por item, `blocked`, override manual |
+| 4 | **S10** | **TASK-06-04 UI** | Parcial | Wizard vacina validado na UI (spec já verde) |
+| 5 | **S11** | **TASK-07-09** | Parcial | WEB-CAMP-04 — specs ok; polish UX opcional |
 | 6 | **S11** | **TASK-07-03** | Parcial | Preview enriquecido (`citizen_count`, tabela déficit) |
 | 7 | **S12** | **TASK-07-04** | Parcial | TSP ótimo (hoje nearest-neighbor + clustering PostGIS) — **pós-gate** se piloto aceitar MVP |
 | 8 | **S12** | **Docs piloto** | Pendente | Atualizar [`checklist-piloto-prefeitura.md`](docs/commercial/checklist-piloto-prefeitura.md) com fluxo Fase 5 |
@@ -653,7 +653,7 @@ flowchart LR
 
 - [x] Campanha domiciliar E2E (automático) — `stock_and_campaigns_spec` exemplo *completes domiciliary gate flow via HTTP* (2026-06-01)
 - [x] Campanha vacinação wizard + `ProvisioningValidator` (automático) — mesmo arquivo, exemplo *completes wizard steps through provisioning approval*
-- [x] Request specs verdes — 21 examples, 0 failures (`stock_and_campaigns` + `reserve_visit_route_supplies`)
+- [x] Request specs verdes — 25 examples, 0 failures (gate + `VisitRouteProgress`, 2026-06-01)
 - [ ] Validação manual UI piloto — [`piloto-validacao-tecnica.md`](docs/commercial/piloto-validacao-tecnica.md) + logins seed
 - [x] Checklist piloto Fase 5 — seção em [`checklist-piloto-prefeitura.md`](docs/commercial/checklist-piloto-prefeitura.md)
 - [ ] EPIC-06 e EPIC-07 marcados **concluídos** no [checklist executivo](#checklist-por-épico-executivo) — após validação manual UI
@@ -684,7 +684,7 @@ flowchart LR
 
 | Item | Épico | Nota |
 |------|-------|------|
-| C2.E PNI proxy | EPIC-05b | Único BP `partial` na [matriz](docs/indicators/methodology-coverage-matrix.md) |
+| C2.E PNI completo + release anual | EPIC-05b + EPIC-12 | Único BP `partial`; import versionado MS — [status-plano-2026-06.md](docs/commercial/status-plano-2026-06.md) §3 |
 | TASK-05-07 repasse | EPIC-05 | Coeficientes oficiais quando Portaria fechar |
 | TASK-07-04 TSP | EPIC-07 | Substituir nearest-neighbor — não bloqueia gate se piloto aceitar rota MVP |
 | ADR-0004 | EPIC-12 | Fontes UFSC + DATASUS |
@@ -700,10 +700,12 @@ flowchart LR
 
 ### Próximo passo concreto
 
-1. **Validar E2E** campanha domiciliar na web (seed piloto: `admin@cidadaobr.local` / `ubs.centro@cidadaobr.local`)
-2. **Specs** `stock_and_campaigns` + reserve/dispatch
-3. **Marcar gate** e EPIC-06/07 no [checklist executivo](#checklist-por-épico-executivo)
-4. **Paralelo:** fechar release EPIC-12 antes de walk-in (Fase 6)
+Ver **[status-plano-2026-06.md](docs/commercial/status-plano-2026-06.md)** (documento único jun/2026).
+
+1. Revalidar specs gate pós-`6949e68`
+2. **Piloto UI** Fase 5 (4 fluxos no checklist prefeitura)
+3. Marcar EPIC-06/07 + `phase-5` completed
+4. Paralelo EPIC-12; depois **Onda 2a PNI** (calendário versionado, C2.E `done`)
 
 ---
 
@@ -3165,8 +3167,8 @@ APIs Field (`TASK-08-01`, `TASK-08-02`, `TASK-08-07`) podem ser entregues **ante
 - [~] **EPIC-04** CidadãoBR Saúde — Portal cidadão (**Fase 3:** API TASK-04-01..05 ok; **Fase 8:** app Flutter TASK-04-06/07)
 - [x] **EPIC-05** CidadãoBR Saúde Gestão — Indicadores 3.493 MVP (Fase 4; repasse ilustrativo)
 - [x] **EPIC-05b** Cobertura Notas Metodológicas 3493 (52/53 BPs `done`; [matriz](docs/indicators/methodology-coverage-matrix.md))
-- [~] **EPIC-06** CidadãoBR Saúde Gestão — Estoque e Campanhas (~90% — wizard vacina; gate E2E pendente)
-- [~] **EPIC-07** CidadãoBR Saúde Gestão — Rotas e Provisionamento (~85% — mapa + reserve/dispatch + romaneio; gate E2E + TASK-07-09 pendente)
+- [~] **EPIC-06** CidadãoBR Saúde Gestão — Estoque e Campanhas (~95% — specs gate ok; **piloto UI** pendente)
+- [~] **EPIC-07** CidadãoBR Saúde Gestão — Rotas e Provisionamento (~90% — specs gate ok; piloto UI + TASK-07-09 polish pendente)
 - [ ] **EPIC-08** CidadãoBR Saúde Campo — App Profissional (**Fase 8**; APIs Field no monólito)  
 - [ ] **EPIC-09** CidadãoBR Saúde — LEDI Completo e PEC (Fase 6 core; Field UI Fase 8)  
 - [ ] **EPIC-10** CidadãoBR Saúde — Cidadão Plus (Fase 6 API; app UI Fase 8)  

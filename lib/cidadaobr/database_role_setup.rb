@@ -3,7 +3,8 @@
 module Cidadaobr
   module DatabaseRoleSetup
     APP_ROLE = "cidadaobr_app"
-    APP_PASSWORD = ENV.fetch("POSTGRES_APP_PASSWORD", "cidadaobr_app")
+    # Senha do papel de runtime — não usar POSTGRES_APP_PASSWORD (no bootstrap vira "postgres").
+    APP_PASSWORD = ENV.fetch("CIDADAOBR_APP_ROLE_PASSWORD", "cidadaobr_app")
 
     module_function
 

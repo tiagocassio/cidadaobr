@@ -3,6 +3,7 @@
 module Inventory
   class PreviewCampaignProvisioning
     Line = Data.define(:key, :label, :quantity_required, :unit, :calculation_source, :supply_item_code, :immunobiological_product_id)
+    RollupView = Data.define(:status, :totals_json)
 
     class << self
       def preview(campaign:)
@@ -42,60 +43,25 @@ module Inventory
         lines
       end
 
-      def rollup!(campaign:)
-        totals = Hash.new { |hash, key| hash[key] = { "label" => key, "quantity_required" => 0, "unit" => "unit" } }
+      def rollup_snapshot(campaign:, route_date: nil)
+        state = build_rollup_state(campaign: campaign, route_date: route_date)
+        RollupView.new(status: state[:status], totals_json: state[:totals_json])
+      end
 
-        campaign.visit_routes.includes(:visit_route_provisioning).find_each do |route|
-          next unless route.visit_route_provisioning
-
-          route.visit_route_provisioning.lines_json.each do |line|
-            line = line.stringify_keys
-            bucket = totals[line["key"]]
-            bucket["label"] = line["label"]
-            bucket["unit"] = line["unit"]
-            bucket["supply_item_code"] = line["supply_item_code"]
-            bucket["immunobiological_product_id"] = line["immunobiological_product_id"]
-            bucket["quantity_required"] += line["quantity_required"].to_i
-          end
-        end
-
-        preview_lines = preview(campaign: campaign)
-        preview_lines.each do |line|
-          bucket = totals[line.key]
-          bucket["label"] = line.label
-          bucket["unit"] = line.unit
-          bucket["supply_item_code"] = line.supply_item_code
-          bucket["immunobiological_product_id"] = line.immunobiological_product_id
-          bucket["quantity_required"] = [ bucket["quantity_required"], line.quantity_required ].max
-        end
-
-        blocked = totals.values.any? do |line|
-          available = available_for_line(campaign: campaign, line: line)
-          line["quantity_available"] = available
-          line["deficit"] = [ line["quantity_required"].to_i - available, 0 ].max
-          line["deficit"].positive?
-        end
-
+      def rollup!(campaign:, route_date: nil)
+        state = build_rollup_state(campaign: campaign, route_date: route_date)
         record = HomeVisitCampaignProvisioning.find_or_initialize_by(home_visit_campaign: campaign)
-        existing_status = record.status
-        status = if blocked
-          "blocked"
-        elsif existing_status.in?(%w[reserved dispatched])
-          existing_status
-        else
-          "calculated"
-        end
         record.assign_attributes(
           municipality: campaign.municipality,
           health_facility: campaign.health_facility,
-          totals_json: totals.values,
-          status: status
+          totals_json: state[:totals_json],
+          status: state[:status]
         )
         record.save!
         record
       end
 
-      def rollup_status!(campaign:)
+      def rollup_status!(campaign:, route_date: nil)
         record = campaign.home_visit_campaign_provisioning
         return unless record
 
@@ -109,20 +75,21 @@ module Inventory
         end
 
         blocked = totals.any? { |line| line["deficit"].to_i.positive? }
-        status = if blocked
-          "blocked"
-        elsif record.status.in?(%w[reserved dispatched])
-          record.status
-        else
-          "calculated"
-        end
+        status = resolve_provisioning_status(
+          campaign: campaign,
+          existing_status: record.status,
+          blocked: blocked,
+          route_date: route_date
+        )
 
         record.update!(totals_json: totals, status: status)
         record
       end
 
-      def apply_campaign_totals_to_routes!(campaign:, totals:)
-        routes = campaign.visit_routes.includes(:visit_route_provisioning, :visit_route_stops).to_a
+      def apply_campaign_totals_to_routes!(campaign:, totals:, route_date: nil)
+        routes = campaign_routes_scope(campaign: campaign, route_date: route_date)
+          .includes(:visit_route_provisioning, :visit_route_stops)
+          .to_a
         total_stops = routes.sum { |route| route.visit_route_stops.size }
         return if total_stops.zero?
 
@@ -191,6 +158,98 @@ module Inventory
       end
 
       private
+
+      def build_rollup_state(campaign:, route_date: nil)
+        totals = Hash.new { |hash, key| hash[key] = { "label" => key, "quantity_required" => 0, "unit" => "unit" } }
+
+        provisioning_routes_scope(campaign: campaign, route_date: route_date).find_each do |route|
+          next unless route.visit_route_provisioning
+
+          route.visit_route_provisioning.lines_json.each do |line|
+            merge_line_into_totals!(totals, line, accumulate: true)
+          end
+        end
+
+        unless route_date.present?
+          preview(campaign: campaign).each do |line|
+            merge_line_into_totals!(totals, line, accumulate: false)
+          end
+        end
+
+        blocked = totals.values.any? do |line|
+          available = available_for_line(campaign: campaign, line: line)
+          line["quantity_available"] = available
+          line["deficit"] = [ line["quantity_required"].to_i - available, 0 ].max
+          line["deficit"].positive?
+        end
+
+        existing_status = campaign.home_visit_campaign_provisioning&.status
+        status = resolve_provisioning_status(
+          campaign: campaign,
+          existing_status: existing_status,
+          blocked: blocked,
+          route_date: route_date
+        )
+
+        { totals_json: totals.values, status: status }
+      end
+
+      def provisioning_routes_scope(campaign:, route_date: nil)
+        campaign_routes_scope(campaign: campaign, route_date: route_date).includes(:visit_route_provisioning)
+      end
+
+      def campaign_routes_scope(campaign:, route_date: nil, statuses: nil)
+        scope = VisitRoute.where(home_visit_campaign_id: campaign.id)
+        scope = scope.where(status: statuses) if statuses.present?
+        route_date.present? ? scope.where(route_date: route_date) : scope
+      end
+
+      def merge_line_into_totals!(totals, line, accumulate:)
+        attrs = line.is_a?(Line) ? line_to_bucket_attrs(line) : line.stringify_keys
+        line_key = attrs["key"].presence || attrs["supply_item_code"].presence || attrs["label"]
+        bucket = totals[line_key]
+        bucket["key"] = line_key
+        bucket["label"] = attrs["label"]
+        bucket["unit"] = attrs["unit"]
+        bucket["supply_item_code"] = attrs["supply_item_code"]
+        bucket["immunobiological_product_id"] = attrs["immunobiological_product_id"]
+        qty = attrs["quantity_required"].to_i
+        bucket["quantity_required"] = if accumulate
+          bucket["quantity_required"] + qty
+        else
+          [ bucket["quantity_required"], qty ].max
+        end
+      end
+
+      def line_to_bucket_attrs(line)
+        {
+          "key" => line.key,
+          "label" => line.label,
+          "unit" => line.unit,
+          "supply_item_code" => line.supply_item_code,
+          "immunobiological_product_id" => line.immunobiological_product_id,
+          "quantity_required" => line.quantity_required
+        }
+      end
+
+      def resolve_provisioning_status(campaign:, existing_status:, blocked:, route_date: nil)
+        if blocked
+          "blocked"
+        elsif routes_pending_reserve?(campaign: campaign, route_date: route_date)
+          "calculated"
+        elsif existing_status.in?(%w[reserved dispatched])
+          existing_status
+        else
+          "calculated"
+        end
+      end
+
+      def routes_pending_reserve?(campaign:, route_date: nil)
+        campaign_routes_scope(campaign: campaign, route_date: route_date, statuses: %w[draft published])
+          .left_joins(:visit_route_provisioning)
+          .where("visit_route_provisionings.id IS NULL OR visit_route_provisionings.status NOT IN (?)", %w[reserved dispatched])
+          .exists?
+      end
 
       def available_for_line(campaign:, line:)
         case line["unit"]

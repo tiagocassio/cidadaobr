@@ -1,9 +1,26 @@
 <section>
-  <%= link_to t("cidadaobr.campaigns.back"), web_campaigns_home_visit_campaign_path(@campaign), class: "text-sm text-slate-600 underline" %>
-  <h2 class="mt-2 mb-6 text-2xl font-bold"><%= t("cidadaobr.campaigns.home_visit.preview_provisioning") %></h2>
+  <%= link_to t("cidadaobr.campaigns.back"), web_campaigns_home_visit_campaign_path(@campaign, route_date: @route_date.iso8601), class: "text-sm text-slate-600 underline" %>
+  <h2 class="mt-2 mb-2 text-2xl font-bold"><%= t("cidadaobr.campaigns.home_visit.preview_provisioning") %></h2>
+  <p class="mb-6 text-sm font-medium text-slate-700"><%= t("cidadaobr.campaigns.home_visit.provisioning_day_label", date: l(@route_date)) %></p>
+
+  <% selectable_dates = (@route_dates + [ @route_date ]).uniq.sort %>
+  <% if selectable_dates.any? %>
+    <form method="get" class="mb-4 flex flex-wrap items-end gap-3 text-sm">
+      <label class="flex flex-col gap-1">
+        <span class="font-medium"><%= t("cidadaobr.campaigns.home_visit.route_date") %></span>
+        <select name="route_date" class="rounded border border-slate-300 px-3 py-2">
+          <% selectable_dates.each do |date| %>
+            <option value="<%= date.iso8601 %>" <%= "selected" if date == @route_date %>><%= l(date) %></option>
+          <% end %>
+        </select>
+      </label>
+      <button type="submit" class="rounded border border-slate-300 px-3 py-2"><%= t("cidadaobr.campaigns.home_visit.apply_route_date") %></button>
+    </form>
+    <p class="mb-4 text-sm text-slate-600"><%= t("cidadaobr.campaigns.home_visit.provisioning_route_date_hint") %></p>
+  <% end %>
 
   <div class="mb-4 flex flex-wrap gap-2">
-    <%= button_to t("cidadaobr.campaigns.home_visit.calculate_provisioning"), calculate_provisioning_web_campaigns_home_visit_campaign_path(@campaign), method: :post, class: "rounded bg-slate-800 px-3 py-2 text-sm font-semibold text-white" %>
+    <%= button_to t("cidadaobr.campaigns.home_visit.calculate_provisioning"), calculate_provisioning_web_campaigns_home_visit_campaign_path(@campaign, route_date: @route_date.iso8601), method: :post, class: "rounded bg-slate-800 px-3 py-2 text-sm font-semibold text-white" %>
     <% if @rollup&.status.in?(%w[calculated blocked]) %>
       <%= button_to t("cidadaobr.campaigns.home_visit.reserve_provisioning"), reserve_provisioning_web_campaigns_home_visit_campaign_path(@campaign, all_routes: true), method: :post, class: "rounded bg-amber-700 px-3 py-2 text-sm font-semibold text-white" %>
     <% end %>
@@ -11,11 +28,14 @@
 
   <div class="rounded-lg border border-slate-200 bg-white p-6 text-sm">
     <% if @rollup.present? %>
-      <p class="mb-4"><%= t("cidadaobr.campaigns.provisioning_status") %>: <strong><%= @rollup.status %></strong></p>
+      <p class="mb-4">
+        <%= t("cidadaobr.campaigns.home_visit.provisioning_status_for_day", date: l(@route_date)) %>:
+        <strong><%= @rollup.status %></strong>
+      </p>
 
       <% editable = @rollup.status.in?(%w[calculated blocked]) %>
       <% if editable %>
-        <%= form_with url: update_provisioning_web_campaigns_home_visit_campaign_path(@campaign), method: :patch, class: "space-y-4" do %>
+        <%= form_with url: update_provisioning_web_campaigns_home_visit_campaign_path(@campaign, route_date: @route_date.iso8601), method: :patch, class: "space-y-4" do %>
           <table class="min-w-full">
             <thead>
               <tr class="text-left">

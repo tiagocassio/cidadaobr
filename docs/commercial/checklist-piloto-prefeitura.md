@@ -40,7 +40,7 @@
 
 ## Fase 5 — Campanhas e rotas (web gestão)
 
-Validação técnica automatizada: `bundle exec rspec spec/requests/web/stock_and_campaigns_spec.rb spec/lib/inventory/reserve_visit_route_supplies_spec.rb`
+Validação técnica automatizada: `bundle exec rspec spec/requests/web/stock_and_campaigns_spec.rb spec/lib/inventory/reserve_visit_route_supplies_spec.rb spec/lib/campaigns/visit_route_progress_spec.rb` (25 examples)
 
 - [ ] **Campanha domiciliar:** público-alvo → gerar rotas → calcular/reservar provisionamento → publicar rotas → despachar kit (UI)
 - [ ] **Campanha vacinação:** wizard 4 passos → aprovar provisionamento → publicar (UI)

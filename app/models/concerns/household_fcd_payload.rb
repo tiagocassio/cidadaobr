@@ -27,7 +27,7 @@ module HouseholdFcdPayload
       "micro_area" => micro_area_code
     }.compact
 
-    condicao = housing_conditions.to_h.stringify_keys.each_with_object({}) do |(key, value), hash|
+    condition_payload = housing_conditions.to_h.stringify_keys.each_with_object({}) do |(key, value), hash|
       next if value.blank?
 
       camel = key.camelize(:lower)
@@ -40,7 +40,7 @@ module HouseholdFcdPayload
       "endereco_local_permanencia" => address,
       "st_animais_no_domicilio" => animals_on_premises
     }
-    payload["condicao_moradia"] = condicao if condicao.present?
+    payload["condicao_moradia"] = condition_payload if condition_payload.present?
     coords = coordinates
     if coords
       payload["latitude"] = coords[:lat]

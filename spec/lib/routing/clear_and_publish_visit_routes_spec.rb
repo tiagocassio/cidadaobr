@@ -153,6 +153,154 @@ RSpec.describe Routing::Commands::PublishVisitRoutes do
     end
   end
 
+  it "publishes routes for one date when another date has unreserved draft routes" do
+    with_tenant(membership) do
+      product = create(:immunobiological_product, municipality: municipality)
+      create(
+        :immunobiological_lot,
+        municipality: municipality,
+        health_facility: facility,
+        immunobiological_product: product,
+        quantity_on_hand: 100
+      )
+      campaign = create(
+        :home_visit_campaign,
+        municipality: municipality,
+        health_facility: facility,
+        status: "routes_generated",
+        target_audience_definition: { "immunobiological_product_id" => product.id }
+      )
+      today = Date.current
+      tomorrow = today + 1.day
+      route_today = create(
+        :visit_route,
+        municipality: municipality,
+        health_facility: facility,
+        home_visit_campaign: campaign,
+        care_team: team,
+        route_date: today,
+        status: "draft"
+      )
+      route_tomorrow = create(
+        :visit_route,
+        municipality: municipality,
+        health_facility: facility,
+        home_visit_campaign: campaign,
+        care_team: team,
+        route_date: tomorrow,
+        status: "draft"
+      )
+      line = {
+        "key" => "immunobiological",
+        "label" => product.name,
+        "quantity_required" => 1,
+        "unit" => "dose",
+        "immunobiological_product_id" => product.id
+      }
+      VisitRouteProvisioning.create!(
+        municipality: municipality,
+        health_facility: facility,
+        visit_route: route_today,
+        status: "reserved",
+        lines_json: [ line.merge("quantity_reserved" => 1) ]
+      )
+      VisitRouteProvisioning.create!(
+        municipality: municipality,
+        health_facility: facility,
+        visit_route: route_tomorrow,
+        status: "calculated",
+        lines_json: [ line ]
+      )
+      HomeVisitCampaignProvisioning.create!(
+        municipality: municipality,
+        health_facility: facility,
+        home_visit_campaign: campaign,
+        status: "reserved",
+        totals_json: []
+      )
+
+      result = described_class.call(campaign: campaign, route_date: today)
+
+      expect(result.routes_published).to eq(1)
+      expect(route_today.reload.status).to eq("published")
+      expect(route_tomorrow.reload.status).to eq("draft")
+      expect(campaign.reload.status).not_to eq("scheduled")
+    end
+  end
+
+  it "blocks publish when a draft route has no provisioning" do
+    with_tenant(membership) do
+      campaign = create(
+        :home_visit_campaign,
+        municipality: municipality,
+        health_facility: facility,
+        status: "routes_generated"
+      )
+      route = create(
+        :visit_route,
+        municipality: municipality,
+        health_facility: facility,
+        home_visit_campaign: campaign,
+        care_team: team,
+        route_date: Date.current,
+        status: "draft"
+      )
+      HomeVisitCampaignProvisioning.create!(
+        municipality: municipality,
+        health_facility: facility,
+        home_visit_campaign: campaign,
+        status: "reserved",
+        totals_json: []
+      )
+
+      result = described_class.call(campaign: campaign, route_date: Date.current)
+
+      expect(result.routes_published).to eq(0)
+      expect(result.message).to eq(I18n.t("cidadaobr.campaigns.home_visit.flash.publish_route_provisioning_not_reserved"))
+      expect(route.reload.status).to eq("draft")
+    end
+  end
+
+  it "blocks publish when a draft route is not reserved" do
+    with_tenant(membership) do
+      campaign = create(
+        :home_visit_campaign,
+        municipality: municipality,
+        health_facility: facility,
+        status: "routes_generated"
+      )
+      route = create(
+        :visit_route,
+        municipality: municipality,
+        health_facility: facility,
+        home_visit_campaign: campaign,
+        care_team: team,
+        route_date: Date.current,
+        status: "draft"
+      )
+      VisitRouteProvisioning.create!(
+        municipality: municipality,
+        health_facility: facility,
+        visit_route: route,
+        status: "calculated",
+        lines_json: [ { "key" => "kit", "label" => "Kit", "quantity_required" => 1, "unit" => "kit", "supply_item_code" => "VISIT_KIT" } ]
+      )
+      HomeVisitCampaignProvisioning.create!(
+        municipality: municipality,
+        health_facility: facility,
+        home_visit_campaign: campaign,
+        status: "reserved",
+        totals_json: []
+      )
+
+      result = described_class.call(campaign: campaign, route_date: Date.current)
+
+      expect(result.routes_published).to eq(0)
+      expect(result.message).to eq(I18n.t("cidadaobr.campaigns.home_visit.flash.publish_route_provisioning_not_reserved"))
+      expect(route.reload.status).to eq("draft")
+    end
+  end
+
   it "blocks publish when provisioning is blocked" do
     with_tenant(membership) do
       product = create(:immunobiological_product, municipality: municipality)

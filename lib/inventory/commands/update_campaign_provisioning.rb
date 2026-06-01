@@ -4,7 +4,7 @@ module Inventory
   module Commands
     class UpdateCampaignProvisioning
       class << self
-        def call(campaign:, totals:)
+        def call(campaign:, totals:, route_date: nil)
           record = campaign.home_visit_campaign_provisioning
           raise ArgumentError, "provisionamento não calculado" if record.blank?
           if record.status.in?(%w[reserved dispatched])
@@ -23,9 +23,10 @@ module Inventory
           record.update!(totals_json: normalized)
           Inventory::PreviewCampaignProvisioning.apply_campaign_totals_to_routes!(
             campaign: campaign.reload,
-            totals: normalized
+            totals: normalized,
+            route_date: route_date
           )
-          Inventory::PreviewCampaignProvisioning.rollup_status!(campaign: campaign.reload)
+          Inventory::PreviewCampaignProvisioning.rollup_status!(campaign: campaign.reload, route_date: route_date)
           record.reload
         end
       end

@@ -28,12 +28,24 @@
       <% end %>
     <% end %>
     <%= link_to t("cidadaobr.campaigns.home_visit.preview_provisioning"), preview_provisioning_web_campaigns_home_visit_campaign_path(@campaign), class: "rounded border border-slate-300 px-3 py-2 text-sm" %>
+    <% if @provisioning_reserve_needed %>
+      <%= button_to t("cidadaobr.campaigns.home_visit.reserve_provisioning"), reserve_provisioning_web_campaigns_home_visit_campaign_path(@campaign, all_routes: true, return_to: "show", route_date: @route_date.iso8601), method: :post, class: "rounded bg-amber-700 px-3 py-2 text-sm font-semibold text-white" %>
+    <% end %>
   </div>
+
+  <% if @provisioning_reserve_needed %>
+    <p class="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+      <%= t("cidadaobr.campaigns.home_visit.dispatch_reserve_hint") %>
+    </p>
+  <% end %>
 
   <div class="mb-6 rounded-lg border border-slate-200 bg-white p-6 text-sm">
     <p><strong><%= t("cidadaobr.campaigns.targets_count") %>:</strong> <%= @targets_count %></p>
     <p><strong><%= HomeVisitCampaign.human_attribute_name(:status) %>:</strong> <%= @campaign.status %></p>
     <p><strong><%= t("cidadaobr.campaigns.provisioning_status") %>:</strong> <%= @provisioning&.status || "—" %></p>
+    <% if @routes_for_date.any? %>
+      <p class="text-slate-600"><%= t("cidadaobr.campaigns.home_visit.provisioning_day_label", date: l(@route_date)) %> — <%= t("cidadaobr.campaigns.home_visit.provisioning_campaign_status_hint") %></p>
+    <% end %>
     <% if @phase5_ready %>
       <p class="mt-2 font-semibold text-emerald-700"><%= t("cidadaobr.campaigns.home_visit.phase5_ready") %></p>
     <% end %>
@@ -48,8 +60,15 @@
           <li class="flex flex-wrap items-center justify-between gap-2 py-2">
             <span><%= row[:care_team_name] %></span>
             <span><%= row[:visited_stops] %> / <%= row[:total_stops] %> (<%= row[:completion_pct] %>%)</span>
-            <% if @routes_for_date.any? { |route| route.care_team_id == row[:care_team_id] && route.status == "published" } %>
-              <%= button_to t("cidadaobr.campaigns.home_visit.dispatch_supplies"), dispatch_supplies_web_campaigns_home_visit_campaign_path(@campaign, **route_date_param, care_team_id: row[:care_team_id]), method: :post, class: "rounded border border-slate-300 px-2 py-1 text-xs" %>
+            <% team_routes = @routes_for_date.select { |route| route.care_team_id == row[:care_team_id] && route.status == "published" } %>
+            <% if team_routes.any? %>
+              <% if team_routes.all? { |route| route.visit_route_provisioning&.status == "dispatched" } %>
+                <span class="text-xs text-slate-500"><%= t("cidadaobr.campaigns.home_visit.dispatch_done") %></span>
+              <% elsif team_routes.all? { |route| route.visit_route_provisioning&.status == "reserved" } %>
+                <%= button_to t("cidadaobr.campaigns.home_visit.dispatch_supplies"), dispatch_supplies_web_campaigns_home_visit_campaign_path(@campaign, **route_date_param, care_team_id: row[:care_team_id]), method: :post, class: "rounded border border-slate-300 px-2 py-1 text-xs" %>
+              <% else %>
+                <span class="text-xs text-amber-800"><%= t("cidadaobr.campaigns.home_visit.dispatch_needs_reserve") %></span>
+              <% end %>
             <% end %>
           </li>
         <% end %>

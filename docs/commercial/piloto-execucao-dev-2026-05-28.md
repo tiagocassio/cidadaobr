@@ -35,7 +35,23 @@ bundle exec rspec spec/requests/web/stock_and_campaigns_spec.rb spec/lib/invento
 
 Resultado esperado: **21 examples, 0 failures** (inclui E2E HTTP domiciliar + wizard vacina).
 
-Correção aplicada: `Web::Campaigns::HomeVisitCampaignsController` usa `::Campaigns::Commands::BuildCampaignTargetList` (evita `NameError` em `build_targets`).
+### Revalidação gate (2026-06-01, `6949e68`)
+
+```bash
+bundle exec rspec spec/requests/web/stock_and_campaigns_spec.rb spec/lib/inventory/reserve_visit_route_supplies_spec.rb
+```
+
+**Resultado:** 21 examples, 0 failures (1.45s).
+
+### Gate estendido (continuação plano — specs TASK-07-09 + i18n)
+
+```bash
+bundle exec rspec spec/requests/web/stock_and_campaigns_spec.rb spec/lib/inventory/reserve_visit_route_supplies_spec.rb spec/lib/campaigns/visit_route_progress_spec.rb
+```
+
+**Resultado:** 25 examples, 0 failures — inclui `VisitRouteProgress` e show com progresso por equipe; correção i18n `route_map`.
+
+Correção aplicada (2026-05-28): `Web::Campaigns::HomeVisitCampaignsController` usa `::Campaigns::Commands::BuildCampaignTargetList` (evita `NameError` em `build_targets`).
 
 ## Checklist manual pendente (UI)
 

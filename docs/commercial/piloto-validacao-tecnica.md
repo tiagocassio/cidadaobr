@@ -6,7 +6,11 @@ Checklist manual (~30 min) após `bin/rails db:seed` em ambiente de desenvolvime
 
 ```bash
 docker compose up -d postgres
-bin/rails db:migrate
+bin/setup --skip-server
+# ou, se o banco já existir mas cidadaobr_app falhar:
+# POSTGRES_APP_USER=postgres POSTGRES_APP_PASSWORD=postgres \
+# POSTGRES_SCHEMA_USER=postgres POSTGRES_SCHEMA_PASSWORD=postgres \
+# CIDADAOBR_APP_ROLE_PASSWORD=cidadaobr_app bin/rails db:prepare
 bin/rails db:seed
 ```
 
@@ -36,6 +40,21 @@ Equipes criadas pelo seed:
 | 6 | Painel — equipe eMulti | Indicadores M1–M2 |
 | 7 | B3 (exodontias) | Score de **equipe**, não pendência por cidadão |
 | 8 | Projeção de repasse | Valor visível com **disclaimer** (estimativa, não oficial) |
+
+## Checklist manual — Fase 5 (campanhas e rotas)
+
+Após subir o servidor (`bin/rails server` ou compose), com login `ubs.centro@cidadaobr.local` ou `admin@cidadaobr.local`:
+
+| # | Rota / ação | Resultado esperado |
+|---|-------------|-------------------|
+| F5-1 | `/web/campaigns/home_visit_campaigns` → nova campanha → **Montar público-alvo** | Alvos listados |
+| F5-2 | **Gerar rotas** → **Calcular/reservar provisionamento** → **Publicar rotas** | Status `scheduled`, rotas `published` |
+| F5-3 | Show da campanha: bloco **Progresso das equipes** | Percentual e equipes visíveis |
+| F5-4 | **Despachar kit** por equipe | Romaneio em `/web/stock/team_supply_dispatches` |
+| F5-5 | **Mapa de rotas** (`route_map`) | Mapa com paradas |
+| F5-6 | `/web/campaigns/vaccination_campaigns` → wizard 4 passos → aprovar provisionamento → publicar | Campanha vacina ativa |
+
+Specs automatizados (gate): ver [piloto-execucao-dev-2026-05-28.md](piloto-execucao-dev-2026-05-28.md) — 21 examples @ `6949e68`.
 
 ## Validação automatizada
 

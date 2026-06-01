@@ -232,7 +232,9 @@ RSpec.describe "Web stock and campaigns", type: :request do
         post calculate_provisioning_web_campaigns_home_visit_campaign_path(campaign)
       }.to change { with_tenant(membership) { HomeVisitCampaignProvisioning.count } }.by(1)
 
-      expect(response).to redirect_to(preview_provisioning_web_campaigns_home_visit_campaign_path(campaign))
+      expect(response).to redirect_to(
+        preview_provisioning_web_campaigns_home_visit_campaign_path(campaign, route_date: Date.current.iso8601)
+      )
     end
 
     it "publishes generated routes for the field API" do
@@ -264,7 +266,9 @@ RSpec.describe "Web stock and campaigns", type: :request do
 
       post publish_routes_web_campaigns_home_visit_campaign_path(campaign)
 
-      expect(response).to redirect_to(web_campaigns_home_visit_campaign_path(campaign))
+      expect(response).to redirect_to(
+        web_campaigns_home_visit_campaign_path(campaign, route_date: Date.current.iso8601)
+      )
       expect(with_tenant(membership) { route.reload.status }).to eq("published")
       expect(with_tenant(membership) { campaign.reload.status }).to eq("scheduled")
     end
@@ -297,7 +301,9 @@ RSpec.describe "Web stock and campaigns", type: :request do
 
       post publish_routes_web_campaigns_home_visit_campaign_path(campaign)
 
-      expect(response).to redirect_to(web_campaigns_home_visit_campaign_path(campaign))
+      expect(response).to redirect_to(
+        web_campaigns_home_visit_campaign_path(campaign, route_date: Date.current.iso8601)
+      )
       expect(flash[:alert]).to be_present
       expect(with_tenant(membership) { route.reload.status }).to eq("draft")
     end
@@ -317,6 +323,103 @@ RSpec.describe "Web stock and campaigns", type: :request do
 
       post generate_routes_web_campaigns_home_visit_campaign_path(campaign)
       expect(with_tenant(membership) { campaign.visit_routes.count }).to eq(1)
+    end
+
+    it "shows reserve hint when published routes are not reserved" do
+      campaign = with_tenant(membership) do
+        team = create(:care_team, municipality: municipality, health_facility: facility, name: "Equipe Reserva")
+        citizen = create(:citizen, municipality: municipality, health_facility: facility, care_team: team)
+        camp = create(:home_visit_campaign, municipality: municipality, health_facility: facility, status: "routes_generated")
+        target = create(:campaign_target, municipality: municipality, health_facility: facility, campaign: camp, citizen: citizen)
+        route = create(
+          :visit_route,
+          municipality: municipality,
+          health_facility: facility,
+          home_visit_campaign: camp,
+          care_team: team,
+          route_date: Date.current,
+          status: "published"
+        )
+        create(
+          :visit_route_stop,
+          municipality: municipality,
+          visit_route: route,
+          citizen: citizen,
+          campaign_target: target,
+          stop_order: 1
+        )
+        VisitRouteProvisioning.create!(
+          municipality: municipality,
+          health_facility: facility,
+          visit_route: route,
+          status: "calculated",
+          lines_json: [ { "key" => "kit", "label" => "Kit", "quantity_required" => 1, "unit" => "kit" } ]
+        )
+        camp
+      end
+
+      get web_campaigns_home_visit_campaign_path(campaign, route_date: Date.current.iso8601)
+      expect(response).to have_http_status(:ok)
+      expect(response.body).to include(I18n.t("cidadaobr.campaigns.home_visit.dispatch_reserve_hint"))
+      expect(response.body).to include(I18n.t("cidadaobr.campaigns.home_visit.reserve_provisioning"))
+      expect(response.body).to include(I18n.t("cidadaobr.campaigns.home_visit.dispatch_needs_reserve"))
+    end
+
+    it "returns to campaign show after reserve from show" do
+      campaign = with_tenant(membership) do
+        product = create(:immunobiological_product, municipality: municipality)
+        create(
+          :immunobiological_lot,
+          municipality: municipality,
+          health_facility: facility,
+          immunobiological_product: product,
+          quantity_on_hand: 100
+        )
+        team = create(:care_team, municipality: municipality, health_facility: facility)
+        citizen = create(:citizen, municipality: municipality, health_facility: facility, care_team: team)
+        camp = create(
+          :home_visit_campaign,
+          municipality: municipality,
+          health_facility: facility,
+          status: "targets_built",
+          target_audience_definition: { "immunobiological_product_id" => product.id }
+        )
+        create(:campaign_target, municipality: municipality, health_facility: facility, campaign: camp, citizen: citizen)
+        Routing::Commands::GenerateVisitRoutes.call(campaign: camp, route_date: Date.current)
+        camp
+      end
+
+      post reserve_provisioning_web_campaigns_home_visit_campaign_path(
+        campaign,
+        all_routes: true,
+        return_to: "show",
+        route_date: Date.current.iso8601
+      )
+
+      expect(response).to redirect_to(
+        web_campaigns_home_visit_campaign_path(campaign, route_date: Date.current.iso8601)
+      )
+    end
+
+    it "renders campaign show with team progress after routes exist" do
+      campaign = with_tenant(membership) do
+        team = create(:care_team, municipality: municipality, health_facility: facility, name: "Equipe Piloto")
+        household = create(:household, municipality: municipality, health_facility: facility)
+        citizen = create(:citizen, municipality: municipality, health_facility: facility, care_team: team)
+        create(:household_member, household: household, citizen: citizen)
+        camp = create(:home_visit_campaign, municipality: municipality, health_facility: facility, status: "targets_built")
+        create(:campaign_target, municipality: municipality, health_facility: facility, campaign: camp, citizen: citizen)
+        Routing::Commands::GenerateVisitRoutes.call(campaign: camp, route_date: Date.current)
+        camp.visit_routes.update_all(status: "published")
+        stop = camp.visit_routes.first.visit_route_stops.first
+        stop.update!(status: "visited")
+        camp
+      end
+
+      get web_campaigns_home_visit_campaign_path(campaign)
+      expect(response).to have_http_status(:ok)
+      expect(response.body).to include("Progresso das equipes")
+      expect(response.body).to include("Equipe Piloto")
     end
 
     it "renders route map with geo payload" do
@@ -372,14 +475,18 @@ RSpec.describe "Web stock and campaigns", type: :request do
       expect(with_tenant(membership) { campaign.reload.visit_routes.count }).to eq(1)
 
       post calculate_provisioning_web_campaigns_home_visit_campaign_path(campaign)
-      expect(response).to redirect_to(preview_provisioning_web_campaigns_home_visit_campaign_path(campaign))
+      expect(response).to redirect_to(
+        preview_provisioning_web_campaigns_home_visit_campaign_path(campaign, route_date: Date.current.iso8601)
+      )
 
       post reserve_provisioning_web_campaigns_home_visit_campaign_path(campaign)
       expect(response).to redirect_to(preview_provisioning_web_campaigns_home_visit_campaign_path(campaign))
       expect(with_tenant(membership) { campaign.reload.home_visit_campaign_provisioning.status }).to eq("reserved")
 
       post publish_routes_web_campaigns_home_visit_campaign_path(campaign)
-      expect(response).to redirect_to(web_campaigns_home_visit_campaign_path(campaign))
+      expect(response).to redirect_to(
+        web_campaigns_home_visit_campaign_path(campaign, route_date: Date.current.iso8601)
+      )
       expect(with_tenant(membership) { campaign.reload.status }).to eq("scheduled")
       expect(with_tenant(membership) { campaign.visit_routes.pluck(:status) }).to all(eq("published"))
 
