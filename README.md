@@ -156,8 +156,6 @@ docker compose exec -T postgres psql -U postgres -c "CREATE DATABASE cidadaobr_t
 RAILS_ENV=test POSTGRES_SCHEMA_USER=postgres POSTGRES_SCHEMA_PASSWORD=postgres bin/rails db:migrate
 ```
 
-`AlignSupplyItemsCodeColumn` em DB legado com `sku` renomeia para `code` e remove colunas órfãs — faça backup se houver dados em `category`/`description`/`item_kind`.
-
 ## Serviços
 
 ```bash

@@ -4,7 +4,7 @@
 **Roteiro organizado (fases × épicos × tasks):** [roteiro-organizado-fases-epicos.md](../roteiro-organizado-fases-epicos.md)  
 **EPIC-00 — volta aos trilhos:** [epic-00-remediation.md](../epic-00-remediation.md) + [ADR-0006](../adr/0006-platform-write-contract.md)
 **Decisão PO:** [roadmap-decision-fase5.md](roadmap-decision-fase5.md) — Opção A (Fase 5 antes de mobile/Fase 6)  
-**Última revisão:** jun/2026 — gate F5 (suite RSpec verde); ver `git log -1` para SHA.
+**Última revisão:** jun/2026 — HEAD `58915e5` (Fases 3/5 gate técnico; OpenAPI citizen).
 
 ---
 
@@ -120,7 +120,7 @@ O MS publica calendários **por faixa etária**, cada um com **Normal** (UI/cida
 
 3. ~~`phase-5-field-campaigns` → completed~~; EPIC-06/07 `done` no roteiro.
 
-**Próximo foco:** **EPIC-12** (paralelo) → **Fase 6**.
+**Foco de desenvolvimento:** **EPIC-12** (Prioridade 3 abaixo) → **Fase 6**.
 
 ### Prioridade 2 — S11 (pós-gate, não bloqueia fechar F5)
 

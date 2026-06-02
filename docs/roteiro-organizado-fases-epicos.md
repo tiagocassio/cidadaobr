@@ -8,7 +8,7 @@
 |-------|---------|
 | Fases **0–7** | Monólito Rails + **web gestão** + APIs JSON |
 | Fase **8** | Repos Flutter (`cidadaobr-mobile-shared`, `cidadaobr-citizen`, `cidadaobr-field`) |
-| **EPIC-12** | Transversal (paralelo a F5); **bloqueia Fase 6** clínica |
+| **EPIC-12** | Transversal (paralelo); **bloqueia Fase 6** clínica |
 | **Fase 3** | EPIC-03 + EPIC-04 **API** (TASK-04-01..05) — **sem app Flutter** |
 | **EPIC-04 app** | TASK-04-06/07 = **Fase 8** apenas |
 
@@ -38,12 +38,12 @@ flowchart TB
     F0[Fase 0]
     F1[Fase 1]
     F2[Fase 2]
+    F3[Fase 3 API]
     F4[Fase 4]
     F4b[Fase 4b]
+    F5[Fase 5]
   end
   subgraph wip [Em curso]
-    F3[Fase 3 API]
-    F5[Fase 5]
     E12[EPIC-12]
   end
   subgraph next [Proximo]

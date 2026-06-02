@@ -58,7 +58,7 @@ Após subir o servidor (`bin/rails server` ou compose), com login `ubs.centro@ci
 
 Specs automatizados (gate): `bundle exec rspec` — suite verde (jun/2026). Campanhas: `spec/requests/web/stock_and_campaigns_spec.rb` (19 examples, fluxo domiciliar + wizard vacina via HTTP).
 
-Banco local: recriar do zero com `docker compose exec -T postgres psql -U postgres -c 'DROP DATABASE ...'` + `bin/rails db:migrate` (schema gerado só das migrations; `supply_items.code` correto).
+Banco local: recriar do zero com `docker compose exec -T postgres psql -U postgres -c 'DROP DATABASE ...'` + `bin/rails db:migrate`.
 
 ## Validação automatizada
 

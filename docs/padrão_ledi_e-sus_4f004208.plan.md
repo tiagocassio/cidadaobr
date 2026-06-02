@@ -1,6 +1,6 @@
 ---
 name: Padrão LEDI e-SUS
-overview: "CidadãoBR Saúde — APS municipal LEDI + 17 indicadores. Fases 0–4b concluídas (matriz 52/53 BPs); Fase 5 em curso (gate E2E campanhas); EPIC-12 parcial. Flutter só Fase 8. RLS + Kafka + ES/CQRS. Código en-US; UI pt-BR."
+overview: "CidadãoBR Saúde — APS municipal LEDI + 17 indicadores. Fases 0–5 gate técnico concluídas (matriz 52/53 BPs); foco EPIC-12 → Fase 6. Flutter só Fase 8. RLS + Kafka + ES/CQRS. Código en-US; UI pt-BR."
 todos:
   - id: fix-ledi-version
     content: Definir versão LEDI alvo e obter Thrift/XSD oficiais
@@ -48,8 +48,8 @@ todos:
     content: "en-US: citizen_accounts + citizen_immunization_records (MVP); panic/tele/meds = EPIC-10 Fase 6"
     status: partial
   - id: api-citizen-v1
-    content: "API /api/v1/citizen: auth, slots, appointments, immunization — MVP; meds/panic/tele = EPIC-10"
-    status: partial
+    content: "API /api/v1/citizen: auth, slots, appointments, immunization — MVP; OpenAPI + openapi_contract_spec; meds/panic/tele = EPIC-10 Fase 6"
+    status: completed
   - id: indicadores-portaria
     content: "Seed indicator_catalog: CVAT + V-* + C1–C7 + B1–B6 + M1–M2 (Portaria 3.493, SAPS 161/2024, Notas MS)"
     status: completed
@@ -72,17 +72,17 @@ todos:
     content: "Isolamento MVP: PostgreSQL RLS + chaves hierárquicas + user_municipality_memberships (sem DB/schema por UBS)"
     status: completed
   - id: schema-campaigns-stock
-    content: "Campanhas vacinação; provisionamento insumo x capacidade sala x UBS (schema + wizard 4 passos; gate E2E ProvisioningValidator pendente)"
-    status: partial
+    content: "Campanhas vacinação; provisionamento insumo x capacidade sala x UBS (schema + wizard 4 passos; gate E2E ProvisioningValidator ok)"
+    status: completed
   - id: schema-home-visit-routing
     content: "Grupo L: visit_routes, route_stops, clustering PostGIS, mapa web; TSP ótimo pós-MVP (nearest-neighbor hoje)"
-    status: partial
+    status: completed
   - id: schema-route-provisioning
-    content: "visit_route_provisionings, reserve/dispatch commands, romaneio web; gate E2E campanha domiciliar pendente"
-    status: partial
+    content: "visit_route_provisionings, reserve/dispatch commands, romaneio web; gate E2E campanha domiciliar ok"
+    status: completed
   - id: web-admin-modules
-    content: "Módulos web Hotwire: indicadores, gestão, agenda, estoque/campanhas/rotas (wizard vacina + mapa + romaneio); gate Fase 5 pendente"
-    status: partial
+    content: "Módulos web Hotwire: indicadores, gestão, agenda, estoque/campanhas/rotas (wizard vacina + mapa + romaneio); gate Fase 5 técnico ok"
+    status: completed
   - id: schema-appointments
     content: "Agendamentos UBS: appointments, service_types, slots; CQRS calendar projection; vínculo encounters"
     status: completed
@@ -100,7 +100,7 @@ todos:
     status: completed
   - id: phase-3-scheduling-citizen-mvp
     content: "Fase 3: EPIC-03 + EPIC-04 API — agenda web + APIs /api/v1/citizen (sem Flutter)"
-    status: partial
+    status: completed
   - id: phase-4-indicators
     content: "Fase 4: EPIC-05 MVP (TASK-05-01..07) — painel, gaps, DSL piloto; repasse ilustrativo (ADR-0003)"
     status: completed
@@ -697,15 +697,15 @@ flowchart LR
 | TASK-05-07 repasse | EPIC-05 | Coeficientes oficiais quando Portaria fechar |
 | TASK-07-04 TSP | EPIC-07 | Substituir nearest-neighbor — não bloqueia gate se piloto aceitar rota MVP |
 | ADR-0004 | EPIC-12 | Fontes UFSC + DATASUS |
-| EPIC-04 API gaps | EPIC-04 | Endpoints citizen pendentes no OpenAPI (app = Fase 8) |
+| OpenAPI citizen (contínuo) | EPIC-04 | `openapi_contract_spec` + `doc/api/openapi.v1.yaml` — app Flutter = Fase 8 |
 
 ### Alocação sugerida (time pequeno)
 
-| Pessoa | Agora (S10) | Depois |
-|--------|-------------|--------|
-| **Dev A** | Gate E2E Fase 5 + specs | EPIC-12 gate → Fase 6 PEC |
+| Pessoa | Agora (pós-F5) | Depois |
+|--------|----------------|--------|
+| **Dev A** | EPIC-12 gate (S8–S9) | Fase 6 PEC / LEDI |
 | **Dev B (opcional)** | EPIC-12 release/fixtures | EPIC-10 APIs |
-| **Solo** | Gate Fase 5 → EPIC-12 → S13 Fase 6 | — |
+| **Solo** | EPIC-12 → S13 Fase 6 | — |
 
 ### Próximo passo concreto
 
