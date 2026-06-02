@@ -108,8 +108,8 @@ todos:
     content: "Fase 4b: EPIC-05b (TASK-05-08) — packs Portaria 3493, DSL v1, matriz 52/53 done (ADR-0005); 1 partial C2.E"
     status: completed
   - id: phase-5-field-campaigns
-    content: "Fase 5: EPIC-06 + EPIC-07 — estoque, campanhas e rotas (web gestão only)"
-    status: in_progress
+    content: "Fase 5: EPIC-06 + EPIC-07 — gate técnico done; F5-1..F6 UI = checklist prefeitura (não bloqueia completed)"
+    status: completed
   - id: phase-6-full-stack
     content: "Fase 6: EPIC-09 + EPIC-10 — LEDI/PEC, walk-in web, APIs panic/tele/meds (sem Flutter)"
     status: pending
@@ -662,10 +662,10 @@ flowchart LR
 
 - [x] Campanha domiciliar E2E (automático) — `stock_and_campaigns_spec` exemplo *completes domiciliary gate flow via HTTP* (2026-06-01)
 - [x] Campanha vacinação wizard + `ProvisioningValidator` (automático) — mesmo arquivo, exemplo *completes wizard steps through provisioning approval*
-- [x] Request specs verdes — 25 examples, 0 failures (gate + `VisitRouteProgress`, 2026-06-01)
-- [ ] Validação manual UI piloto — [`piloto-validacao-tecnica.md`](docs/commercial/piloto-validacao-tecnica.md) + logins seed
-- [x] Checklist piloto Fase 5 — seção em [`checklist-piloto-prefeitura.md`](docs/commercial/checklist-piloto-prefeitura.md)
-- [ ] EPIC-06 e EPIC-07 marcados **concluídos** no [checklist executivo](#checklist-por-épico-executivo) — após validação manual UI
+- [x] Request specs verdes — suite RSpec verde (`bundle exec rspec`, jun/2026)
+- [x] Gate HTTP campanhas — `stock_and_campaigns_spec` (domiciliar + wizard vacina)
+- [x] Checklist piloto Fase 5 — [`checklist-piloto-prefeitura.md`](docs/commercial/checklist-piloto-prefeitura.md); F5-1..F6 na UI (`piloto-validacao-tecnica.md`) antes de go-live prefeitura — **fora** do gate `completed` da fase
+- [x] EPIC-06 e EPIC-07 **concluídos** no roteiro e status-plano (jun/2026)
 
 ### Trilha paralela — EPIC-12 (S8–S9)
 

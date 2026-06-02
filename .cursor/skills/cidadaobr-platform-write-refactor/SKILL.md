@@ -26,8 +26,8 @@ Reimpor o **contrato de escrita** da Fase 0 sem Event Sourcing puro. Fonte da ve
 | Base | Prefer `ApplicationCommand` + `CommandBus.dispatch(Class, **params)` from controllers/APIs |
 | Transaction | `write_transaction` on `ApplicationCommand` (tenant RLS when `TenantContext` is set) |
 | Tenant | Validate `municipality_id` / `health_facility_id` vs membership or JWT |
-| Events | `RecordPlatformEvent.call` when crossing contexts, in `OutboxPublisher::TOPIC_MAPPING`, or audit-worthy transition |
-| Topic | `topic: OutboxPublisher::TOPIC_MAPPING.fetch("event.type")` |
+| Events | `RecordPlatformEvent.call` when crossing contexts, listed in `Cidadaobr::KafkaTopics::ALL`, or audit-worthy transition |
+| Topic | Same string as `event_type` (`Cidadaobr::KafkaTopics::*`); `topic` kwarg optional |
 | Controller | No `Model.create!` / `save!` / `update!` for domain mutations |
 
 **Do not:** replay aggregates from `domain_events`; add `rails_event_store`; read `domain_events` in UI.
@@ -37,7 +37,7 @@ Reimpor o **contrato de escrita** da Fase 0 sem Event Sourcing puro. Fonte da ve
 Emit (with outbox) if any:
 
 - Another bounded context consumes the change (agenda → indicators; campaign → routes; stock → kits).
-- Event type is (or will be) in `app/services/outbox_publisher.rb` → `TOPIC_MAPPING`.
+- Event type is (or will be) in `Cidadaobr::KafkaTopics::ALL` (and `bin/kafka_create_topics`).
 - Business transition: publish routes, reserve supplies, cancel campaign, etc.
 
 Optional for local admin CRUD with no consumer yet.
@@ -46,7 +46,7 @@ Optional for local admin CRUD with no consumer yet.
 
 | Wave | Focus | Key files |
 |------|--------|-----------|
-| **B** | Campaigns + routes + supply | `lib/campaigns/`, `lib/routing/`, `lib/inventory/`, `HomeVisitCampaignsController`, `TOPIC_MAPPING`, `bin/kafka_create_topics` |
+| **B** | Campaigns + routes + supply | `lib/campaigns/commands/build_campaign_target_list.rb`, `lib/routing/`, `lib/inventory/`, `HomeVisitCampaignsController`, `Cidadaobr::KafkaTopics`, `bin/kafka_create_topics` |
 | **C** | Web cadastro | `CitizensController`, `HouseholdsController` → territory/citizens commands |
 | **D** | CQRS light | `ApplicationCommand`, `QueryBus` for heavy reads |
 

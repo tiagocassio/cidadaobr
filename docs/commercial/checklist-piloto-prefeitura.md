@@ -40,10 +40,11 @@
 
 ## Fase 5 — Campanhas e rotas (web gestão)
 
-Validação técnica automatizada: `bundle exec rspec spec/requests/web/stock_and_campaigns_spec.rb spec/lib/inventory/reserve_visit_route_supplies_spec.rb spec/lib/campaigns/visit_route_progress_spec.rb` (25 examples)
+Validação técnica automatizada (jun/2026): suite RSpec verde (`bundle exec rspec`) — inclui `stock_and_campaigns_spec` (E2E HTTP domiciliar + wizard vacina), reserve/dispatch, `visit_route_progress`, `openapi_contract_spec`.
 
-- [ ] **Campanha domiciliar:** público-alvo → gerar rotas → calcular/reservar provisionamento → publicar rotas → despachar kit (UI)
-- [ ] **Campanha vacinação:** wizard 4 passos → aprovar provisionamento → publicar (UI)
+- [x] **Campanha domiciliar (gate HTTP):** público-alvo → rotas → provisionamento → publicar → despacho — spec *completes domiciliary gate flow via HTTP*
+- [x] **Campanha vacinação (gate HTTP):** wizard + provisionamento — spec *completes wizard steps through provisioning approval*
+- [ ] **UI gestor:** repetir F5-1..F5-6 em `bin/dev` com logins seed (aceite visual antes de piloto prefeitura)
 - [ ] Romaneio de insumos (`/web/stock/team_supply_dispatches`) conferido com gestor UBS
 - [ ] Mapa de rotas (`route_map`) usado para revisar paradas do dia
 

@@ -4,7 +4,7 @@
 **Roteiro organizado (fases × épicos × tasks):** [roteiro-organizado-fases-epicos.md](../roteiro-organizado-fases-epicos.md)  
 **EPIC-00 — volta aos trilhos:** [epic-00-remediation.md](../epic-00-remediation.md) + [ADR-0006](../adr/0006-platform-write-contract.md)
 **Decisão PO:** [roadmap-decision-fase5.md](roadmap-decision-fase5.md) — Opção A (Fase 5 antes de mobile/Fase 6)  
-**HEAD referência:** `6949e68` — FCD web, RLS, campanhas (após `25bd047` do plano)
+**Última revisão:** jun/2026 — gate F5 (suite RSpec verde); ver `git log -1` para SHA.
 
 ---
 
@@ -13,10 +13,10 @@
 | Fase | Status | Gate |
 |------|--------|------|
 | **0–2** | Concluída | RLS, CQRS, Kafka, LEDI core, ops web |
-| **3** | Parcial (só API) | EPIC-03 `done`; EPIC-04 API TASK-04-01..05 (`partial` gaps OpenAPI) — **Flutter = Fase 8** |
+| **3** | **Concluída** | EPIC-03 `done`; EPIC-04 API TASK-04-01..05 + OpenAPI alinhado — **Flutter = Fase 8** |
 | **4** | Concluída | 17 indicadores, painel, gaps; repasse **ilustrativo** ([ADR-0003](../adr/0003-epic05-mvp-scope.md)) |
 | **4b** | **Concluída (gate)** | 52/53 BPs `done`; 1 `partial` (C2.E) — **não bloqueia** roadmap ([ADR-0005](../adr/0005-methodology-coverage.md)) |
-| **5** | **Em curso** | Código ~90–95%; specs E2E ok; **EPIC-00 Onda B** (eventos campanha/rota) feita 2026-06-02; **falta piloto UI** |
+| **5** | **Concluída (gate técnico)** | EPIC-06/07; suite RSpec verde; E2E HTTP campanhas; **UI gestor** = aceite visual checklist prefeitura |
 | **12** | ~40% (paralelo) | Release referência; **bloqueia Fase 6** clínica |
 | **6–8** | Pendente | Flutter só Fase 8 |
 
@@ -29,9 +29,10 @@ flowchart LR
   pni[Onda2_PNI]
   epic12[EPIC12]
 
-  done --> f5 --> ui --> f6
+  done --> f5
   epic12 --> f6
   f5 -.-> epic12
+  f5 -.-> ui
   done -.-> pni
   epic12 --> pni
 ```
@@ -96,9 +97,9 @@ O MS publica calendários **por faixa etária**, cada um com **Normal** (UI/cida
 |----------|--------|
 | E2E domiciliar (HTTP spec) | Feito |
 | Wizard vacina + `ProvisioningValidator` (spec) | Feito |
-| 25 examples (gate + `visit_route_progress`) | **Feito** — 0 failures; i18n `route_map` corrigido |
-| **Validação manual UI** | **Pendente** |
-| EPIC-06/07 marcados concluídos no plano mestre | Pendente (após UI) |
+| Suite completa (gate campanhas + regressão) | **Feito** — suite RSpec verde (jun/2026) |
+| **Validação manual UI** | Checklist F5-1..F5-6 em `bin/dev` (operador); gate HTTP fechado |
+| EPIC-06/07 marcados concluídos no plano mestre | **Feito** (jun/2026) |
 
 **Logins piloto:** `admin@cidadaobr.local` / `ubs.centro@cidadaobr.local` — `password123`  
 **Guias:** [piloto-validacao-tecnica.md](piloto-validacao-tecnica.md), [checklist-piloto-prefeitura.md](checklist-piloto-prefeitura.md) § Fase 5
@@ -109,15 +110,17 @@ O MS publica calendários **por faixa etária**, cada um com **Normal** (UI/cida
 
 ## 5. Próximos passos (ordem)
 
-### Prioridade 1 — Fechar Fase 5 (S10)
+### Prioridade 1 — Fase 5 encerrada (gate técnico; UI gestor opcional)
 
-1. ~~Rodar specs de gate~~ — **concluído** 2026-06-01 (`6949e68`): 21 examples, 0 failures.
+1. ~~Rodar specs de gate~~ — suite RSpec verde (jun/2026).
 
-1b. ~~**EPIC-00 Onda B**~~ — **concluído** 2026-06-02: eventos `campaign.targets.built`, `home_visit.route.*`, `visit_route.supplies.*`; `CommandBus` em `HomeVisitCampaignsController`; specs em `spec/lib/{campaigns,routing,inventory}/`.
+1b. ~~**EPIC-00** ondas B–J + Onda A (governança)~~ — concluído.
 
-2. **Piloto UI** (~30–60 min): campanha domiciliar completa; wizard vacina; romaneio; mapa de rotas.
+2. **Piloto UI gestor** (opcional antes de prefeitura): F5-1..F5-6 em `bin/dev` — [piloto-validacao-tecnica.md](piloto-validacao-tecnica.md).
 
-3. Após (2): `phase-5-field-campaigns` → completed; EPIC-06/07 no checklist executivo; [roadmap-decision-fase5.md](roadmap-decision-fase5.md) gate concluído.
+3. ~~`phase-5-field-campaigns` → completed~~; EPIC-06/07 `done` no roteiro.
+
+**Próximo foco:** **EPIC-12** (paralelo) → **Fase 6**.
 
 ### Prioridade 2 — S11 (pós-gate, não bloqueia fechar F5)
 

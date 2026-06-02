@@ -54,7 +54,11 @@ Após subir o servidor (`bin/rails server` ou compose), com login `ubs.centro@ci
 | F5-5 | **Mapa de rotas** (`route_map`) | Mapa com paradas |
 | F5-6 | `/web/campaigns/vaccination_campaigns` → wizard 4 passos → aprovar provisionamento → publicar | Campanha vacina ativa |
 
-Specs automatizados (gate): ver [piloto-execucao-dev-2026-05-28.md](piloto-execucao-dev-2026-05-28.md) — 21 examples @ `6949e68`.
+**Gate técnico (jun/2026):** F5-2 e F5-6 cobertos por request specs HTTP; F5-3..F5-5 com specs de lib (`visit_route_progress`, reserve/dispatch). Confirmar F5-1..F5-6 na UI com `bin/dev` antes de piloto prefeitura.
+
+Specs automatizados (gate): `bundle exec rspec` — suite verde (jun/2026). Campanhas: `spec/requests/web/stock_and_campaigns_spec.rb` (19 examples, fluxo domiciliar + wizard vacina via HTTP).
+
+Banco local: recriar do zero com `docker compose exec -T postgres psql -U postgres -c 'DROP DATABASE ...'` + `bin/rails db:migrate` (schema gerado só das migrations; `supply_items.code` correto).
 
 ## Validação automatizada
 

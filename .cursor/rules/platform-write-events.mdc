@@ -1,5 +1,5 @@
 ---
-description: Platform events and outbox (TOPIC_MAPPING must stay in sync)
+description: Platform events and outbox (Cidadaobr::KafkaTopics must stay in sync with bin/kafka_create_topics)
 globs: app/services/outbox_publisher.rb,lib/**/commands/**/*.rb,app/jobs/**/*outbox*
 alwaysApply: false
 ---

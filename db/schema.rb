@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_06_02_140000) do
+ActiveRecord::Schema[8.1].define(version: 2026_06_02_150000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
@@ -635,16 +635,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_02_140000) do
     t.index ["municipality_id", "health_facility_id", "created_at"], name: "index_stock_movements_on_municipality_facility_created"
   end
 
-  create_table "supply_item_components", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
-    t.uuid "component_item_id", null: false
-    t.uuid "composite_item_id", null: false
-    t.datetime "created_at", null: false
-    t.uuid "municipality_id", null: false
-    t.decimal "quantity_per_unit", precision: 12, scale: 3, default: "1.0", null: false
-    t.datetime "updated_at", null: false
-    t.index ["composite_item_id", "component_item_id"], name: "index_supply_item_components_on_kit_and_component", unique: true
-  end
-
   create_table "supply_items", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.boolean "active", default: true, null: false
     t.string "code", null: false
@@ -857,9 +847,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_02_140000) do
   add_foreign_key "stock_movements", "health_facilities"
   add_foreign_key "stock_movements", "immunobiological_lots"
   add_foreign_key "stock_movements", "supply_items"
-  add_foreign_key "supply_item_components", "municipalities"
-  add_foreign_key "supply_item_components", "supply_items", column: "component_item_id"
-  add_foreign_key "supply_item_components", "supply_items", column: "composite_item_id"
   add_foreign_key "team_indicator_results", "care_teams"
   add_foreign_key "team_indicator_results", "municipalities"
   add_foreign_key "team_satisfaction_survey_scores", "care_teams"

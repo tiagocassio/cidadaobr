@@ -1,17 +1,15 @@
 # Platform write — examples
 
-## Gold: command + event + topic
+## Gold: command + event
 
 From `lib/scheduling/commands/book_appointment.rb` (pattern only):
 
 ```ruby
-# Inside ApplicationCommand#call:
 write_transaction do
-  # validations, AR writes, domain rules
   appointment = Appointment.create!(...)
 
   RecordPlatformEvent.call(
-    event_type: "appointment.booked",
+    event_type: Cidadaobr::KafkaTopics::APPOINTMENT_BOOKED,
     aggregate_type: "Appointment",
     aggregate_id: appointment.id,
     payload: {
@@ -19,7 +17,6 @@ write_transaction do
       citizen_id: appointment.citizen_id,
       scheduled_at: appointment.scheduled_at.iso8601
     },
-    topic: OutboxPublisher::TOPIC_MAPPING.fetch("appointment.booked"),
     care_team_id: appointment.care_team_id
   )
 
@@ -49,81 +46,35 @@ def create
 end
 ```
 
-## Anti-pattern: command without tenant transaction
+## Anti-pattern: separate topic name
 
 ```ruby
-# BAD
-def self.call(attrs)
-  Citizen.create!(attrs)
-end
-```
-
-```ruby
-# GOOD
-def self.call(attrs)
-  Cidadaobr::TenantRls.write_transaction do
-    # apply_write_scope! if needed
-    citizen = Citizen.create!(attrs.merge(tenant_scope(attrs)))
-    # optional RecordPlatformEvent
-    citizen
-  end
-end
-```
-
-## Anti-pattern: event type not in TOPIC_MAPPING
-
-```ruby
-# BAD — publish will fail or use wrong topic
-topic: "some.random.topic"
+# BAD — event_type and Kafka topic must match
+RecordPlatformEvent.call(
+  event_type: "appointment.booked",
+  topic: "appointment-booked",
+  ...
+)
 
 # GOOD
-topic: OutboxPublisher::TOPIC_MAPPING.fetch("campaign.targets.built")
+RecordPlatformEvent.call(
+  event_type: Cidadaobr::KafkaTopics::APPOINTMENT_BOOKED,
+  ...
+)
 ```
 
-Add key to `OutboxPublisher::TOPIC_MAPPING` in the same PR:
+## Command skeleton (campaigns)
 
-```ruby
-"campaign.targets.built" => "campaign.targets.built",
-```
+Ver implementação em `lib/campaigns/commands/build_campaign_target_list.rb` (`RecordPlatformEvent` + `Cidadaobr::KafkaTopics`).
 
 ## Spec snippet (event + outbox)
 
 ```ruby
 expect {
-  described_class.call(campaign: campaign, ...)
+  described_class.call(campaign: campaign)
 }.to change(DomainEvent, :count).by(1)
   .and change(OutboxMessage, :count).by(1)
 
-event = DomainEvent.order(:created_at).last
-expect(event.event_type).to eq("campaign.targets.built")
-expect(OutboxMessage.last.topic).to eq(OutboxPublisher::TOPIC_MAPPING.fetch("campaign.targets.built"))
+expect(DomainEvent.last.event_type).to eq(Cidadaobr::KafkaTopics::CAMPAIGN_TARGETS_BUILT)
+expect(OutboxMessage.last.topic).to eq(Cidadaobr::KafkaTopics::CAMPAIGN_TARGETS_BUILT)
 ```
-
-## New command skeleton (Onda B)
-
-```ruby
-# lib/campaigns/commands/build_campaign_target_list.rb
-module Campaigns
-  class BuildCampaignTargetList < ApplicationCommand
-    def self.call(campaign:, performed_by:)
-      Cidadaobr::TenantRls.write_transaction do
-        # build targets, persist
-        campaign.reload
-
-        RecordPlatformEvent.call(
-          event_type: "campaign.targets.built",
-          aggregate_type: "HomeVisitCampaign",
-          aggregate_id: campaign.id,
-          payload: { campaign_id: campaign.id, target_count: campaign.targets.count },
-          topic: OutboxPublisher::TOPIC_MAPPING.fetch("campaign.targets.built"),
-          care_team_id: campaign.care_team_id
-        )
-
-        campaign
-      end
-    end
-  end
-end
-```
-
-Adjust `ApplicationCommand` API to match project base if it uses instance `#call` instead of `.call`.

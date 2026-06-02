@@ -13,9 +13,9 @@ O backlog marca EPIC-00 `done` na **infra** (Fase 0); este documento é o **gate
 |---|----------|-------------|
 | 1 | Mutação operacional só em `lib/<context>/commands/` | `rg '\.(save|create|update)!?\(' app/controllers` → lista vazia (exceto allowlist) |
 | 2 | Borda HTTP/API usa `CommandBus.dispatch` | Sem `SomeCommand.call` / AR em controllers de domínio |
-| 3 | Eventos de integração com `RecordPlatformEvent` + `TOPIC_MAPPING` | Specs + mapping sincronizado com `bin/kafka_create_topics` |
+| 3 | Eventos de integração com `RecordPlatformEvent` + `Cidadaobr::KafkaTopics` | Specs + tópicos em `bin/kafka_create_topics` (`event_type` = topic) |
 | 4 | Tenant + transação | `with_tenant` nos specs; commands em transação AR (RLS via middleware/initializer) |
-| 5 | Governança | PR checklist; ADR-0006 referenciado no README dev (pendente) |
+| 5 | Governança | PR checklist; ADR-0006 referenciado no README dev |
 
 **Sem allowlist de controllers** para mutações de domínio (jun/2026): usuários municipais via `Platform::Commands::*`.
 
@@ -34,7 +34,7 @@ O backlog marca EPIC-00 `done` na **infra** (Fase 0); este documento é o **gate
 | **territory (ops)** | facilities, teams, micro_areas | controllers web | care_team.created/updated | **OK** (Onda H) |
 | **platform (users)** | `lib/platform/commands/*` | `UsersController` | — (auth local) | **OK** (Onda H) |
 | **inventory estoque** | lot + product commands | lots/products#create | lot.received | **OK** (Onda G) |
-| **routing helpers** | clear/update provisioning | bus parcial | opcional / pendente revisão | **Parcial** |
+| **routing helpers** | clear/update provisioning | `CommandBus` em `HomeVisitCampaignsController` | eventos via commands chamados | **OK** |
 | **reference (EPIC-12)** | `Reference::Commands::PublishRelease` | jobs | `reference-release-published` (platform outbox) | **OK** (S9) |
 
 ---
@@ -47,7 +47,7 @@ O backlog marca EPIC-00 `done` na **infra** (Fase 0); este documento é o **gate
 - [x] Skill Cursor + `AGENTS.md`
 - [x] Plano mestre / roteiro atualizados
 - [x] Matriz de conformidade (este doc)
-- [ ] PR template + README dev
+- [x] PR template + README dev
 - [x] Gate CI — `bin/ci_controller_writes` (job `controller_writes_gate`)
 
 ### Onda B — Campanha domiciliar — **concluída**

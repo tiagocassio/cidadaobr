@@ -129,6 +129,35 @@ Variável opcional `LEDI_PEC_STUB_REJECT=true` faz o consumer `LediBatchReadyCon
 
 Eventos novos (constantes em `Cidadaobr::KafkaTopics`, mesmo nome no tópico Kafka) entram na outbox via `RecordPlatformEvent`. Publique com `bin/rails outbox:publish` (ou agende o task) até existirem consumidores de negócio dedicados (EPIC-09 / EPIC-03). Karafka já registra rotas placeholder em `PlatformEventConsumer`.
 
+## Platform write (desenvolvimento)
+
+Mutações de domínio seguem [ADR-0006](docs/adr/0006-platform-write-contract.md):
+
+- Commands em `lib/<context>/commands/`, expostos via `CommandBus.dispatch`
+- `write_transaction` em `ApplicationCommand` (RLS quando há `TenantContext`)
+- Eventos de integração: `RecordPlatformEvent` com `event_type` = tópico Kafka (`Cidadaobr::KafkaTopics`)
+
+Gate local: `bin/ci_controller_writes`. Matriz de conformidade: [docs/epic-00-remediation.md](docs/epic-00-remediation.md). Skill Cursor: `.cursor/skills/cidadaobr-platform-write-refactor/`.
+
+### Recriar banco do zero (desenvolvimento)
+
+`db/schema.rb` é gerado pelas migrations — não editar à mão. Para reset completo:
+
+```bash
+# development
+docker compose exec -T postgres psql -U postgres -c "DROP DATABASE IF EXISTS cidadaobr_development;"
+docker compose exec -T postgres psql -U postgres -c "CREATE DATABASE cidadaobr_development OWNER postgres;"
+POSTGRES_SCHEMA_USER=postgres POSTGRES_SCHEMA_PASSWORD=postgres bin/rails db:migrate
+bin/rails db:seed
+
+# test (antes de rspec)
+docker compose exec -T postgres psql -U postgres -c "DROP DATABASE IF EXISTS cidadaobr_test;"
+docker compose exec -T postgres psql -U postgres -c "CREATE DATABASE cidadaobr_test OWNER postgres;"
+RAILS_ENV=test POSTGRES_SCHEMA_USER=postgres POSTGRES_SCHEMA_PASSWORD=postgres bin/rails db:migrate
+```
+
+`AlignSupplyItemsCodeColumn` em DB legado com `sku` renomeia para `code` e remove colunas órfãs — faça backup se houver dados em `category`/`description`/`item_kind`.
+
 ## Serviços
 
 ```bash

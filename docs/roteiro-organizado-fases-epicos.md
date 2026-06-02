@@ -23,10 +23,10 @@
 | **0** | Foundation | `done` | EPIC-00 | RLS, CQRS, Kafka, auth |
 | **1** | LEDI Core | `done` | EPIC-01 | Transporte, adapters MVP, projectors |
 | **2** | Ops + Web base | `done` | EPIC-02 | UBS, equipes, mapa, LEDI status |
-| **3** | Scheduling + Citizen **API** | `partial` | EPIC-03, EPIC-04 (API) | Agenda web + `/api/v1/citizen` MVP — **não inclui Flutter** |
+| **3** | Scheduling + Citizen **API** | `done` | EPIC-03, EPIC-04 (API) | Agenda web + `/api/v1/citizen` MVP — **não inclui Flutter** |
 | **4** | Indicators MVP | `done` | EPIC-05 | Painel X/17, gaps, repasse ilustrativo |
 | **4b** | Methodology | `done` | EPIC-05b | Matriz 52/53 BPs; C2.E `partial` não bloqueia |
-| **5** | Campaigns (web) | `in_progress` | EPIC-06, EPIC-07 | Piloto UI campanhas/rotas (specs E2E ok) |
+| **5** | Campaigns (web) | `done` | EPIC-06, EPIC-07 | Gate técnico (suite RSpec verde); UI gestor = checklist prefeitura |
 | **T** | Referência MS | `partial` | **EPIC-12** | Release versionada + fixtures CI |
 | **6** | LEDI/PEC + Plus API | `pending` | EPIC-09, EPIC-10 (API) | Walk-in web, PEC; **requer EPIC-12** |
 | **7** | IA + SIAPS | `pending` | EPIC-11 | Perfis, conciliação MS |
@@ -73,8 +73,8 @@ flowchart TB
 | EPIC-04 | **3** API · **8** App | `partial` | Portal cidadão |
 | EPIC-05 | 4 | `done` (MVP) | Gestão — Indicadores 3.493 |
 | EPIC-05b | 4b | `done` | Cobertura Notas Metodológicas 3493 |
-| EPIC-06 | 5 | `in_progress` (~95%) | Gestão — Estoque e Campanhas |
-| EPIC-07 | 5 | `in_progress` (~90%) | Gestão — Rotas e Provisionamento |
+| EPIC-06 | 5 | `done` | Gestão — Estoque e Campanhas |
+| EPIC-07 | 5 | `done` | Gestão — Rotas e Provisionamento |
 | EPIC-12 | T (1→6) | `partial` (~40%) | Dados de Referência MS/LEDI |
 | EPIC-09 | 6 core · 8 Field UI | `pending` | LEDI Completo e PEC |
 | EPIC-10 | 6 API · 8 App UI | `pending` | Cidadão Plus |
@@ -121,7 +121,7 @@ flowchart TB
 | | TASK-02-07 Animais domicílio | `done` |
 | STORY-02-03 LEDI status | TASK-02-06 WEB-LEDI-01 Lotes | `done` |
 
-### Fase 3 — Scheduling + Citizen API `partial`
+### Fase 3 — Scheduling + Citizen API `done`
 
 **Escopo:** web agenda (EPIC-03) + API cidadão (EPIC-04 TASK-04-01..05). **Fora:** TASK-04-06/07 (Fase 8).
 
@@ -135,7 +135,7 @@ flowchart TB
 | | TASK-03-04 WEB-SCHED-01 Agenda | `done` |
 | | TASK-03-05 WEB-SCHED-02 Check-in/fila | `done` |
 
-#### EPIC-04 Portal cidadão — fatia API (Fase 3) `partial`
+#### EPIC-04 Portal cidadão — fatia API (Fase 3) `done`
 
 | Story | Task | Fase | Status |
 |-------|------|------|--------|
@@ -143,7 +143,7 @@ flowchart TB
 | STORY-04-02 Consultas | TASK-04-02 API slots/consultas | 3 | `done` |
 | STORY-04-03 Vacinas | TASK-04-03 Projeção immunization | 3 | `done` |
 | | TASK-04-04 API carteira/cobertura | 3 | `done` |
-| | TASK-04-05 API agendar vacina | 3 | `partial` (gaps OpenAPI) |
+| | TASK-04-05 API agendar vacina | 3 | `done` (vacina via POST `/appointments`; OpenAPI alinhado) |
 | STORY-04-02 Consultas app | TASK-04-06 App shell Minha UBS | **8** | `pending` |
 | STORY-04-03 Vacinas app | TASK-04-07 App carteira/agendar | **8** | `pending` |
 
@@ -163,7 +163,7 @@ flowchart TB
 |-------|------|--------|
 | STORY-05-03 Cobertura 3493 | TASK-05-08 Packs + matriz 52/53 | `done` (C2.E `partial`) |
 
-### Fase 5 — EPIC-06 + EPIC-07 Campanhas web `in_progress`
+### Fase 5 — EPIC-06 + EPIC-07 Campanhas web `done`
 
 #### EPIC-06 Estoque e Campanhas
 
@@ -188,7 +188,7 @@ flowchart TB
 | | TASK-07-10 Prédio/condomínio | **8** (EPIC-08) | `pending` |
 | STORY-07-04 Romaneio | TASK-07-07 Dispatch kit | `partial` (+ `visit_route.supplies.dispatched`) |
 
-**Gate Fase 5:** piloto UI manual (specs 25 ex. ok).
+**Gate Fase 5:** concluído (suite RSpec verde; E2E HTTP campanhas). UI gestor: checklist prefeitura.
 
 ### Transversal — EPIC-12 Referência MS `partial`
 
@@ -263,13 +263,12 @@ flowchart TB
 
 ## 5. Próximos passos (ordem)
 
-1. **Gate Fase 5** — piloto UI (EPIC-06/07).
-2. **Paralelo EPIC-12** — release versionada (desbloqueia Fase 6).
-3. **Fechar Fase 3** — só TASK-04-05 / OpenAPI (não Flutter).
-4. **Fase 6** — EPIC-09 + EPIC-10 API.
-5. **Onda 2a PNI** — pós F5 + EPIC-12 (C2.E).
-6. **Fase 7** — EPIC-11.
-7. **Fase 8** — mobile-shared → Citizen → Field.
+1. **EPIC-12** — release versionada + fixtures CI (desbloqueia Fase 6).
+2. **Fase 6** — EPIC-09 + EPIC-10 API.
+3. **Onda 2a PNI** — pós EPIC-12 (C2.E).
+4. **Piloto prefeitura** — checklist UI F5 opcional antes de go-live.
+5. **Fase 7** — EPIC-11.
+6. **Fase 8** — mobile-shared → Citizen → Field.
 
 ---
 

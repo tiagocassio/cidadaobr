@@ -8,7 +8,7 @@
 | Kafka consumers | `docs/adr/0007-kafka-topic-consumer-policy.md` |
 | Remediation waves | `docs/epic-00-remediation.md` |
 | Roteiro fases | `docs/roteiro-organizado-fases-epicos.md` |
-| Outbox mapping | `app/services/outbox_publisher.rb` (`TOPIC_MAPPING`) |
+| Kafka topic SSOT | `lib/cidadaobr/kafka_topics.rb` (`event_type` = topic) |
 
 ## Audit script
 
@@ -33,21 +33,19 @@ done
 # Direct .call from controllers (prefer CommandBus)
 rg '\w+::\w+\.call\(' app/controllers --glob '*.rb'
 
-# TOPIC_MAPPING keys vs RecordPlatformEvent event_type strings
-rg 'event_type:\s*"' lib app -g '*.rb'
-rg '^\s*"[^"]+"\s*=>' app/services/outbox_publisher.rb
+# KafkaTopics constants vs bin/kafka_create_topics
+rg 'Cidadaobr::KafkaTopics::' lib app -g '*.rb'
 ```
 
 ## `RecordPlatformEvent` shape
 
 ```ruby
 RecordPlatformEvent.call(
-  event_type: "appointment.booked",           # must match TOPIC_MAPPING key if publishing
+  event_type: Cidadaobr::KafkaTopics::APPOINTMENT_BOOKED,
   aggregate_type: "Appointment",
   aggregate_id: appointment.id,
-  payload: { ... },                             # JSON-serializable; ids as strings if UUID
-  topic: OutboxPublisher::TOPIC_MAPPING.fetch("appointment.booked"),
-  care_team_id: appointment.care_team_id        # when applicable
+  payload: { ... },
+  care_team_id: appointment.care_team_id
 )
 ```
 
