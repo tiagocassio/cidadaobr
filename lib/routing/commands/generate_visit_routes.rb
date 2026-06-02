@@ -45,10 +45,11 @@ module Routing
         write_transaction do
           cleared_on_regenerate = false
           if @regenerate
-            ClearVisitRoutes.clear!(
+            ClearVisitRoutes.call(
               campaign: @campaign,
               route_date: @route_date,
-              sync_provisioning: false
+              sync_provisioning: false,
+              within_existing_transaction: true
             )
             cleared_on_regenerate = true
           end
@@ -57,7 +58,9 @@ module Routing
 
           grouped.each do |care_team_id, team_targets|
             care_team = CareTeam.find(care_team_id)
-            geo_clusters = Routing::ClusterVisitRouteTargets.call(team_targets).values
+            targets_by_household = team_targets.group_by { |target| household_key_for(target) }
+            visit_targets = targets_by_household.values.map { |group| pick_representative_target(group) }
+            geo_clusters = Routing::ClusterVisitRouteTargets.call(visit_targets).values
             chunks = geo_clusters.flat_map { |cluster| cluster.each_slice(@max_stops_per_route).to_a }
 
             chunks.each_with_index do |chunk, index|
@@ -84,7 +87,7 @@ module Routing
                   campaign_target: target,
                   status: "pending"
                 )
-                target.update!(status: "routed")
+                targets_by_household[household_key_for(target)].each { |member| member.update!(status: "routed") }
                 stops_created += 1
               end
 
@@ -108,6 +111,15 @@ module Routing
 
       def household_for(citizen)
         citizen.household_members.order(:created_at).first&.household
+      end
+
+      def household_key_for(target)
+        household = target.household || household_for(target.citizen)
+        household&.id || "citizen:#{target.citizen_id}"
+      end
+
+      def pick_representative_target(targets)
+        targets.max_by { |target| [ target.priority_score.to_i, -target.created_at.to_i ] }
       end
 
       def facility_location(facility)

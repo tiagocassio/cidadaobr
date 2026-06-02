@@ -65,6 +65,26 @@ RSpec.describe Routing::Commands::GenerateVisitRoutes do
     end
   end
 
+  it "creates one stop per household when multiple targets share a domicilio" do
+    with_tenant(membership) do
+      campaign = create(:home_visit_campaign, municipality: municipality, health_facility: facility, status: "targets_built")
+      household = create(:household, municipality: municipality, health_facility: facility, care_team: team)
+      citizens = 3.times.map do |index|
+        create(:citizen, municipality: municipality, health_facility: facility, care_team: team, full_name: "Citizen #{index}")
+      end
+      citizens.each do |citizen|
+        create(:household_member, household: household, citizen: citizen)
+        create(:campaign_target, municipality: municipality, health_facility: facility, campaign: campaign, citizen: citizen, household: household)
+      end
+
+      result = described_class.call(campaign: campaign, route_date: Date.current)
+
+      expect(result.stops_created).to eq(1)
+      expect(campaign.visit_routes.first.visit_route_stops.count).to eq(1)
+      expect(campaign.campaign_targets.pluck(:status)).to all(eq("routed"))
+    end
+  end
+
   it "reports unassigned targets without routing them" do
     with_tenant(membership) do
       campaign = create(:home_visit_campaign, municipality: municipality, health_facility: facility, status: "targets_built")

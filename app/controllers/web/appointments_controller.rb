@@ -201,7 +201,7 @@ module Web
       from = parse_date_param(params[:from_date], default: Date.current.beginning_of_month)
       to = parse_date_param(params[:to_date], default: Date.current)
       to = from if to < from
-      [from, to]
+      [ from, to ]
     end
 
     def parse_date_param(value, default:)

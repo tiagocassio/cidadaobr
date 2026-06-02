@@ -53,7 +53,7 @@ docker compose up -d postgres
 POSTGRES_APP_USER=postgres POSTGRES_APP_PASSWORD=postgres \
 POSTGRES_SCHEMA_USER=postgres POSTGRES_SCHEMA_PASSWORD=postgres \
 CIDADAOBR_APP_ROLE_PASSWORD=cidadaobr_app \
-bin/rails db:prepare
+bin/setup
 
 bin/rails db:seed
 ```

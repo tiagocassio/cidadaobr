@@ -23,15 +23,21 @@ team_emulti_norte = nil
 
 ActiveRecord::Base.transaction do
   Cidadaobr::TenantContext.with(municipality_tenant) do
-    facility_a = HealthFacility.find_or_create_by!(municipality: municipality, cnes: "2000001") do |record|
-      record.name = "UBS Centro"
-      record.facility_service_kind = "primary_care"
-    end
+    facility_a = HealthFacility.find_or_initialize_by(municipality: municipality, cnes: "2000001")
+    facility_a.assign_attributes(
+      name: "UBS Centro",
+      facility_service_kind: "primary_care",
+      location: Cidadaobr::GeoPoint.build(lng: -42.78238676865467, lat: -5.147343336515128)
+    )
+    facility_a.save!
 
-    facility_b = HealthFacility.find_or_create_by!(municipality: municipality, cnes: "2000002") do |record|
-      record.name = "UBS Norte"
-      record.facility_service_kind = "primary_care"
-    end
+    facility_b = HealthFacility.find_or_initialize_by(municipality: municipality, cnes: "2000002")
+    facility_b.assign_attributes(
+      name: "UBS Norte",
+      facility_service_kind: "primary_care",
+      location: Cidadaobr::GeoPoint.build(lng: -42.759083736490716, lat: -5.0489857982207536)
+    )
+    facility_b.save!
 
     team_centro = CareTeam.find_or_initialize_by(municipality: municipality, ine: "0000000001")
     team_centro.assign_attributes(name: "Equipe Centro 01", health_facility: facility_a, team_kind: "esf")
@@ -49,19 +55,21 @@ ActiveRecord::Base.transaction do
     team_emulti_norte.assign_attributes(name: "Equipe eMulti Norte", health_facility: facility_b, team_kind: "emulti")
     team_emulti_norte.save!
 
-    micro_area = MicroArea.find_or_create_by!(municipality: municipality, code: "01") do |record|
-      record.name = "Microárea Centro"
-      record.care_team = team_centro
-      factory = Cidadaobr::GeoPoint.factory
-      ring = factory.linear_ring([
-        factory.point(-46.65, -23.58),
-        factory.point(-46.61, -23.58),
-        factory.point(-46.61, -23.52),
-        factory.point(-46.65, -23.52),
-        factory.point(-46.65, -23.58)
-      ])
-      record.coverage = factory.polygon(ring)
-    end
+    micro_area = MicroArea.find_or_initialize_by(municipality: municipality, code: "01")
+    factory = Cidadaobr::GeoPoint.factory
+    ring = factory.linear_ring([
+      factory.point(-42.792, -5.157),
+      factory.point(-42.772, -5.157),
+      factory.point(-42.772, -5.137),
+      factory.point(-42.792, -5.137),
+      factory.point(-42.792, -5.157)
+    ])
+    micro_area.assign_attributes(
+      name: "Microárea Centro",
+      care_team: team_centro,
+      coverage: factory.polygon(ring)
+    )
+    micro_area.save!
 
     FacilityMicroAreaCoverage.find_or_create_by!(health_facility: facility_a, micro_area: micro_area)
 
@@ -110,6 +118,8 @@ ActiveRecord::Base.transaction do
     puts "  Care teams: #{team_centro.name} (#{team_centro.team_kind}), #{team_norte.name} (#{team_norte.team_kind})"
     puts "  Demo B/M teams: #{team_esb_centro.name} (#{team_esb_centro.team_kind}), #{team_emulti_norte.name} (#{team_emulti_norte.team_kind})"
     puts "  Microárea demo: #{micro_area.code} - #{micro_area.name}"
+    puts "  UBS Centro: lat -5.147343, lng -42.782387"
+    puts "  UBS Norte: lat -5.048986, lng -42.759084"
   end
 end
 

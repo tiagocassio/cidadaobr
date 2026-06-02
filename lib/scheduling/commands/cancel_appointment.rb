@@ -29,6 +29,5 @@ module Scheduling
         @appointment
       end
     end
-
   end
 end

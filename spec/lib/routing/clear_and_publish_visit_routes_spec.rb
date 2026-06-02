@@ -340,12 +340,20 @@ RSpec.describe Routing::Commands::PublishVisitRoutes do
         route_date: Date.current,
         status: "draft"
       )
+      visit_kit = SupplyItem.create!(
+        municipality: municipality,
+        name: "Kit",
+        category: "visit_kit",
+        kind: "composite",
+        description: "Kit",
+        unit: "kit"
+      )
       VisitRouteProvisioning.create!(
         municipality: municipality,
         health_facility: facility,
         visit_route: route,
         status: "calculated",
-        lines_json: [ { "key" => "kit", "label" => "Kit", "quantity_required" => 1, "unit" => "kit", "supply_item_code" => "VISIT_KIT" } ]
+        lines_json: [ { "key" => visit_kit.id, "label" => "Kit", "quantity_required" => 1, "unit" => "kit", "supply_item_id" => visit_kit.id } ]
       )
       HomeVisitCampaignProvisioning.create!(
         municipality: municipality,

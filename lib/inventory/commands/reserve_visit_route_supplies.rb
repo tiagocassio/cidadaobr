@@ -95,20 +95,29 @@ module Inventory
             shortages << "#{line['label']}: required #{required}, reserved #{required - remaining}"
           end
         else
-          code = line["supply_item_code"].presence || line["key"]
-          if code.blank?
+          item = SupplyLineReference.resolve_item(municipality_id: @campaign.municipality_id, attrs: line)
+          if item.blank?
             line["quantity_reserved"] = 0
-            shortages << "#{line['label']}: missing supply item code"
+            shortages << "#{line['label']}: missing supply item"
           else
-            allocations, remaining = allocate_supply_item(
-              code: code,
-              quantity: required,
-              provisioning: provisioning
-            )
+            allocations = []
+            shortfall = false
+            item.leaf_requirements(required).each do |requirement|
+              part_allocations, remaining = allocate_supply_item(
+                item: requirement.item,
+                quantity: requirement.quantity.ceil,
+                provisioning: provisioning
+              )
+              allocations.concat(part_allocations)
+              shortfall = true if remaining.positive?
+            end
             line["allocations"] = allocations
-            line["quantity_reserved"] = required - remaining
-            if remaining.positive?
-              shortages << "#{line['label']}: required #{required}, reserved #{required - remaining}"
+            line["supply_item_id"] = item.id
+            if shortfall
+              line["quantity_reserved"] = 0
+              shortages << "#{line['label']}: required #{required}, could not reserve all components"
+            else
+              line["quantity_reserved"] = required
             end
           end
         end
@@ -153,10 +162,7 @@ module Inventory
         [ allocations, remaining ]
       end
 
-      def allocate_supply_item(code:, quantity:, provisioning:)
-        item = SupplyItem.find_by(municipality_id: @campaign.municipality_id, code: code)
-        return [ [], quantity ] unless item
-
+      def allocate_supply_item(item:, quantity:, provisioning:)
         balance = StockBalance.lock.find_by(
           municipality_id: @campaign.municipality_id,
           health_facility_id: @campaign.health_facility_id,
@@ -193,6 +199,10 @@ module Inventory
               "cidadaobr.campaigns.home_visit.flash.reserve_invalid_provisioning_status",
               status: provisioning.status
             )
+          end
+
+          if provisioning.lines_json.blank?
+            return I18n.t("cidadaobr.campaigns.home_visit.flash.reserve_empty_kit")
           end
         end
 

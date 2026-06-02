@@ -3,7 +3,7 @@
 module Campaigns
   module Commands
     class BuildCampaignTargetList < ApplicationCommand
-      Result = Data.define(:created_count, :skipped_count, :eligible_count)
+      Result = Data.define(:created_count, :skipped_count, :updated_count, :eligible_count)
 
       def self.preview_scope(campaign:, definition: nil)
         raw = definition || campaign.target_audience_definition
@@ -30,6 +30,7 @@ module Campaigns
         scope = base_scope(definition: definition)
         created = 0
         skipped = 0
+        updated = 0
         result = nil
 
         write_transaction do
@@ -43,7 +44,8 @@ module Campaigns
               citizen: citizen
             )
             if target.persisted?
-              skipped += 1
+              sync_exiting = sync_existing_target!(target, household: household, citizen: citizen)
+              sync_exiting ? updated += 1 : skipped += 1
               next
             end
 
@@ -62,7 +64,7 @@ module Campaigns
             @campaign.update!(status: next_status_after_build(@campaign))
           end
 
-          result = Result.new(created_count: created, skipped_count: skipped, eligible_count: eligible_count)
+          result = Result.new(created_count: created, skipped_count: skipped, updated_count: updated, eligible_count: eligible_count)
           emit_targets_built!(result: result)
         end
 
@@ -103,14 +105,14 @@ module Campaigns
 
         scope.where(
           id: HouseholdMember
-            .joins(:household)
-            .where(
-              households: {
-                municipality_id: @campaign.municipality_id,
-                micro_area_code: codes
-              }
-            )
-            .select(:citizen_id)
+                .joins(:household)
+                .where(
+                  households: {
+                    municipality_id: @campaign.municipality_id,
+                    micro_area_code: codes
+                  }
+                )
+                .select(:citizen_id)
         )
       end
 
@@ -125,6 +127,19 @@ module Campaigns
 
       def household_for(citizen)
         citizen.household_members.order(:created_at).first&.household
+      end
+
+      def sync_existing_target!(target, household:, citizen:)
+        return false unless target.status == "pending"
+
+        attrs = {
+          household: household,
+          priority_score: priority_for(citizen)
+        }
+        return false if target.household_id == household&.id && target.priority_score == attrs[:priority_score]
+
+        target.update!(attrs)
+        true
       end
 
       def remove_stale_targets!(scope:)
@@ -171,7 +186,7 @@ module Campaigns
             eligible_count: result.eligible_count,
             target_count: @campaign.campaign_targets.count
           },
-)
+        )
       end
     end
   end

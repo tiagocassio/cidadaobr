@@ -5,9 +5,11 @@ module Routing
     class ClearVisitRoutes < ApplicationCommand
       Result = Data.define(:routes_removed, :targets_reset, :message)
 
-      def initialize(campaign:, route_date:)
+      def initialize(campaign:, route_date:, sync_provisioning: true, within_existing_transaction: false)
         @campaign = campaign
         @route_date = route_date
+        @sync_provisioning = sync_provisioning
+        @within_existing_transaction = within_existing_transaction
       end
 
       def call
@@ -20,11 +22,11 @@ module Routing
           )
         end
 
-        write_transaction { perform_clear!(sync_provisioning: true) }
-      end
-
-      def self.clear!(campaign:, route_date:, sync_provisioning: true)
-        new(campaign: campaign, route_date: route_date).perform_clear!(sync_provisioning: sync_provisioning)
+        if @within_existing_transaction
+          perform_clear!
+        else
+          write_transaction { perform_clear! }
+        end
       end
 
       def self.sync_provisioning!(campaign)
@@ -38,7 +40,7 @@ module Routing
 
       private
 
-      def perform_clear!(sync_provisioning:)
+      def perform_clear!
         routes = @campaign.visit_routes.where(route_date: @route_date)
         target_ids = VisitRouteStop
           .where(visit_route_id: routes.select(:id))
@@ -59,7 +61,7 @@ module Routing
           @campaign.update!(status: "targets_built")
         end
 
-        self.class.sync_provisioning!(@campaign) if sync_provisioning
+        self.class.sync_provisioning!(@campaign) if @sync_provisioning
 
         Result.new(routes_removed, targets_reset, nil)
       end

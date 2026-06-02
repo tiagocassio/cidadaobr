@@ -12,9 +12,25 @@ influenza = ImmunobiologicalProduct.find_or_initialize_by(municipality: municipa
 influenza.assign_attributes(name: "Influenza tetravalente", target_species: "human", active: true)
 influenza.save!
 
-syringe = SupplyItem.find_or_initialize_by(municipality: municipality, code: "SYRINGE_05")
-syringe.assign_attributes(name: "Seringa 0,5 ml", unit: "unit", active: true)
+syringe = SupplyItem.find_or_initialize_by(municipality: municipality, name: "Seringa 0,5 ml", kind: "simple")
+syringe.assign_attributes(
+  category: "syringe",
+  sku: "SYRINGE-05",
+  description: "Seringa descartável 0,5 ml — vacinação e medicação em domicílio",
+  unit: "unit",
+  active: true
+)
 syringe.save!
+
+lancet = SupplyItem.find_or_initialize_by(municipality: municipality, name: "Lanceta", kind: "simple")
+lancet.assign_attributes(
+  category: "lancet",
+  sku: "LANCET-01",
+  description: "Lanceta descartável — glicemia capilar em visita domiciliar",
+  unit: "unit",
+  active: true
+)
+lancet.save!
 
 lot = ImmunobiologicalLot.find_or_initialize_by(
   municipality: municipality,
@@ -37,16 +53,31 @@ StockBalance.find_or_initialize_by(
   supply_item: syringe
 ).update!(quantity: 1_000)
 
-visit_kit = SupplyItem.find_or_initialize_by(municipality: municipality, code: "VISIT_KIT")
-visit_kit.assign_attributes(name: "Kit visita domiciliar", unit: "kit", active: true)
+StockBalance.find_or_initialize_by(
+  municipality: municipality,
+  health_facility: facility_a,
+  supply_item: lancet
+).update!(quantity: 1_000)
+
+visit_kit = SupplyItem.find_or_initialize_by(municipality: municipality, name: "Kit visita domiciliar", kind: "composite")
+visit_kit.assign_attributes(
+  category: "visit_kit",
+  sku: "VISIT-KIT",
+  description: "Kit composto para visita domiciliar de campanha (seringa + lancetas por parada)",
+  unit: "kit",
+  active: true
+)
 visit_kit.save!
 
-HealthFacility.where(municipality: municipality).find_each do |facility|
-  StockBalance.find_or_initialize_by(
-    municipality: municipality,
-    health_facility: facility,
-    supply_item: visit_kit
-  ).update!(quantity: 500)
+[
+  [ syringe, 1 ],
+  [ lancet, 2 ]
+].each do |component_item, quantity_per_unit|
+  SupplyItemComponent.find_or_initialize_by(composite_item: visit_kit, component_item: component_item).tap do |component|
+    component.municipality = municipality
+    component.quantity_per_unit = quantity_per_unit
+    component.save!
+  end
 end
 
 vaccination_room = ConsultationRoom.find_or_initialize_by(
@@ -83,26 +114,49 @@ ends_on = starts_on + 6.days
 end
 
 team_centro = CareTeam.find_by!(municipality: municipality, ine: "0000000001")
-household = Household.find_or_initialize_by(
-  municipality: municipality,
-  health_facility: facility_a,
-  street: "Rua Demo",
-  street_number: "100"
-)
-household.assign_attributes(
-  ibge_code: municipality.ibge_code,
-  care_team: team_centro,
-  micro_area_code: "01",
-  neighborhood: "Centro",
-  location: Cidadaobr::GeoPoint.build(lng: -46.6333, lat: -23.5505)
-)
-household.save!
+demo_households = [
+  {
+    cpf: "52998224725",
+    name: "Maria Silva Demo",
+    birth_date: 72.years.ago.to_date,
+    street_number: "100",
+    lat: -5.169102301089202,
+    lng: -42.77499377455036
+  },
+  {
+    cpf: "39053344705",
+    name: "João Santos Demo",
+    birth_date: 45.years.ago.to_date,
+    street_number: "120",
+    lat: -5.190002213011813,
+    lng: -42.756025191228396
+  },
+  {
+    cpf: "15350946056",
+    name: "Ana Costa Demo",
+    birth_date: 8.years.ago.to_date,
+    street_number: "140",
+    lat: -5.1834630510838675,
+    lng: -42.736412877845524
+  }
+]
 
-[
-  { cpf: "52998224725", name: "Maria Silva Demo", birth_date: 72.years.ago.to_date },
-  { cpf: "39053344705", name: "João Santos Demo", birth_date: 45.years.ago.to_date },
-  { cpf: "15350946056", name: "Ana Costa Demo", birth_date: 8.years.ago.to_date }
-].each do |attrs|
+demo_households.each do |attrs|
+  household = Household.find_or_initialize_by(
+    municipality: municipality,
+    health_facility: facility_a,
+    street: "Rua Demo",
+    street_number: attrs[:street_number]
+  )
+  household.assign_attributes(
+    ibge_code: municipality.ibge_code,
+    care_team: team_centro,
+    micro_area_code: "01",
+    neighborhood: "Centro",
+    location: Cidadaobr::GeoPoint.build(lng: attrs[:lng], lat: attrs[:lat])
+  )
+  household.save!
+
   citizen = Citizen.find_or_initialize_by(municipality: municipality, cpf: attrs[:cpf])
   citizen.assign_attributes(
     care_team: team_centro,
@@ -112,6 +166,8 @@ household.save!
     sex: "F"
   )
   citizen.save!
+
+  HouseholdMember.where(citizen: citizen).where.not(household: household).delete_all
   HouseholdMember.find_or_create_by!(household: household, citizen: citizen)
 end
 

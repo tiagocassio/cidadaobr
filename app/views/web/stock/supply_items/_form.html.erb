@@ -1,0 +1,87 @@
+<% category_options = SupplyItem::CATEGORIES.map { |value| [t("activerecord.attributes.supply_item/category.#{value}", default: value.humanize), value] } %>
+<% kind_options = SupplyItem::KINDS.map { |value| [t("activerecord.attributes.supply_item/kind.#{value}", default: value.humanize), value] } %>
+<% component_select_options = simple_items.map { |simple_item| ["#{simple_item.name} (#{t("activerecord.attributes.supply_item/category.#{simple_item.category}", default: simple_item.category)})", simple_item.id] } %>
+
+<%= form_with model: item,
+              url: item.persisted? ? web_stock_supply_item_path(item) : web_stock_supply_items_path,
+              class: "max-w-3xl space-y-4 rounded-lg border border-slate-200 bg-white p-6",
+              data: {
+                controller: "supply-item-form",
+                supply_item_form_clear_label_value: t("cidadaobr.stock.supply_items.clear_component_row"),
+                supply_item_form_remove_label_value: t("cidadaobr.common.remove")
+              } do |form| %>
+  <% if item.errors.any? %>
+    <div class="rounded bg-red-50 px-4 py-2 text-sm text-red-800"><%= item.errors.full_messages.to_sentence %></div>
+  <% end %>
+
+  <div class="grid gap-4 md:grid-cols-2">
+    <div>
+      <%= form.label :category, class: "mb-1 block text-sm font-medium" %>
+      <%= form.select :category, category_options, {}, class: "w-full rounded border border-slate-300 px-3 py-2", required: true %>
+    </div>
+    <div>
+      <%= form.label :kind, class: "mb-1 block text-sm font-medium" %>
+      <%= form.select :kind, kind_options, {},
+                      class: "w-full rounded border border-slate-300 px-3 py-2",
+                      required: true,
+                      data: { supply_item_form_target: "kind", action: "change->supply-item-form#toggleComponents" } %>
+    </div>
+  </div>
+
+  <div>
+    <%= form.label :name, class: "mb-1 block text-sm font-medium" %>
+    <%= form.text_field :name, required: true, class: "w-full rounded border border-slate-300 px-3 py-2" %>
+  </div>
+
+  <div class="grid gap-4 md:grid-cols-2">
+    <div>
+      <%= form.label :unit, class: "mb-1 block text-sm font-medium" %>
+      <%= form.text_field :unit, required: true, placeholder: "unit, box, kit", class: "w-full rounded border border-slate-300 px-3 py-2" %>
+    </div>
+    <div>
+      <%= form.label :sku, class: "mb-1 block text-sm font-medium" %>
+      <%= form.text_field :sku, class: "w-full rounded border border-slate-300 px-3 py-2" %>
+    </div>
+  </div>
+
+  <div>
+    <%= form.label :description, class: "mb-1 block text-sm font-medium" %>
+    <%= form.text_area :description, rows: 3, class: "w-full rounded border border-slate-300 px-3 py-2", placeholder: t("cidadaobr.stock.supply_items.description_hint") %>
+  </div>
+
+  <div class="flex items-center gap-2">
+    <%= form.check_box :active %>
+    <%= form.label :active, class: "text-sm" %>
+  </div>
+
+  <div data-supply-item-form-target="componentsSection" class="<%= item.composite? ? "" : "hidden" %> space-y-3 rounded-lg border border-slate-200 bg-slate-50 p-4">
+    <div class="flex items-center justify-between">
+      <h3 class="text-sm font-semibold"><%= t("cidadaobr.stock.supply_items.components_title") %></h3>
+      <button type="button"
+              class="text-sm text-emerald-700 underline disabled:cursor-not-allowed disabled:text-slate-400 disabled:no-underline"
+              data-supply-item-form-target="addRowButton"
+              data-action="supply-item-form#addRow">
+        <%= t("cidadaobr.stock.supply_items.add_component") %>
+      </button>
+    </div>
+    <p class="text-xs text-slate-600"><%= t("cidadaobr.stock.supply_items.components_hint") %></p>
+
+    <div class="hidden md:grid md:grid-cols-[1fr_120px_80px] md:gap-2 md:text-xs md:font-medium md:text-slate-600">
+      <div><%= SupplyItemComponent.human_attribute_name(:component_item_id) %></div>
+      <div><%= SupplyItemComponent.human_attribute_name(:quantity_per_unit) %></div>
+      <div></div>
+    </div>
+
+    <div data-supply-item-form-target="rows" class="space-y-2">
+      <% component_lines.each_with_index do |line, index| %>
+        <%= render "component_row", index: index, line: line, component_select_options: component_select_options %>
+      <% end %>
+    </div>
+
+    <template data-supply-item-form-target="rowTemplate">
+      <%= render "component_row", index: "NEW_INDEX", line: { "component_item_id" => "", "quantity_per_unit" => 1 }, component_select_options: component_select_options %>
+    </template>
+  </div>
+
+  <%= form.submit class: "rounded bg-emerald-700 px-4 py-2 font-semibold text-white" %>
+<% end %>

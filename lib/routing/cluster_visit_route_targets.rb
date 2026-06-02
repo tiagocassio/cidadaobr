@@ -44,8 +44,11 @@ module Routing
           ),
           clustered AS (
             SELECT idx, target_id,
-              ST_ClusterDBSCAN(ST_SetSRID(ST_MakePoint(lng, lat), 4326)::geography, #{eps_meters.to_f}, #{min_points.to_i})
-                OVER () AS cluster_id
+              ST_ClusterDBSCAN(
+                ST_Transform(ST_SetSRID(ST_MakePoint(lng, lat), 4326), 3857),
+                #{eps_meters.to_f},
+                #{min_points.to_i}
+              ) OVER (ORDER BY idx) AS cluster_id
             FROM points
           )
           SELECT idx, cluster_id FROM clustered ORDER BY idx

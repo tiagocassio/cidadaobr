@@ -15,13 +15,13 @@ RSpec.describe Inventory::Commands::UpdateCampaignProvisioning do
       health_facility: facility,
       home_visit_campaign: campaign,
       status: "reserved",
-      totals_json: [{ "key" => "x", "label" => "X", "quantity_required" => 1, "unit" => "unit" }]
+      totals_json: [ { "key" => "x", "label" => "X", "quantity_required" => 1, "unit" => "unit" } ]
     )
 
     expect do
       described_class.call(
         campaign: campaign,
-        totals: [{ key: "x", label: "X", quantity_required: 2, unit: "unit" }]
+        totals: [ { key: "x", label: "X", quantity_required: 2, unit: "unit" } ]
       )
     end.to raise_error(ArgumentError, /bloqueado/)
     end
@@ -43,19 +43,19 @@ RSpec.describe Inventory::Commands::UpdateCampaignProvisioning do
         health_facility: facility,
         visit_route: route,
         status: "calculated",
-        lines_json: [{ "key" => "gloves", "label" => "Luvas", "quantity_required" => 1, "unit" => "unit" }]
+        lines_json: [ { "key" => "gloves", "label" => "Luvas", "quantity_required" => 1, "unit" => "unit" } ]
       )
       HomeVisitCampaignProvisioning.create!(
         municipality: municipality,
         health_facility: facility,
         home_visit_campaign: campaign,
         status: "calculated",
-        totals_json: [{ "key" => "gloves", "label" => "Luvas", "quantity_required" => 1, "unit" => "unit" }]
+        totals_json: [ { "key" => "gloves", "label" => "Luvas", "quantity_required" => 1, "unit" => "unit" } ]
       )
 
       described_class.call(
         campaign: campaign,
-        totals: [{ key: "gloves", label: "Luvas", quantity_required: 10, unit: "unit" }]
+        totals: [ { key: "gloves", label: "Luvas", quantity_required: 10, unit: "unit" } ]
       )
 
       expect(route.visit_route_provisioning.reload.lines_json.first["quantity_required"]).to eq(10)
@@ -90,7 +90,7 @@ RSpec.describe Inventory::Commands::UpdateCampaignProvisioning do
           health_facility: facility,
           visit_route: route,
           status: "calculated",
-          lines_json: [{ "key" => "gloves", "label" => "Luvas", "quantity_required" => 1, "unit" => "unit" }]
+          lines_json: [ { "key" => "gloves", "label" => "Luvas", "quantity_required" => 1, "unit" => "unit" } ]
         )
       end
       HomeVisitCampaignProvisioning.create!(
@@ -98,12 +98,12 @@ RSpec.describe Inventory::Commands::UpdateCampaignProvisioning do
         health_facility: facility,
         home_visit_campaign: campaign,
         status: "calculated",
-        totals_json: [{ "key" => "gloves", "label" => "Luvas", "quantity_required" => 1, "unit" => "unit" }]
+        totals_json: [ { "key" => "gloves", "label" => "Luvas", "quantity_required" => 1, "unit" => "unit" } ]
       )
 
       described_class.call(
         campaign: campaign,
-        totals: [{ key: "gloves", label: "Luvas", quantity_required: 10, unit: "unit" }]
+        totals: [ { key: "gloves", label: "Luvas", quantity_required: 10, unit: "unit" } ]
       )
 
       route_totals = [ route_a, route_b ].flat_map do |route|
@@ -144,7 +144,7 @@ RSpec.describe Inventory::Commands::UpdateCampaignProvisioning do
           health_facility: facility,
           visit_route: route,
           status: "calculated",
-          lines_json: [{ "key" => "gloves", "label" => "Luvas", "quantity_required" => 1, "unit" => "unit" }]
+          lines_json: [ { "key" => "gloves", "label" => "Luvas", "quantity_required" => 1, "unit" => "unit" } ]
         )
       end
       HomeVisitCampaignProvisioning.create!(
@@ -152,12 +152,12 @@ RSpec.describe Inventory::Commands::UpdateCampaignProvisioning do
         health_facility: facility,
         home_visit_campaign: campaign,
         status: "calculated",
-        totals_json: [{ "key" => "gloves", "label" => "Luvas", "quantity_required" => 1, "unit" => "unit" }]
+        totals_json: [ { "key" => "gloves", "label" => "Luvas", "quantity_required" => 1, "unit" => "unit" } ]
       )
 
       described_class.call(
         campaign: campaign,
-        totals: [{ key: "gloves", label: "Luvas", quantity_required: 10, unit: "unit" }],
+        totals: [ { key: "gloves", label: "Luvas", quantity_required: 10, unit: "unit" } ],
         route_date: today
       )
 

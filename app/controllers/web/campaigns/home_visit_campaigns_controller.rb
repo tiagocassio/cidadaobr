@@ -40,7 +40,7 @@ module Web
           starts_on: Date.current,
           ends_on: 30.days.from_now.to_date,
           target_audience_definition: { "min_age" => 60 },
-          supply_plan: [ { "name" => "Kit visita", "supply_item_code" => "VISIT_KIT", "quantity_per_visit" => 1, "unit" => "kit" } ]
+          supply_plan: default_supply_plan
         )
       end
 
@@ -227,7 +227,7 @@ module Web
         end
 
         totals = params.require(:totals).map do |line|
-          line.permit(:key, :label, :quantity_required, :unit, :supply_item_code, :immunobiological_product_id).to_h
+          line.permit(:key, :label, :quantity_required, :unit, :supply_item_id, :immunobiological_product_id).to_h
         end
         CommandBus.dispatch(
           Inventory::Commands::UpdateCampaignProvisioning,
@@ -294,7 +294,7 @@ module Web
             marker = {
               lat: household.location.y,
               lng: household.location.x,
-              label: "#{route.care_team.name} · parada #{stop.stop_order}",
+              label: "#{route.care_team.name} · #{stop.citizen.full_name} · parada #{stop.stop_order}",
               route_id: route.id
             }
             @map_markers << marker
@@ -346,6 +346,19 @@ module Web
         @facilities = scoped_health_facilities.order(:name)
       end
 
+      def default_supply_plan
+        visit_kit = SupplyItem.composites.find_by(municipality_id: current_municipality.id, name: "Kit visita domiciliar")
+        return [] unless visit_kit
+
+        [
+          {
+            "supply_item_id" => visit_kit.id,
+            "quantity_per_visit" => 1,
+            "unit" => visit_kit.unit
+          }
+        ]
+      end
+
       def campaign_params
         permitted = params.require(:home_visit_campaign).permit(
           :name,
@@ -354,7 +367,7 @@ module Web
           :ends_on,
           :waste_factor,
           target_audience_definition: {},
-          supply_plan: [ %i[name supply_item_code quantity_per_visit unit] ]
+          supply_plan: [ %i[supply_item_id quantity_per_visit unit] ]
         )
         permitted[:health_facility_id] = sanitize_scoped_health_facility_id(permitted[:health_facility_id])
         permitted

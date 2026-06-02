@@ -60,7 +60,14 @@ RSpec.describe Inventory::PreviewCampaignProvisioning do
 
   it "subtracts committed syringes for syringe supply lines" do
     with_tenant(membership) do
-      syringe = SupplyItem.create!(municipality: municipality, code: "SYRINGE-1ML", name: "Seringa", unit: "unit")
+      syringe = SupplyItem.create!(
+        municipality: municipality,
+        name: "Seringa",
+        category: "syringe",
+        kind: "simple",
+        description: "Seringa 1 ml",
+        unit: "unit"
+      )
       StockBalance.create!(
         municipality: municipality,
         health_facility: facility,
@@ -89,7 +96,7 @@ RSpec.describe Inventory::PreviewCampaignProvisioning do
       available = described_class.send(
         :available_for_line,
         campaign: campaign,
-        line: { "unit" => "unit", "supply_item_code" => "SYRINGE-1ML", "key" => "SYRINGE-1ML" }
+        line: { "unit" => "unit", "supply_item_id" => syringe.id, "key" => syringe.id }
       )
 
       expect(available).to eq(100)

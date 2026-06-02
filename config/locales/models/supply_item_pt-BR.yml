@@ -1,0 +1,67 @@
+pt-BR:
+  activerecord:
+    attributes:
+      supply_item:
+        category: "Categoria"
+        name: "Nome"
+        unit: "Unidade"
+        kind: "Tipo"
+        description: "Descrição"
+        sku: "SKU (fornecedor)"
+        active: "Ativo"
+      supply_item/kind:
+        simple: "Simples"
+        composite: "Composto (kit)"
+      supply_item/category:
+        syringe: "Seringa"
+        needle: "Agulha"
+        lancet: "Lanceta"
+        glove: "Luva descartável"
+        mask: "Máscara"
+        cap: "Touca descartável"
+        gown: "Avental / macetão"
+        gauze: "Gaze"
+        cotton_ball: "Algodão"
+        alcohol_70: "Álcool 70%"
+        antiseptic: "Antisséptico / desinfetante"
+        test_strip: "Tira reagente"
+        rapid_test: "Teste rápido"
+        collection_tube: "Tubo de coleta"
+        specimen_container: "Frasco coletor"
+        cold_chain: "Cadeia fria"
+        adhesive_tape: "Fita adesiva"
+        bandage: "Curativo / atadura"
+        oral_rehydration: "Soro de reidratação oral"
+        condom: "Preservativo"
+        lubricant: "Lubrificante"
+        larvicide: "Larvicida"
+        insecticide: "Inseticida"
+        water_treatment: "Tratamento de água"
+        educational_material: "Material educativo / impresso"
+        visit_kit: "Kit de visita"
+        medication_aux: "Insumo auxiliar de medicamento"
+        sharps_container: "Coletor perfurocortante"
+        other: "Outros"
+      supply_item_component:
+        composite_item_id: "Item composto"
+        component_item_id: "Componente"
+        quantity_per_unit: "Quantidade por unidade"
+    errors:
+      models:
+        supply_item:
+          attributes:
+            base:
+              composite_requires_components: "informe ao menos um componente para o kit"
+              component_quantity_required: "informe a quantidade de cada componente"
+              invalid_component_quantity: "quantidade do componente deve ser maior que zero"
+              invalid_component_item: "componente inválido ou de outro município"
+              component_must_be_simple: "componente deve ser um item simples"
+              duplicate_component_item: "não repita o mesmo componente no kit"
+              invalid_component_reference: "o kit não pode incluir a si mesmo como componente"
+        supply_item_component:
+          attributes:
+            composite_item_id:
+              must_be_composite: "deve ser um item composto (kit)"
+            component_item_id:
+              must_be_simple: "deve ser um item simples"
+              invalid_component_reference: "não pode referenciar o próprio item"

@@ -18,7 +18,7 @@ SCHEMA_MUTATION_TASKS = %w[
 ].freeze
 
 SCHEMA_MUTATION_TASKS.each do |task_name|
-  Rake::Task[task_name].enhance(["cidadaobr:db:with_schema_user"])
+  Rake::Task[task_name].enhance([ "cidadaobr:db:with_schema_user" ])
   Rake::Task[task_name].enhance do
     Cidadaobr::DatabaseBootstrap.ensure_admin_objects!
   ensure
@@ -26,7 +26,7 @@ SCHEMA_MUTATION_TASKS.each do |task_name|
   end
 end
 
-Rake::Task["db:prepare"].enhance(["cidadaobr:db:with_schema_user"])
+Rake::Task["db:prepare"].enhance([ "cidadaobr:db:with_schema_user" ])
 Rake::Task["db:prepare"].enhance do
   Cidadaobr::DatabaseBootstrap.ensure_admin_objects!
 ensure

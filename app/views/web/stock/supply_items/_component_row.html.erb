@@ -1,0 +1,24 @@
+<div class="grid gap-2 md:grid-cols-[1fr_120px_80px] md:items-end" data-supply-item-form-target="row">
+  <div>
+    <%= select_tag "supply_item[components][#{index}][component_item_id]",
+                   options_for_select([ [ t("cidadaobr.stock.supply_items.select_component"), "" ] ] + component_select_options, line["component_item_id"]),
+                   class: "w-full rounded border border-slate-300 px-3 py-2 text-sm",
+                   data: { supply_item_form_target: "componentField" } %>
+  </div>
+  <div>
+    <%= number_field_tag "supply_item[components][#{index}][quantity_per_unit]",
+                         line["quantity_per_unit"],
+                         min: 0.001,
+                         step: 0.001,
+                         class: "w-full rounded border border-slate-300 px-3 py-2 text-sm",
+                         data: { supply_item_form_target: "componentField" } %>
+  </div>
+  <div class="flex md:justify-end">
+    <button type="button"
+            class="text-sm text-red-700 underline"
+            data-supply-item-form-target="removeButton"
+            data-action="supply-item-form#removeRow">
+      <%= t("cidadaobr.common.remove") %>
+    </button>
+  </div>
+</div>

@@ -29,13 +29,32 @@ class CreateInventoryAndCampaignTables < ActiveRecord::Migration[8.1]
 
     create_table :supply_items, id: :uuid do |t|
       t.uuid :municipality_id, null: false
-      t.string :code, null: false
+      t.string :category, null: false, default: "other"
       t.string :name, null: false
       t.string :unit, null: false, default: "unit"
+      t.string :kind, null: false, default: "simple"
+      t.text :description
+      t.string :sku
       t.boolean :active, null: false, default: true
       t.timestamps
     end
-    add_index :supply_items, %i[municipality_id code], unique: true, name: "index_supply_items_on_municipality_code"
+    add_index :supply_items,
+              %i[municipality_id sku],
+              unique: true,
+              where: "sku IS NOT NULL",
+              name: "index_supply_items_on_municipality_sku"
+
+    create_table :supply_item_components, id: :uuid do |t|
+      t.uuid :municipality_id, null: false
+      t.uuid :composite_item_id, null: false
+      t.uuid :component_item_id, null: false
+      t.decimal :quantity_per_unit, precision: 12, scale: 3, null: false, default: 1
+      t.timestamps
+    end
+    add_index :supply_item_components,
+              %i[composite_item_id component_item_id],
+              unique: true,
+              name: "index_supply_item_components_on_composite_and_component"
 
     create_table :stock_balances, id: :uuid do |t|
       t.uuid :municipality_id, null: false
@@ -112,6 +131,9 @@ class CreateInventoryAndCampaignTables < ActiveRecord::Migration[8.1]
     add_foreign_key :stock_movements, :immunobiological_lots
     add_foreign_key :stock_movements, :supply_items
     add_foreign_key :stock_movements, :health_facilities
+    add_foreign_key :supply_item_components, :supply_items, column: :composite_item_id
+    add_foreign_key :supply_item_components, :supply_items, column: :component_item_id
+    add_foreign_key :supply_item_components, :municipalities
     add_foreign_key :vaccination_campaigns, :immunobiological_products
     add_foreign_key :vaccination_campaigns, :health_facilities
   end

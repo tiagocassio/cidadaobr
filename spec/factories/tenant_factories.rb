@@ -160,6 +160,18 @@ FactoryBot.define do
     to_create { |instance| TenantFactoryHelpers.save_with_municipality_tenant!(instance) }
   end
 
+  factory :supply_item do
+    municipality
+    sequence(:name) { |n| "Insumo #{n}" }
+    category { "other" }
+    kind { "simple" }
+    unit { "unit" }
+    description { "Insumo demo" }
+    active { true }
+
+    to_create { |instance| TenantFactoryHelpers.save_with_municipality_tenant!(instance) }
+  end
+
   factory :immunobiological_lot do
     municipality
     health_facility { association :health_facility, municipality: municipality }

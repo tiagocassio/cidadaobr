@@ -1,0 +1,58 @@
+<section>
+  <div class="mb-4 flex items-center justify-between">
+    <h2 class="text-2xl font-bold"><%= t("cidadaobr.stock.supply_items.index_title") %></h2>
+    <%= link_to t("cidadaobr.stock.supply_items.new_link"), new_web_stock_supply_item_path, class: "rounded bg-emerald-700 px-4 py-2 text-sm font-semibold text-white" %>
+  </div>
+
+  <div class="overflow-hidden rounded-lg border border-slate-200 bg-white">
+    <table class="min-w-full text-sm">
+      <thead class="bg-slate-50 text-left">
+        <tr>
+          <th class="px-4 py-3"><%= SupplyItem.human_attribute_name(:name) %></th>
+          <th class="px-4 py-3"><%= SupplyItem.human_attribute_name(:category) %></th>
+          <th class="px-4 py-3"><%= SupplyItem.human_attribute_name(:unit) %></th>
+          <th class="px-4 py-3"><%= SupplyItem.human_attribute_name(:kind) %></th>
+          <th class="px-4 py-3"><%= t("cidadaobr.stock.supply_items.components_count") %></th>
+          <th class="px-4 py-3"><%= SupplyItem.human_attribute_name(:active) %></th>
+          <th class="px-4 py-3"></th>
+        </tr>
+      </thead>
+      <tbody>
+        <% if @items.empty? %>
+          <tr>
+            <td colspan="7" class="px-4 py-8 text-center text-slate-600">
+              <%= t("cidadaobr.stock.supply_items.empty") %>
+              <%= link_to t("cidadaobr.stock.supply_items.new_link"), new_web_stock_supply_item_path, class: "ml-2 text-emerald-700 underline" %>
+            </td>
+          </tr>
+        <% else %>
+          <% @items.each do |item| %>
+          <tr class="border-t border-slate-100">
+            <td class="px-4 py-3">
+              <div class="font-medium"><%= item.name %></div>
+              <% if item.sku.present? %>
+                <div class="text-xs text-slate-500">SKU <%= item.sku %></div>
+              <% end %>
+            </td>
+            <td class="px-4 py-3"><%= t("activerecord.attributes.supply_item/category.#{item.category}", default: item.category) %></td>
+            <td class="px-4 py-3"><%= item.unit %></td>
+            <td class="px-4 py-3"><%= t("activerecord.attributes.supply_item/kind.#{item.kind}", default: item.kind) %></td>
+            <td class="px-4 py-3">
+              <% if item.composite? %>
+                <%= item.supply_item_components.size %>
+              <% else %>
+                —
+              <% end %>
+            </td>
+            <td class="px-4 py-3"><%= item.active? ? t("cidadaobr.common.yes") : t("cidadaobr.common.no") %></td>
+            <td class="px-4 py-3 text-right">
+              <%= link_to t("cidadaobr.actions.edit"), edit_web_stock_supply_item_path(item), class: "text-emerald-700 underline" %>
+            </td>
+          </tr>
+          <% end %>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+  <%== pagy_nav(@pagy) if @pagy.pages > 1 %>
+</section>

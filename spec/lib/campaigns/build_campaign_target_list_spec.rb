@@ -132,4 +132,34 @@ RSpec.describe Campaigns::Commands::BuildCampaignTargetList do
       expect(campaign.campaign_targets.pluck(:status)).to eq([ "routed" ])
     end
   end
+
+  it "syncs household on existing pending targets when domicilio changes" do
+    with_tenant(membership) do
+      old_household = create(:household, municipality: municipality, health_facility: facility, care_team: team, street_number: "1")
+      new_household = create(:household, municipality: municipality, health_facility: facility, care_team: team, street_number: "2")
+      citizen = create(:citizen, municipality: municipality, health_facility: facility, care_team: team)
+      create(:household_member, household: new_household, citizen: citizen)
+      campaign = create(
+        :home_visit_campaign,
+        municipality: municipality,
+        health_facility: facility,
+        target_audience_definition: { "min_age" => 0 }
+      )
+      target = create(
+        :campaign_target,
+        municipality: municipality,
+        health_facility: facility,
+        campaign: campaign,
+        citizen: citizen,
+        household: old_household,
+        status: "pending"
+      )
+
+      result = described_class.call(campaign: campaign)
+
+      expect(result.created_count).to eq(0)
+      expect(result.updated_count).to eq(1)
+      expect(target.reload.household_id).to eq(new_household.id)
+    end
+  end
 end

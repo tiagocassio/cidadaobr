@@ -43,6 +43,201 @@ RSpec.describe "Web stock and campaigns", type: :request do
     end
   end
 
+  describe "supply items" do
+    it "lists and creates a simple supply item" do
+      get web_stock_supply_items_path
+      expect(response).to have_http_status(:ok)
+
+      expect {
+        post web_stock_supply_items_path, params: {
+          supply_item: {
+            category: "syringe",
+            name: "Seringa 1 ml",
+            unit: "unit",
+            kind: "simple",
+            description: "Vacinação domiciliar",
+            active: true
+          }
+        }
+      }.to change { with_tenant(membership) { SupplyItem.count } }.by(1)
+
+      expect(response).to redirect_to(web_stock_supply_items_path)
+    end
+
+    it "creates a composite supply item with components" do
+      syringe = create(:supply_item, municipality: municipality, name: "Seringa", category: "syringe")
+      lancet = create(:supply_item, municipality: municipality, name: "Lanceta", category: "lancet")
+
+      expect {
+        post web_stock_supply_items_path, params: {
+          supply_item: {
+            category: "visit_kit",
+            name: "Kit visita",
+            unit: "kit",
+            kind: "composite",
+            description: "Kit por parada",
+            active: true,
+            components: [
+              { component_item_id: syringe.id, quantity_per_unit: 1 },
+              { component_item_id: lancet.id, quantity_per_unit: 2 }
+            ]
+          }
+        }
+      }.to change { with_tenant(membership) { SupplyItem.where(kind: "composite").count } }.by(1)
+        .and change { with_tenant(membership) { SupplyItemComponent.count } }.by(2)
+
+      kit = with_tenant(membership) { SupplyItem.find_by!(name: "Kit visita") }
+      expect(with_tenant(membership) { kit.supply_item_components.count }).to eq(2)
+      expect(response).to redirect_to(web_stock_supply_items_path)
+    end
+
+    it "re-renders new when composite create has invalid components" do
+      syringe = create(:supply_item, municipality: municipality, name: "Seringa", category: "syringe")
+
+      expect {
+        post web_stock_supply_items_path, params: {
+          supply_item: {
+            category: "visit_kit",
+            name: "Kit inválido",
+            unit: "kit",
+            kind: "composite",
+            description: "Kit",
+            active: true,
+            components: [
+              { component_item_id: syringe.id, quantity_per_unit: 1 },
+              { component_item_id: syringe.id, quantity_per_unit: 2 }
+            ]
+          }
+        }
+      }.not_to change { with_tenant(membership) { SupplyItem.where(name: "Kit inválido").count } }
+
+      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response.body).to include('action="/web/stock/supply_items"')
+      expect(response.body).not_to include('action="/web/stock/supply_items/')
+    end
+
+    it "includes inactive linked components in the edit select" do
+      inactive_syringe = create(
+        :supply_item,
+        municipality: municipality,
+        name: "Seringa inativa",
+        category: "syringe",
+        active: false
+      )
+      kit = with_tenant(membership) do
+        item = SupplyItem.create!(
+          municipality: municipality,
+          category: "visit_kit",
+          name: "Kit com inativo",
+          unit: "kit",
+          kind: "composite",
+          description: "Kit"
+        )
+        SupplyItemComponent.create!(
+          municipality: municipality,
+          composite_item: item,
+          component_item: inactive_syringe,
+          quantity_per_unit: 1
+        )
+        item
+      end
+
+      get edit_web_stock_supply_item_path(kit)
+
+      expect(response).to have_http_status(:ok)
+      expect(response.body).to include("Seringa inativa")
+    end
+
+    it "updates a composite supply item replacing components" do
+      syringe = create(:supply_item, municipality: municipality, name: "Seringa", category: "syringe")
+      lancet = create(:supply_item, municipality: municipality, name: "Lanceta", category: "lancet")
+      kit = with_tenant(membership) do
+        item = SupplyItem.create!(
+          municipality: municipality,
+          category: "visit_kit",
+          name: "Kit antigo",
+          unit: "kit",
+          kind: "composite",
+          description: "Kit"
+        )
+        SupplyItemComponent.create!(
+          municipality: municipality,
+          composite_item: item,
+          component_item: syringe,
+          quantity_per_unit: 1
+        )
+        item
+      end
+
+      patch web_stock_supply_item_path(kit), params: {
+        supply_item: {
+          category: "visit_kit",
+          name: "Kit atualizado",
+          unit: "kit",
+          kind: "composite",
+          description: "Kit revisado",
+          active: true,
+          components: [
+            { component_item_id: lancet.id, quantity_per_unit: 3 }
+          ]
+        }
+      }
+
+      expect(response).to redirect_to(web_stock_supply_items_path)
+      with_tenant(membership) do
+        kit.reload
+        expect(kit.name).to eq("Kit atualizado")
+        expect(kit.supply_item_components.count).to eq(1)
+        expect(kit.supply_item_components.first.component_item_id).to eq(lancet.id)
+        expect(kit.supply_item_components.first.quantity_per_unit).to eq(3)
+      end
+    end
+
+    it "re-renders edit when composite update has invalid components" do
+      syringe = create(:supply_item, municipality: municipality, name: "Seringa", category: "syringe")
+      kit = with_tenant(membership) do
+        item = SupplyItem.create!(
+          municipality: municipality,
+          category: "visit_kit",
+          name: "Kit antigo",
+          unit: "kit",
+          kind: "composite",
+          description: "Kit"
+        )
+        SupplyItemComponent.create!(
+          municipality: municipality,
+          composite_item: item,
+          component_item: syringe,
+          quantity_per_unit: 1
+        )
+        item
+      end
+
+      patch web_stock_supply_item_path(kit), params: {
+        supply_item: {
+          category: "visit_kit",
+          name: "Kit alterado",
+          unit: "kit",
+          kind: "composite",
+          description: "Kit",
+          active: true,
+          components: [
+            { component_item_id: syringe.id, quantity_per_unit: 1 },
+            { component_item_id: syringe.id, quantity_per_unit: 2 }
+          ]
+        }
+      }
+
+      expect(response).to have_http_status(:unprocessable_entity)
+      with_tenant(membership) do
+        kit.reload
+        expect(kit.name).to eq("Kit antigo")
+        expect(kit.supply_item_components.count).to eq(1)
+      end
+      expect(response.body).to include("Kit alterado")
+    end
+  end
+
   describe "immunobiological lots" do
     it "registers a lot" do
       expect {

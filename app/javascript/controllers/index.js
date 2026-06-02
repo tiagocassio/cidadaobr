@@ -12,3 +12,6 @@ application.register("household-map", HouseholdMapController)
 
 import VisitRouteMapController from "./visit_route_map_controller"
 application.register("visit-route-map", VisitRouteMapController)
+
+import SupplyItemFormController from "./supply_item_form_controller"
+application.register("supply-item-form", SupplyItemFormController)

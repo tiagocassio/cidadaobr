@@ -309,4 +309,24 @@ RSpec.describe Inventory::Commands::ReserveVisitRouteSupplies do
       expect(lot.reload.quantity_on_hand).to eq(14)
     end
   end
+
+  it "blocks reserve when route provisioning has no supply lines" do
+    with_tenant(membership) do
+      campaign = create(:home_visit_campaign, municipality: municipality, health_facility: facility)
+      route = create(:visit_route, home_visit_campaign: campaign, care_team: care_team, municipality: municipality, health_facility: facility)
+      VisitRouteProvisioning.create!(
+        municipality: municipality,
+        health_facility: facility,
+        visit_route: route,
+        status: "calculated",
+        lines_json: []
+      )
+
+      result = described_class.call(campaign: campaign)
+
+      expect(result.blocked).to be(true)
+      expect(result.message).to eq(I18n.t("cidadaobr.campaigns.home_visit.flash.reserve_empty_kit"))
+      expect(route.visit_route_provisioning.reload.status).to eq("calculated")
+    end
+  end
 end

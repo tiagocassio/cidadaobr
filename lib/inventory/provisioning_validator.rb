@@ -83,23 +83,50 @@ module Inventory
         [ on_hand - committed, 0 ].max
       end
 
-      def available_supply_at(municipality_id:, health_facility_id:, code_prefix:, immunobiological_product_id: nil, exclude_vaccination_campaign_id: nil, syringes_per_dose: 1)
-        on_hand = supply_quantity_at(
-          municipality_id: municipality_id,
-          health_facility_id: health_facility_id,
-          code_prefix: code_prefix
-        )
-        return on_hand unless code_prefix.to_s.start_with?("SYRINGE")
-        return on_hand if immunobiological_product_id.blank?
+      def available_supply_at(municipality_id:, health_facility_id:, supply_item_id: nil, code_prefix: nil, immunobiological_product_id: nil, exclude_vaccination_campaign_id: nil, syringes_per_dose: 1)
+        if supply_item_id.present?
+          item = SupplyItem.find_for_municipality(municipality_id: municipality_id, supply_item_id: supply_item_id)
+          return 0 unless item
 
-        committed_syringes = committed_doses_elsewhere(
-          municipality_id: municipality_id,
-          health_facility_id: health_facility_id,
-          immunobiological_product_id: immunobiological_product_id,
-          exclude_vaccination_campaign_id: exclude_vaccination_campaign_id
-        ) * syringes_per_dose.to_i
+          committed_syringes = 0
+          if item.category == "syringe" && immunobiological_product_id.present?
+            committed_syringes = committed_doses_elsewhere(
+              municipality_id: municipality_id,
+              health_facility_id: health_facility_id,
+              immunobiological_product_id: immunobiological_product_id,
+              exclude_vaccination_campaign_id: exclude_vaccination_campaign_id
+            ) * syringes_per_dose.to_i
+          end
 
-        [ on_hand - committed_syringes, 0 ].max
+          return SupplyAvailability.available_for_item(
+            municipality_id: municipality_id,
+            health_facility_id: health_facility_id,
+            supply_item_id: item.id,
+            committed_syringes: committed_syringes
+          )
+        end
+
+        if syringe_aggregate_request?(code_prefix: code_prefix)
+          on_hand = SupplyItem.where(municipality_id: municipality_id).syringes.sum do |item|
+            SupplyAvailability.quantity_on_hand(
+              municipality_id: municipality_id,
+              health_facility_id: health_facility_id,
+              item: item
+            )
+          end
+          return on_hand if immunobiological_product_id.blank?
+
+          committed_syringes = committed_doses_elsewhere(
+            municipality_id: municipality_id,
+            health_facility_id: health_facility_id,
+            immunobiological_product_id: immunobiological_product_id,
+            exclude_vaccination_campaign_id: exclude_vaccination_campaign_id
+          ) * syringes_per_dose.to_i
+
+          return [ on_hand - committed_syringes, 0 ].max
+        end
+
+        0
       end
 
       def lock_stock_for_facility_product!(municipality_id:, health_facility_id:, immunobiological_product_id:, exclude_vaccination_campaign_id: nil)
@@ -144,7 +171,7 @@ module Inventory
       def lock_syringe_stock!(municipality_id:, health_facility_id:)
         item_ids = SupplyItem
           .where(municipality_id: municipality_id)
-          .where("code LIKE ?", "SYRINGE%")
+          .syringes
           .pluck(:id)
         return if item_ids.empty?
 
@@ -187,32 +214,45 @@ module Inventory
       end
 
       def supply_syringe_configured?(campaign:)
-        SupplyItem.where(municipality_id: campaign.municipality_id).where("code LIKE ?", "SYRINGE%").exists?
+        SupplyItem.where(municipality_id: campaign.municipality_id).syringes.exists?
       end
 
-      def supply_quantity_at(municipality_id:, health_facility_id:, code_prefix:)
-        item_ids = SupplyItem
-          .where(municipality_id: municipality_id)
-          .where("code LIKE ?", "#{code_prefix}%")
-          .pluck(:id)
-        return 0 if item_ids.empty?
+      def supply_quantity_at(municipality_id:, health_facility_id:, supply_item_id: nil, code_prefix: nil)
+        if supply_item_id.present?
+          item = SupplyItem.find_for_municipality(municipality_id: municipality_id, supply_item_id: supply_item_id)
+          return 0 unless item
 
-        StockBalance
-          .where(
+          return SupplyAvailability.quantity_on_hand(
             municipality_id: municipality_id,
             health_facility_id: health_facility_id,
-            supply_item_id: item_ids
+            item: item
           )
-          .sum(:quantity)
-          .to_i
+        end
+
+        if syringe_aggregate_request?(code_prefix: code_prefix)
+          return SupplyItem.where(municipality_id: municipality_id).syringes.sum do |item|
+            SupplyAvailability.quantity_on_hand(
+              municipality_id: municipality_id,
+              health_facility_id: health_facility_id,
+              item: item
+            )
+          end
+        end
+
+        0
       end
 
-      def available_supply_quantity(campaign:, code_prefix:)
+      def available_supply_quantity(campaign:, supply_item_id: nil, code_prefix: nil)
         supply_quantity_at(
           municipality_id: campaign.municipality_id,
           health_facility_id: campaign.health_facility_id,
+          supply_item_id: supply_item_id,
           code_prefix: code_prefix
         )
+      end
+
+      def syringe_aggregate_request?(code_prefix:)
+        code_prefix.to_s.start_with?("SYRINGE")
       end
 
       def capacity_ok?(campaign:, room_capacity_per_day:)

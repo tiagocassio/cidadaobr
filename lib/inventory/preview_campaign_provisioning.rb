@@ -2,7 +2,7 @@
 
 module Inventory
   class PreviewCampaignProvisioning
-    Line = Data.define(:key, :label, :quantity_required, :unit, :calculation_source, :supply_item_code, :immunobiological_product_id)
+    Line = Data.define(:key, :label, :quantity_required, :unit, :calculation_source, :supply_item_id, :immunobiological_product_id)
     RollupView = Data.define(:status, :totals_json)
 
     class << self
@@ -11,14 +11,16 @@ module Inventory
         lines = []
 
         campaign.supply_plan.each do |entry|
-          entry = entry.stringify_keys
+          item = SupplyLineReference.resolve_plan_item(municipality_id: campaign.municipality_id, entry: entry)
+          next unless item
+
           lines << Line.new(
-            key: entry["supply_item_code"] || entry["code"],
-            label: entry["name"] || entry["supply_item_code"],
-            quantity_required: (entry["quantity_per_visit"].to_d * stop_count).ceil,
-            unit: entry["unit"] || "unit",
+            key: item.id,
+            label: entry.stringify_keys["name"].presence || item.name,
+            quantity_required: (entry.stringify_keys["quantity_per_visit"].to_d * stop_count).ceil,
+            unit: entry.stringify_keys["unit"].presence || item.unit,
             calculation_source: "campaign_plan:#{stop_count}×stops",
-            supply_item_code: entry["supply_item_code"],
+            supply_item_id: item.id,
             immunobiological_product_id: nil
           )
         end
@@ -35,7 +37,7 @@ module Inventory
             quantity_required: qty,
             unit: "dose",
             calculation_source: "immunobiological:#{immunobiological_count}×dose",
-            supply_item_code: nil,
+            supply_item_id: nil,
             immunobiological_product_id: product_id
           )
         end
@@ -115,7 +117,7 @@ module Inventory
               "label" => line["label"],
               "quantity_required" => scaled,
               "unit" => line["unit"],
-              "supply_item_code" => line["supply_item_code"],
+              "supply_item_id" => line["supply_item_id"],
               "immunobiological_product_id" => line["immunobiological_product_id"]
             }
           end
@@ -141,7 +143,7 @@ module Inventory
             "quantity_required" => scaled,
             "unit" => line.unit,
             "calculation_source" => line.calculation_source,
-            "supply_item_code" => line.supply_item_code,
+            "supply_item_id" => line.supply_item_id,
             "immunobiological_product_id" => line.immunobiological_product_id
           }
         end
@@ -206,12 +208,12 @@ module Inventory
 
       def merge_line_into_totals!(totals, line, accumulate:)
         attrs = line.is_a?(Line) ? line_to_bucket_attrs(line) : line.stringify_keys
-        line_key = attrs["key"].presence || attrs["supply_item_code"].presence || attrs["label"]
+        line_key = bucket_key_for(attrs)
         bucket = totals[line_key]
         bucket["key"] = line_key
         bucket["label"] = attrs["label"]
         bucket["unit"] = attrs["unit"]
-        bucket["supply_item_code"] = attrs["supply_item_code"]
+        bucket["supply_item_id"] = attrs["supply_item_id"]
         bucket["immunobiological_product_id"] = attrs["immunobiological_product_id"]
         qty = attrs["quantity_required"].to_i
         bucket["quantity_required"] = if accumulate
@@ -221,12 +223,16 @@ module Inventory
         end
       end
 
+      def bucket_key_for(attrs)
+        attrs["supply_item_id"].presence || attrs["immunobiological_product_id"].presence || attrs["key"].presence || attrs["label"]
+      end
+
       def line_to_bucket_attrs(line)
         {
           "key" => line.key,
           "label" => line.label,
           "unit" => line.unit,
-          "supply_item_code" => line.supply_item_code,
+          "supply_item_id" => line.supply_item_id,
           "immunobiological_product_id" => line.immunobiological_product_id,
           "quantity_required" => line.quantity_required
         }
@@ -252,6 +258,7 @@ module Inventory
       end
 
       def available_for_line(campaign:, line:)
+        line = line.stringify_keys
         case line["unit"]
         when "dose"
           return 0 if line["immunobiological_product_id"].blank?
@@ -262,16 +269,15 @@ module Inventory
             immunobiological_product_id: line["immunobiological_product_id"]
           )
         else
-          code = line["supply_item_code"].presence || line["key"]
-          return 0 if code.blank?
+          supply_item_id = line["supply_item_id"]
+          return 0 if supply_item_id.blank?
 
-          code_prefix = code.start_with?("SYRINGE") ? "SYRINGE" : code
           product_id = campaign.target_audience_definition.to_h["immunobiological_product_id"]
 
           Inventory::ProvisioningValidator.available_supply_at(
             municipality_id: campaign.municipality_id,
             health_facility_id: campaign.health_facility_id,
-            code_prefix: code_prefix,
+            supply_item_id: supply_item_id,
             immunobiological_product_id: product_id
           )
         end

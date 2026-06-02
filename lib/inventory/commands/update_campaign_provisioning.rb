@@ -19,7 +19,7 @@ module Inventory
         normalized = @totals.map do |line|
           line.stringify_keys.slice(
             "key", "label", "quantity_required", "unit",
-            "supply_item_code", "immunobiological_product_id"
+            "supply_item_id", "immunobiological_product_id"
           ).tap do |entry|
             entry["quantity_required"] = entry["quantity_required"].to_i
           end

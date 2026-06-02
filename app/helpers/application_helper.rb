@@ -83,13 +83,13 @@ module ApplicationHelper
 
   def health_facility_service_kind_options
     HealthFacility::SERVICE_KINDS.map do |kind|
-      [facility_service_kind_label(kind), kind]
+      [ facility_service_kind_label(kind), kind ]
     end
   end
 
   def user_membership_role_options
     UserMunicipalityMembership::WEB_ROLE_CODES.map do |code|
-      [membership_role_label(code), code]
+      [ membership_role_label(code), code ]
     end
   end
 
