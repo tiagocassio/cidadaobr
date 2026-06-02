@@ -30,8 +30,8 @@ RSpec.describe Ledi::SubmitLediBatch do
 
       expect(created_batch.status).to eq("ready")
       expect(TransportRecord.where(ledi_batch_id: created_batch.id).count).to eq(1)
-      expect(DomainEvent.where(event_type: "ledi.batch.submitted").count).to eq(1)
-      expect(OutboxMessage.find_by(event_type: "ledi.batch.submitted").topic).to eq("ledi.batch.ready")
+      expect(DomainEvent.where(event_type: Cidadaobr::KafkaTopics::LEDI_BATCH_SUBMITTED).count).to eq(1)
+      expect(OutboxMessage.find_by(event_type: Cidadaobr::KafkaTopics::LEDI_BATCH_SUBMITTED).topic).to eq(Cidadaobr::KafkaTopics::LEDI_BATCH_SUBMITTED)
       created_batch
     end
 

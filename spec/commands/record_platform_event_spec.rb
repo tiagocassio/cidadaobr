@@ -22,11 +22,11 @@ RSpec.describe RecordPlatformEvent do
 
     event = with_tenant(membership) do
       described_class.call(
-        event_type: "platform.bootstrapped",
+        event_type: Cidadaobr::KafkaTopics::DOMAIN_OUTBOX,
         aggregate_type: "Platform",
         aggregate_id: SecureRandom.uuid,
         payload: { ok: true },
-        topic: "domain.outbox"
+        topic: Cidadaobr::KafkaTopics::DOMAIN_OUTBOX
       )
     end
 
@@ -48,11 +48,11 @@ RSpec.describe RecordPlatformEvent do
 
     event = with_tenant(membership) do
       described_class.call(
-        event_type: "clinical.record.imported",
+        event_type: Cidadaobr::KafkaTopics::CLINICAL_RECORD_IMPORTED,
         aggregate_type: "ClinicalRecord",
         aggregate_id: SecureRandom.uuid,
         payload: { ok: true },
-        topic: "clinical.record.imported",
+        topic: Cidadaobr::KafkaTopics::CLINICAL_RECORD_IMPORTED,
         care_team_id: care_team.id
       )
     end
@@ -99,11 +99,11 @@ RSpec.describe RecordPlatformEvent do
 
     event = with_tenant(membership) do
       described_class.call(
-        event_type: "platform.bootstrapped",
+        event_type: Cidadaobr::KafkaTopics::DOMAIN_OUTBOX,
         aggregate_type: "Platform",
         aggregate_id: aggregate_id,
         payload: { ok: true },
-        topic: "domain.outbox"
+        topic: Cidadaobr::KafkaTopics::DOMAIN_OUTBOX
       )
     end
 
@@ -124,11 +124,11 @@ RSpec.describe RecordPlatformEvent do
     expect do
       with_tenant(membership) do
         described_class.call(
-          event_type: "platform.bootstrapped",
+          event_type: Cidadaobr::KafkaTopics::DOMAIN_OUTBOX,
           aggregate_type: "Platform",
           aggregate_id: SecureRandom.uuid,
           payload: { ok: true },
-          topic: "domain.outbox"
+          topic: Cidadaobr::KafkaTopics::DOMAIN_OUTBOX
         )
       end
     end.to raise_error(Ledi::Errors::AmbiguousTeamScopeError, /exactly one care team/)
@@ -145,11 +145,11 @@ RSpec.describe RecordPlatformEvent do
     expect do
       with_tenant(membership) do
         described_class.call(
-          event_type: "platform.bootstrapped",
+          event_type: Cidadaobr::KafkaTopics::DOMAIN_OUTBOX,
           aggregate_type: "Platform",
           aggregate_id: SecureRandom.uuid,
           payload: { ok: true },
-          topic: "domain.outbox"
+          topic: Cidadaobr::KafkaTopics::DOMAIN_OUTBOX
         )
       end
     end.to raise_error(Ledi::Errors::AmbiguousTeamScopeError, /at least one assigned care team/)

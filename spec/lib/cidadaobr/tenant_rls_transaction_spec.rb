@@ -37,11 +37,11 @@ RSpec.describe "Tenant RLS transaction extension" do
     Cidadaobr::TenantContext.with(Cidadaobr::TenantScope.from_membership(membership)) do
       expect {
         RecordPlatformEvent.call(
-          event_type: "platform.bootstrapped",
+          event_type: Cidadaobr::KafkaTopics::DOMAIN_OUTBOX,
           aggregate_type: "Platform",
           aggregate_id: SecureRandom.uuid,
           payload: { probe: true },
-          topic: "domain.outbox",
+          topic: Cidadaobr::KafkaTopics::DOMAIN_OUTBOX,
           metadata: {}
         )
       }.to change(DomainEvent, :count).by(1)

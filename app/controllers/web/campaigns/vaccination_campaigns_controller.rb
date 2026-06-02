@@ -61,8 +61,13 @@ module Web
           return
         end
 
-        if @campaign.save
-          redirect_to wizard_web_campaigns_vaccination_campaign_path(@campaign, step: 2),
+        result = CommandBus.dispatch(
+          ::Campaigns::Commands::CreateVaccinationCampaign,
+          campaign: @campaign,
+          municipality: current_municipality
+        )
+        if result.success
+          redirect_to wizard_web_campaigns_vaccination_campaign_path(result.campaign, step: 2),
                       notice: t("cidadaobr.campaigns.vaccination_wizard.saved_step1")
         else
           render_wizard(1, status: :unprocessable_entity)
@@ -84,9 +89,14 @@ module Web
           return
         end
 
-        if @campaign.update(campaign_params)
+        result = CommandBus.dispatch(
+          ::Campaigns::Commands::UpdateVaccinationCampaign,
+          campaign: @campaign,
+          attributes: campaign_params
+        )
+        if result.success
           if (@campaign.previous_changes.keys & STEP1_ATTRS).any?
-            invalidate_after_definition_change!
+            CommandBus.dispatch(::Campaigns::Commands::InvalidateVaccinationCampaignDraft, campaign: @campaign)
           end
           redirect_to wizard_web_campaigns_vaccination_campaign_path(@campaign, step: 2),
                       notice: t("cidadaobr.campaigns.vaccination_wizard.saved_step1")
@@ -135,11 +145,20 @@ module Web
             count = preview_count_for_definition(definition)
             attrs[:target_doses] = count if count.positive?
           end
-          if @campaign.update(attrs)
+          result = CommandBus.dispatch(
+            ::Campaigns::Commands::UpdateVaccinationCampaign,
+            campaign: @campaign,
+            attributes: attrs
+          )
+          if result.success
             audience_changed = previous_audience != normalized_audience_definition(definition)
             doses_changed = @campaign.target_doses.to_i != previous_doses
             if audience_changed || doses_changed
-              invalidate_after_definition_change!(keep_audience: true)
+              CommandBus.dispatch(
+                ::Campaigns::Commands::InvalidateVaccinationCampaignDraft,
+                campaign: @campaign,
+                keep_audience: true
+              )
             end
             redirect_to wizard_web_campaigns_vaccination_campaign_path(@campaign, step: 3)
           else
@@ -155,7 +174,7 @@ module Web
             return
           end
 
-          result = ::Campaigns::Commands::BuildCampaignTargetList.call(campaign: @campaign)
+          result = CommandBus.dispatch(::Campaigns::Commands::BuildCampaignTargetList, campaign: @campaign)
           redirect_after_build_targets!(result, wizard_web_campaigns_vaccination_campaign_path(@campaign, step: 4))
         else
           redirect_to wizard_web_campaigns_vaccination_campaign_path(@campaign, step: 1)
@@ -180,7 +199,7 @@ module Web
           return
         end
 
-        result = ::Campaigns::Commands::BuildCampaignTargetList.call(campaign: @campaign)
+        result = CommandBus.dispatch(::Campaigns::Commands::BuildCampaignTargetList, campaign: @campaign)
         redirect_after_build_targets!(result, web_campaigns_vaccination_campaign_path(@campaign))
       end
 
@@ -203,7 +222,12 @@ module Web
           return
         end
 
-        @campaign.update!(status: "active")
+        result = CommandBus.dispatch(::Campaigns::Commands::PublishVaccinationCampaign, campaign: @campaign)
+        if result.message.present?
+          redirect_to web_campaigns_vaccination_campaign_path(@campaign), alert: result.message
+          return
+        end
+
         redirect_to web_campaigns_vaccination_campaign_path(@campaign),
                     notice: t("cidadaobr.campaigns.flash.published")
       end
@@ -342,28 +366,6 @@ module Web
         { target_audience_definition: definition }
       end
 
-      def invalidate_after_definition_change!(keep_audience: false)
-        return if @campaign.status == "active"
-
-        had_provisioning = @campaign.supply_provisioning.present?
-
-        updates = {}
-        if keep_audience
-          updates[:status] = "draft" if had_provisioning
-        else
-          definition = @campaign.target_audience_definition.deep_dup
-          definition.delete("wizard_audience_saved")
-          updates[:target_audience_definition] = definition
-          updates[:target_doses] = 0
-          updates[:status] = "draft"
-          @campaign.assign_attributes(updates)
-        end
-
-        ::Campaigns::Commands::BuildCampaignTargetList.remove_stale_for!(campaign: @campaign)
-        @campaign.supply_provisioning&.destroy
-        @campaign.update!(updates) if updates.any?
-      end
-
       def reject_mutations_when_active!
         return unless @campaign&.status == "active"
 
@@ -393,7 +395,10 @@ module Web
       end
 
       def run_provisioning!
-        @last_provisioning_result = Inventory::ProvisioningValidator.persist!(campaign: @campaign)
+        @last_provisioning_result = CommandBus.dispatch(
+          Inventory::Commands::PersistVaccinationProvisioning,
+          campaign: @campaign
+        )
       end
     end
   end

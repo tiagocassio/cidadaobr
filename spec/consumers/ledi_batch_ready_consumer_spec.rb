@@ -15,7 +15,9 @@ RSpec.describe LediBatchReadyConsumer do
     message = instance_double("Karafka message", payload: envelope.to_json)
     consumer = described_class.new
     allow(consumer).to receive(:messages).and_return([ message ])
-    allow(consumer).to receive(:topic).and_return(instance_double("Karafka topic", name: "ledi.batch.ready"))
+    allow(consumer).to receive(:topic).and_return(
+      instance_double("Karafka topic", name: Cidadaobr::KafkaTopics::LEDI_BATCH_SUBMITTED)
+    )
     consumer.consume
   end
 
@@ -33,7 +35,7 @@ RSpec.describe LediBatchReadyConsumer do
 
       batch.reload
       expect(batch.status).to eq("submitted")
-      expect(DomainEvent.where(event_type: "ledi.batch.status_changed", aggregate_id: batch.id).count).to eq(1)
+      expect(DomainEvent.where(event_type: Cidadaobr::KafkaTopics::LEDI_BATCH_STATUSCHANGED, aggregate_id: batch.id).count).to eq(1)
     end
   end
 
@@ -45,7 +47,7 @@ RSpec.describe LediBatchReadyConsumer do
     with_tenant(membership) do
       consume_envelope(envelope_for(submitted_batch))
 
-      expect(DomainEvent.where(event_type: "ledi.batch.status_changed", aggregate_id: submitted_batch.id).count).to eq(0)
+      expect(DomainEvent.where(event_type: Cidadaobr::KafkaTopics::LEDI_BATCH_STATUSCHANGED, aggregate_id: submitted_batch.id).count).to eq(0)
     end
   end
 
@@ -59,7 +61,7 @@ RSpec.describe LediBatchReadyConsumer do
       batch.reload
       expect(batch.status).to eq("rejected")
       expect(batch.rejection_reason).to include("PEC rejeitou lote")
-      expect(DomainEvent.where(event_type: "ledi.batch.status_changed", aggregate_id: batch.id).count).to eq(1)
+      expect(DomainEvent.where(event_type: Cidadaobr::KafkaTopics::LEDI_BATCH_STATUSCHANGED, aggregate_id: batch.id).count).to eq(1)
     end
   ensure
     ENV["LEDI_PEC_STUB_REJECT"] = original
@@ -77,7 +79,7 @@ RSpec.describe LediBatchReadyConsumer do
 
       submitted_batch.reload
       expect(submitted_batch.status).to eq("submitted")
-      expect(DomainEvent.where(event_type: "ledi.batch.status_changed", aggregate_id: submitted_batch.id).count).to eq(0)
+      expect(DomainEvent.where(event_type: Cidadaobr::KafkaTopics::LEDI_BATCH_STATUSCHANGED, aggregate_id: submitted_batch.id).count).to eq(0)
     end
   ensure
     ENV["LEDI_PEC_STUB_REJECT"] = original

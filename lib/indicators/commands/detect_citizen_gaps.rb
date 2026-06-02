@@ -125,7 +125,7 @@ module Indicators
 
     def emit_gap_detected!(gap)
       RecordPlatformEvent.call(
-        event_type: "indicator.gap.detected",
+        event_type: Cidadaobr::KafkaTopics::INDICATOR_GAP_DETECTED,
         aggregate_type: "CitizenIndicatorGap",
         aggregate_id: gap.id,
         payload: {
@@ -136,8 +136,7 @@ module Indicators
           good_practice_code: gap.good_practice_code,
           status: gap.status
         },
-        topic: OutboxPublisher::TOPIC_MAPPING.fetch("indicator.gap.detected"),
-        care_team_id: gap.care_team_id
+          care_team_id: gap.care_team_id
       )
     end
   end

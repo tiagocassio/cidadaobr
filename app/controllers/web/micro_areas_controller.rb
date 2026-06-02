@@ -20,12 +20,19 @@ module Web
     end
 
     def create
-      @micro_area = MicroArea.new(micro_area_params)
-      @micro_area.municipality = current_municipality
-      assign_coverage!
+      @micro_area = MicroArea.new
+      result = CommandBus.dispatch(
+        Territory::Commands::CreateMicroArea,
+        micro_area: @micro_area,
+        attributes: micro_area_params,
+        municipality: current_municipality,
+        coverage_bbox: micro_area_coverage_bbox,
+        remove_coverage: remove_coverage_requested?,
+        health_facility_ids: micro_area_health_facility_ids
+      )
+      @micro_area = result.micro_area
 
-      if @micro_area.errors.none? && @micro_area.save
-        sync_facility_coverages!
+      if result.success
         redirect_to web_micro_areas_path, notice: t("cidadaobr.micro_areas.flash.created")
       else
         render :new, status: :unprocessable_entity
@@ -36,11 +43,17 @@ module Web
     end
 
     def update
-      attributes = micro_area_params
-      assign_coverage!
+      result = CommandBus.dispatch(
+        Territory::Commands::UpdateMicroArea,
+        micro_area: @micro_area,
+        attributes: micro_area_params,
+        coverage_bbox: micro_area_coverage_bbox,
+        remove_coverage: remove_coverage_requested?,
+        health_facility_ids: micro_area_health_facility_ids
+      )
+      @micro_area = result.micro_area
 
-      if @micro_area.errors.none? && @micro_area.update(attributes)
-        sync_facility_coverages!
+      if result.success
         redirect_to web_micro_areas_path, notice: t("cidadaobr.micro_areas.flash.updated")
       else
         render :edit, status: :unprocessable_entity
@@ -61,8 +74,8 @@ module Web
       @health_facilities = HealthFacility.where(municipality_id: current_municipality.id).order(:name)
     end
 
-    def sync_facility_coverages!
-      @micro_area.sync_health_facility_coverages!(Array(params.dig(:micro_area, :health_facility_ids)).compact_blank)
+    def micro_area_health_facility_ids
+      Array(params.dig(:micro_area, :health_facility_ids)).compact_blank
     end
 
     def micro_area_params
@@ -80,24 +93,10 @@ module Web
       ActiveModel::Type::Boolean.new.cast(params.dig(:micro_area, :remove_coverage))
     end
 
-    def assign_coverage!
-      if remove_coverage_requested?
-        @micro_area.coverage = nil
-        return
-      end
+    def micro_area_coverage_bbox
+      return nil unless coverage_params_present?
 
-      return unless coverage_params_present?
-
-      coverage = build_coverage
-      if coverage
-        @micro_area.coverage = coverage
-      else
-        @micro_area.errors.add(:base, :invalid_coverage)
-      end
-    end
-
-    def build_coverage
-      Cidadaobr::GeoPoint.bbox_polygon(
+      Territory::MicroAreaCoverage.build_polygon(
         sw_lat: params.dig(:micro_area, :coverage_sw_lat),
         sw_lng: params.dig(:micro_area, :coverage_sw_lng),
         ne_lat: params.dig(:micro_area, :coverage_ne_lat),

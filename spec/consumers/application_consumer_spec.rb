@@ -256,7 +256,7 @@ RSpec.describe ApplicationConsumer do
 
     broken_event = KafkaProcessedEvent.new(
       event_id: envelope["event_id"],
-      topic: "test.topic",
+      topic: "test-topic",
       consumer_group: KarafkaApp.config.client_id,
       processed_at: Time.current
     )

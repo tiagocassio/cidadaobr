@@ -25,7 +25,7 @@ RSpec.describe ClinicalRecordPersistedConsumer do
     message = instance_double("Karafka message", payload: envelope.to_json)
     consumer = described_class.new
     allow(consumer).to receive(:messages).and_return([ message ])
-    allow(consumer).to receive(:topic).and_return(instance_double("Karafka topic", name: "clinical.record.persisted"))
+    allow(consumer).to receive(:topic).and_return(instance_double("Karafka topic", name: Cidadaobr::KafkaTopics::CLINICAL_RECORD_PERSISTED))
     consumer.consume
   end
 
@@ -37,7 +37,7 @@ RSpec.describe ClinicalRecordPersistedConsumer do
     end
 
     event = with_tenant(membership) do
-      DomainEvent.find_by!(event_type: "clinical.record.persisted", aggregate_id: clinical_record.id)
+      DomainEvent.find_by!(event_type: Cidadaobr::KafkaTopics::CLINICAL_RECORD_PERSISTED, aggregate_id: clinical_record.id)
     end
 
     envelope = Cidadaobr::EventEnvelope.from_domain_event(event).to_h
@@ -52,7 +52,7 @@ RSpec.describe ClinicalRecordPersistedConsumer do
       "event_id" => SecureRandom.uuid,
       "municipality_id" => municipality.id,
       "health_facility_id" => facility.id,
-      "event_type" => "clinical.record.persisted",
+      "event_type" => Cidadaobr::KafkaTopics::CLINICAL_RECORD_PERSISTED,
       "payload" => { "clinical_record_id" => SecureRandom.uuid },
       "occurred_at" => Time.current.iso8601
     }
@@ -69,7 +69,7 @@ RSpec.describe ClinicalRecordPersistedConsumer do
       "event_id" => SecureRandom.uuid,
       "municipality_id" => municipality.id,
       "health_facility_id" => facility.id,
-      "event_type" => "clinical.record.persisted",
+      "event_type" => Cidadaobr::KafkaTopics::CLINICAL_RECORD_PERSISTED,
       "payload" => { "clinical_record_id" => SecureRandom.uuid },
       "occurred_at" => 5.minutes.ago.iso8601
     }
@@ -78,7 +78,7 @@ RSpec.describe ClinicalRecordPersistedConsumer do
     marked_messages = []
     consumer.define_singleton_method(:mark_as_consumed) { |msg| marked_messages << msg }
     allow(consumer).to receive(:messages).and_return([ message ])
-    allow(consumer).to receive(:topic).and_return(instance_double("Karafka topic", name: "clinical.record.persisted"))
+    allow(consumer).to receive(:topic).and_return(instance_double("Karafka topic", name: Cidadaobr::KafkaTopics::CLINICAL_RECORD_PERSISTED))
 
     expect { consumer.consume }.not_to raise_error
 
@@ -91,7 +91,7 @@ RSpec.describe ClinicalRecordPersistedConsumer do
       "event_id" => SecureRandom.uuid,
       "municipality_id" => municipality.id,
       "health_facility_id" => facility.id,
-      "event_type" => "clinical.record.persisted",
+      "event_type" => Cidadaobr::KafkaTopics::CLINICAL_RECORD_PERSISTED,
       "payload" => { "clinical_record_id" => SecureRandom.uuid }
     }
     message = instance_double(
@@ -103,7 +103,7 @@ RSpec.describe ClinicalRecordPersistedConsumer do
     marked_messages = []
     consumer.define_singleton_method(:mark_as_consumed) { |msg| marked_messages << msg }
     allow(consumer).to receive(:messages).and_return([ message ])
-    allow(consumer).to receive(:topic).and_return(instance_double("Karafka topic", name: "clinical.record.persisted"))
+    allow(consumer).to receive(:topic).and_return(instance_double("Karafka topic", name: Cidadaobr::KafkaTopics::CLINICAL_RECORD_PERSISTED))
 
     expect { consumer.consume }.not_to raise_error
 

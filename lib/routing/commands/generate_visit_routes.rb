@@ -2,112 +2,132 @@
 
 module Routing
   module Commands
-    class GenerateVisitRoutes
+    class GenerateVisitRoutes < ApplicationCommand
       Result = Data.define(:routes_created, :stops_created, :unassigned_count, :skipped, :message)
 
-      class << self
-        def call(campaign:, route_date:, max_stops_per_route: 50, regenerate: false)
-          if campaign.visit_routes.where(route_date: route_date).exists? && !regenerate
-            return Result.new(
-              0,
-              0,
-              0,
-              true,
-              I18n.t("cidadaobr.campaigns.home_visit.flash.routes_already_exist", date: I18n.l(route_date))
+      def initialize(campaign:, route_date:, max_stops_per_route: 50, regenerate: false)
+        @campaign = campaign
+        @route_date = route_date
+        @max_stops_per_route = max_stops_per_route
+        @regenerate = regenerate
+      end
+
+      def call
+        if @campaign.visit_routes.where(route_date: @route_date).exists? && !@regenerate
+          return Result.new(
+            0,
+            0,
+            0,
+            true,
+            I18n.t("cidadaobr.campaigns.home_visit.flash.routes_already_exist", date: I18n.l(@route_date))
+          )
+        end
+
+        targets = CampaignTarget
+          .where(campaign: @campaign, status: %w[pending routed])
+          .includes(citizen: { households: [] })
+          .order(priority_score: :desc, created_at: :asc)
+
+        unassigned_count = targets.count { |target| target.citizen.care_team_id.blank? }
+        routable_targets = targets.select { |target| target.citizen.care_team_id.present? }
+
+        depot = facility_location(@campaign.health_facility)
+        unless depot
+          message = if routable_targets.any?
+            I18n.t("cidadaobr.campaigns.home_visit.flash.no_facility_location")
+          end
+          return Result.new(0, 0, unassigned_count, false, message)
+        end
+
+        routes_created = 0
+        stops_created = 0
+
+        write_transaction do
+          cleared_on_regenerate = false
+          if @regenerate
+            ClearVisitRoutes.clear!(
+              campaign: @campaign,
+              route_date: @route_date,
+              sync_provisioning: false
             )
+            cleared_on_regenerate = true
           end
 
-          targets = CampaignTarget
-            .where(campaign: campaign, status: %w[pending routed])
-            .includes(citizen: { households: [] })
-            .order(priority_score: :desc, created_at: :asc)
+          grouped = routable_targets.group_by { |target| target.citizen.care_team_id }
 
-          unassigned_count = targets.count { |target| target.citizen.care_team_id.blank? }
-          routable_targets = targets.select { |target| target.citizen.care_team_id.present? }
+          grouped.each do |care_team_id, team_targets|
+            care_team = CareTeam.find(care_team_id)
+            geo_clusters = Routing::ClusterVisitRouteTargets.call(team_targets).values
+            chunks = geo_clusters.flat_map { |cluster| cluster.each_slice(@max_stops_per_route).to_a }
 
-          depot = facility_location(campaign.health_facility)
-          unless depot
-            message = if routable_targets.any?
-              I18n.t("cidadaobr.campaigns.home_visit.flash.no_facility_location")
-            end
-            return Result.new(0, 0, unassigned_count, false, message)
-          end
-
-          routes_created = 0
-          stops_created = 0
-
-          ActiveRecord::Base.transaction do
-            cleared_on_regenerate = false
-            if regenerate
-              ClearVisitRoutes.clear!(
-                campaign: campaign,
-                route_date: route_date,
-                sync_provisioning: false
+            chunks.each_with_index do |chunk, index|
+              route = VisitRoute.create!(
+                municipality: @campaign.municipality,
+                health_facility: @campaign.health_facility,
+                home_visit_campaign: @campaign,
+                care_team: care_team,
+                route_date: @route_date,
+                sequence_number: index + 1,
+                status: "draft"
               )
-              cleared_on_regenerate = true
-            end
+              routes_created += 1
 
-            grouped = routable_targets.group_by { |target| target.citizen.care_team_id }
-
-            grouped.each do |care_team_id, team_targets|
-              care_team = CareTeam.find(care_team_id)
-              geo_clusters = Routing::ClusterVisitRouteTargets.call(team_targets).values
-              chunks = geo_clusters.flat_map { |cluster| cluster.each_slice(max_stops_per_route).to_a }
-
-              chunks.each_with_index do |chunk, index|
-                route = VisitRoute.create!(
-                  municipality: campaign.municipality,
-                  health_facility: campaign.health_facility,
-                  home_visit_campaign: campaign,
-                  care_team: care_team,
-                  route_date: route_date,
-                  sequence_number: index + 1,
-                  status: "draft"
+              ordered = Routing::OrderVisitRouteStops.call(chunk, start_point: depot)
+              ordered.each_with_index do |target, stop_index|
+                household = target.household || household_for(target.citizen)
+                VisitRouteStop.create!(
+                  municipality: @campaign.municipality,
+                  visit_route: route,
+                  stop_order: stop_index + 1,
+                  household: household,
+                  citizen: target.citizen,
+                  campaign_target: target,
+                  status: "pending"
                 )
-                routes_created += 1
-
-                ordered = Routing::OrderVisitRouteStops.call(chunk, start_point: depot)
-                ordered.each_with_index do |target, stop_index|
-                  household = target.household || household_for(target.citizen)
-                  VisitRouteStop.create!(
-                    municipality: campaign.municipality,
-                    visit_route: route,
-                    stop_order: stop_index + 1,
-                    household: household,
-                    citizen: target.citizen,
-                    campaign_target: target,
-                    status: "pending"
-                  )
-                  target.update!(status: "routed")
-                  stops_created += 1
-                end
-
-                Inventory::PreviewCampaignProvisioning.persist_route!(route: route)
+                target.update!(status: "routed")
+                stops_created += 1
               end
-            end
 
-            if routes_created.positive?
-              campaign.update!(status: "routes_generated")
-              Inventory::PreviewCampaignProvisioning.rollup!(campaign: campaign)
-            elsif cleared_on_regenerate
-              ClearVisitRoutes.sync_provisioning!(campaign)
+              Inventory::PreviewCampaignProvisioning.persist_route!(route: route)
             end
           end
 
-          Result.new(routes_created, stops_created, unassigned_count, false, nil)
+          if routes_created.positive?
+            @campaign.update!(status: "routes_generated")
+            Inventory::PreviewCampaignProvisioning.rollup!(campaign: @campaign)
+            emit_routes_generated!(routes_created: routes_created, stops_created: stops_created)
+          elsif cleared_on_regenerate
+            ClearVisitRoutes.sync_provisioning!(@campaign)
+          end
         end
 
-        private
+        Result.new(routes_created, stops_created, unassigned_count, false, nil)
+      end
 
-        def household_for(citizen)
-          citizen.household_members.order(:created_at).first&.household
-        end
+      private
 
-        def facility_location(facility)
-          return unless facility&.location
+      def household_for(citizen)
+        citizen.household_members.order(:created_at).first&.household
+      end
 
-          [ facility.location.y, facility.location.x ]
-        end
+      def facility_location(facility)
+        return unless facility&.location
+
+        [ facility.location.y, facility.location.x ]
+      end
+
+      def emit_routes_generated!(routes_created:, stops_created:)
+        RecordPlatformEvent.call(
+          event_type: Cidadaobr::KafkaTopics::HOME_VISIT_ROUTE_GENERATED,
+          aggregate_type: @campaign.class.name,
+          aggregate_id: @campaign.id,
+          payload: {
+            campaign_id: @campaign.id,
+            route_date: @route_date.iso8601,
+            routes_created: routes_created,
+            stops_created: stops_created
+          },
+)
       end
     end
   end

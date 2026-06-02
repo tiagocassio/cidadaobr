@@ -72,7 +72,7 @@ module Indicators
 
     def emit_team_score_updated!(result)
       RecordPlatformEvent.call(
-        event_type: "indicator.team_score.updated",
+        event_type: Cidadaobr::KafkaTopics::INDICATOR_TEAM_SCORE_UPDATED,
         aggregate_type: "TeamIndicatorResult",
         aggregate_id: result.id,
         payload: {
@@ -84,8 +84,7 @@ module Indicators
           tier: result.tier,
           projected_transfer: result.projected_transfer
         },
-        topic: OutboxPublisher::TOPIC_MAPPING.fetch("indicator.team_score.updated"),
-        care_team_id: result.care_team_id
+          care_team_id: result.care_team_id
       )
     end
   end

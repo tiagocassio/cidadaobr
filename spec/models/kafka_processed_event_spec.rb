@@ -6,7 +6,7 @@ RSpec.describe KafkaProcessedEvent, type: :model do
   it "enforces idempotency keys" do
     attrs = {
       event_id: SecureRandom.uuid,
-      topic: "domain.outbox",
+      topic: Cidadaobr::KafkaTopics::DOMAIN_OUTBOX,
       consumer_group: "cidadaobr_saude",
       processed_at: Time.current
     }

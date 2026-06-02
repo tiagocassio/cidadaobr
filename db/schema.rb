@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_06_01_124135) do
+ActiveRecord::Schema[8.1].define(version: 2026_06_02_140000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
@@ -493,6 +493,41 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_01_124135) do
     t.index ["status"], name: "index_outbox_messages_on_status"
   end
 
+  create_table "platform_events", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "aggregate_id", null: false
+    t.string "aggregate_type", null: false
+    t.datetime "created_at", null: false
+    t.string "event_type", null: false
+    t.jsonb "metadata", default: {}, null: false
+    t.datetime "occurred_at", null: false
+    t.jsonb "payload", default: {}, null: false
+    t.datetime "updated_at", null: false
+    t.bigint "version", null: false
+    t.index ["aggregate_type", "aggregate_id", "version"], name: "index_platform_events_on_aggregate_version", unique: true
+    t.index ["event_type"], name: "index_platform_events_on_event_type"
+    t.index ["occurred_at"], name: "index_platform_events_on_occurred_at"
+  end
+
+  create_table "platform_outbox_messages", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.string "event_type", null: false
+    t.datetime "kafka_sent_at"
+    t.text "last_error"
+    t.jsonb "payload", default: {}, null: false
+    t.boolean "permanent_failure", default: false, null: false
+    t.uuid "platform_event_id", null: false
+    t.integer "publish_attempts", default: 0, null: false
+    t.datetime "published_at"
+    t.datetime "publishing_claimed_at"
+    t.string "status", default: "pending", null: false
+    t.string "topic", null: false
+    t.datetime "updated_at", null: false
+    t.index ["platform_event_id"], name: "index_platform_outbox_messages_on_platform_event_id", unique: true
+    t.index ["publishing_claimed_at"], name: "index_platform_outbox_on_publishing_claimed_at", where: "((status)::text = 'publishing'::text)"
+    t.index ["status", "permanent_failure", "updated_at"], name: "index_platform_outbox_on_retryable_failed", where: "(((status)::text = 'failed'::text) AND (permanent_failure = false))"
+    t.index ["status"], name: "index_platform_outbox_messages_on_status"
+  end
+
   create_table "professional_availability_blocks", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.datetime "created_at", null: false
     t.datetime "ends_at", null: false
@@ -598,6 +633,16 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_01_124135) do
     t.uuid "supply_item_id"
     t.datetime "updated_at", null: false
     t.index ["municipality_id", "health_facility_id", "created_at"], name: "index_stock_movements_on_municipality_facility_created"
+  end
+
+  create_table "supply_item_components", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "component_item_id", null: false
+    t.uuid "composite_item_id", null: false
+    t.datetime "created_at", null: false
+    t.uuid "municipality_id", null: false
+    t.decimal "quantity_per_unit", precision: 12, scale: 3, default: "1.0", null: false
+    t.datetime "updated_at", null: false
+    t.index ["composite_item_id", "component_item_id"], name: "index_supply_item_components_on_kit_and_component", unique: true
   end
 
   create_table "supply_items", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -812,6 +857,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_01_124135) do
   add_foreign_key "stock_movements", "health_facilities"
   add_foreign_key "stock_movements", "immunobiological_lots"
   add_foreign_key "stock_movements", "supply_items"
+  add_foreign_key "supply_item_components", "municipalities"
+  add_foreign_key "supply_item_components", "supply_items", column: "component_item_id"
+  add_foreign_key "supply_item_components", "supply_items", column: "composite_item_id"
   add_foreign_key "team_indicator_results", "care_teams"
   add_foreign_key "team_indicator_results", "municipalities"
   add_foreign_key "team_satisfaction_survey_scores", "care_teams"

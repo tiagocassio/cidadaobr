@@ -50,7 +50,8 @@ module Api
             return render_json_error("Invalid room or slot for citizen facility", status: :unprocessable_entity)
           end
 
-          appointment = Scheduling::BookAppointment.call(
+          appointment = CommandBus.dispatch(
+            Scheduling::BookAppointment,
             citizen_id: current_citizen.id,
             appointment_service_type_id: params.require(:appointment_service_type_id),
             consultation_room_id: params.require(:consultation_room_id),
@@ -68,7 +69,7 @@ module Api
 
         def cancel
           appointment = Appointment.includes(:appointment_service_type).find_by!(id: params[:id], citizen_id: current_citizen.id)
-          Scheduling::CancelAppointment.call(appointment: appointment)
+          CommandBus.dispatch(Scheduling::CancelAppointment, appointment: appointment)
           @appointment = appointment.reload
           render :show
         rescue Scheduling::Errors::InvalidTransitionError
@@ -94,7 +95,8 @@ module Api
             return render_json_error("Invalid room for this appointment", status: :unprocessable_entity)
           end
 
-          Scheduling::RescheduleAppointment.call(
+          CommandBus.dispatch(
+            Scheduling::RescheduleAppointment,
             appointment: appointment,
             scheduled_at: scheduled_at,
             room_capacity_slot_id: slot.id

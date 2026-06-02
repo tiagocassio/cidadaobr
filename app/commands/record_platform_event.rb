@@ -3,12 +3,12 @@
 class RecordPlatformEvent < ApplicationCommand
   AGGREGATE_VERSION_INDEX = "index_domain_events_on_aggregate_version"
 
-  def initialize(event_type:, aggregate_type:, aggregate_id:, payload:, topic:, metadata: {}, care_team_id: nil)
+  def initialize(event_type:, aggregate_type:, aggregate_id:, payload:, topic: nil, metadata: {}, care_team_id: nil)
     @event_type = event_type
     @aggregate_type = aggregate_type
     @aggregate_id = aggregate_id
     @payload = payload
-    @topic = topic
+    @topic = topic || event_type
     @metadata = metadata
     @care_team_id = care_team_id
   end

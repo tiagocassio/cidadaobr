@@ -19,7 +19,7 @@ RSpec.describe Ledi::RejectLediBatch do
       expect(batch.status).to eq("rejected")
       expect(batch.rejection_reason).to eq("PEC XSD invalid")
       expect(batch.rejected_at).to be_present
-      expect(DomainEvent.where(event_type: "ledi.batch.status_changed", aggregate_id: batch.id).count).to eq(1)
+      expect(DomainEvent.where(event_type: Cidadaobr::KafkaTopics::LEDI_BATCH_STATUSCHANGED, aggregate_id: batch.id).count).to eq(1)
     end
   end
 
@@ -30,7 +30,7 @@ RSpec.describe Ledi::RejectLediBatch do
 
       expect(result.status).to eq("rejected")
       expect(result.rejection_reason).to eq("PEC XSD invalid")
-      expect(DomainEvent.where(event_type: "ledi.batch.status_changed", aggregate_id: batch.id).count).to eq(1)
+      expect(DomainEvent.where(event_type: Cidadaobr::KafkaTopics::LEDI_BATCH_STATUSCHANGED, aggregate_id: batch.id).count).to eq(1)
     end
   end
 

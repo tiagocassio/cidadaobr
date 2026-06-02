@@ -34,7 +34,7 @@ RSpec.describe Ledi::ProjectionRunner do
 
       citizen = Citizen.find_by(municipality_id: municipality.id, cpf: "39053344705")
       expect(citizen.full_name).to eq("Maria da Silva")
-      expect(DomainEvent.where(event_type: "citizen.registered").count).to eq(1)
+      expect(DomainEvent.where(event_type: Cidadaobr::KafkaTopics::CITIZEN_REGISTERED).count).to eq(1)
     end
   end
 

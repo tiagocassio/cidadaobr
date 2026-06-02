@@ -13,11 +13,11 @@ RSpec.describe QueryBus, type: :service do
     with_tenant(membership) do
       CommandBus.dispatch(
         RecordPlatformEvent,
-        event_type: "platform.bootstrapped",
+        event_type: Cidadaobr::KafkaTopics::DOMAIN_OUTBOX,
         aggregate_type: "Platform",
         aggregate_id: SecureRandom.uuid,
         payload: { boot: true },
-        topic: "domain.outbox"
+        topic: Cidadaobr::KafkaTopics::DOMAIN_OUTBOX
       )
 
       expect { QueryBus.ask(ListDomainEvents) }.not_to change(OutboxMessage, :count)

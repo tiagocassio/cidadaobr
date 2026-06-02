@@ -19,9 +19,14 @@ module Web
 
       def create
         @product = ImmunobiologicalProduct.new(product_params)
-        @product.municipality = current_municipality
+        result = CommandBus.dispatch(
+          Inventory::Commands::CreateImmunobiologicalProduct,
+          product: @product,
+          municipality: current_municipality
+        )
+        @product = result.product
 
-        if @product.save
+        if result.success
           redirect_to web_stock_immunobiological_products_path, notice: t("cidadaobr.stock.products.flash.created")
         else
           render :new, status: :unprocessable_entity
@@ -31,7 +36,14 @@ module Web
       def edit; end
 
       def update
-        if @product.update(product_params)
+        result = CommandBus.dispatch(
+          Inventory::Commands::UpdateImmunobiologicalProduct,
+          product: @product,
+          attributes: product_params
+        )
+        @product = result.product
+
+        if result.success
           redirect_to web_stock_immunobiological_products_path, notice: t("cidadaobr.stock.products.flash.updated")
         else
           render :edit, status: :unprocessable_entity

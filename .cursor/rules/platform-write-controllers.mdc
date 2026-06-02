@@ -1,0 +1,14 @@
+---
+description: Controllers must not own domain writes (ADR-0006)
+globs: app/controllers/**/*.rb
+alwaysApply: false
+---
+
+# Controllers (ADR-0006)
+
+Do not use `Model.create!`, `save!`, `update!`, or `destroy!` for domain mutations.
+
+- Dispatch: `CommandBus.dispatch(CommandClass, **params)` (not `CommandClass.call` unless bus is unavailable and documented).
+- Reads: simple AR scopes OK; heavy lists → `app/queries/` + `QueryBus.ask`.
+
+Remediação: `docs/epic-00-remediation.md` (Ondas B–C para campanhas e cadastro web).

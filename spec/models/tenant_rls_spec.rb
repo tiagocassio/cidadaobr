@@ -23,11 +23,11 @@ RSpec.describe "Tenant RLS isolation", type: :model do
     with_tenant(Cidadaobr::TenantScope.from_membership(membership)) do
       CommandBus.dispatch(
         RecordPlatformEvent,
-        event_type: "platform.bootstrapped",
+        event_type: Cidadaobr::KafkaTopics::DOMAIN_OUTBOX,
         aggregate_type: "Platform",
         aggregate_id: SecureRandom.uuid,
         payload: { facility_id: facility.id },
-        topic: "domain.outbox",
+        topic: Cidadaobr::KafkaTopics::DOMAIN_OUTBOX,
         metadata: {}
       )
     end

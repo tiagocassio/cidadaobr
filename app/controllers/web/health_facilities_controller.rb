@@ -17,19 +17,16 @@ module Web
     end
 
     def create
-      attrs, invalid_coordinates = location_attrs_from_params
-      @health_facility = scoped_health_facilities.build(attrs)
-      @health_facility.municipality = current_municipality
-      @health_facility.errors.add(:latitude, t("cidadaobr.health_facilities.flash.invalid_coordinates")) if invalid_coordinates
-      @health_facility.errors.add(:longitude, t("cidadaobr.health_facilities.flash.invalid_coordinates")) if invalid_coordinates
+      @health_facility = scoped_health_facilities.build
+      result = CommandBus.dispatch(
+        Territory::Commands::CreateHealthFacility,
+        health_facility: @health_facility,
+        attributes: health_facility_params.to_h,
+        municipality: current_municipality
+      )
+      @health_facility = result.health_facility
 
-      saved = false
-      tenant_scoped_transaction do
-        saved = !invalid_coordinates && @health_facility.save
-        raise ActiveRecord::Rollback unless saved
-      end
-
-      if saved
+      if result.success
         redirect_to web_health_facility_path(@health_facility), notice: t("cidadaobr.health_facilities.flash.created")
       else
         render :new, status: :unprocessable_entity
@@ -40,18 +37,14 @@ module Web
     end
 
     def update
-      attrs, invalid_coordinates = location_attrs_from_params
-      @health_facility.assign_attributes(attrs)
-      @health_facility.errors.add(:latitude, t("cidadaobr.health_facilities.flash.invalid_coordinates")) if invalid_coordinates
-      @health_facility.errors.add(:longitude, t("cidadaobr.health_facilities.flash.invalid_coordinates")) if invalid_coordinates
+      result = CommandBus.dispatch(
+        Territory::Commands::UpdateHealthFacility,
+        health_facility: @health_facility,
+        attributes: health_facility_params.to_h
+      )
+      @health_facility = result.health_facility
 
-      saved = false
-      tenant_scoped_transaction do
-        saved = !invalid_coordinates && @health_facility.save
-        raise ActiveRecord::Rollback unless saved
-      end
-
-      if saved
+      if result.success
         redirect_to web_health_facility_path(@health_facility), notice: t("cidadaobr.health_facilities.flash.updated")
       else
         render :edit, status: :unprocessable_entity
@@ -64,23 +57,8 @@ module Web
       @health_facility = scoped_health_facilities.find(params[:id])
     end
 
-    def location_attrs_from_params
-      permitted = params.require(:health_facility).permit(:name, :cnes, :facility_service_kind, :latitude, :longitude)
-      attrs = permitted.except(:latitude, :longitude)
-      latitude = permitted[:latitude]
-      longitude = permitted[:longitude]
-      if latitude.blank? || longitude.blank?
-        attrs[:location] = nil
-        return [ attrs, false ]
-      end
-
-      location = Cidadaobr::GeoPoint.from_payload(latitude: latitude, longitude: longitude)
-      if location
-        attrs[:location] = location
-        [ attrs, false ]
-      else
-        [ attrs, true ]
-      end
+    def health_facility_params
+      params.require(:health_facility).permit(:name, :cnes, :facility_service_kind, :latitude, :longitude)
     end
   end
 end

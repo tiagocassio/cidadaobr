@@ -24,7 +24,7 @@ module Scheduling
       tenant = Cidadaobr::TenantContext.current_or_raise!
       scheduled_at = Time.zone.now.change(sec: 0)
 
-      ActiveRecord::Base.transaction do
+      write_transaction do
         citizen = Citizen.find(@citizen_id)
         service_type = AppointmentServiceType.find(@appointment_service_type_id)
         room = ConsultationRoom.find(@consultation_room_id)
@@ -52,7 +52,7 @@ module Scheduling
           modality: @modality
         ).tap do |appointment|
           RecordPlatformEvent.call(
-            event_type: "appointment.walk_in_booked",
+            event_type: Cidadaobr::KafkaTopics::APPOINTMENT_WALK_IN_BOOKED,
             aggregate_type: "Appointment",
             aggregate_id: appointment.id,
             payload: {
@@ -61,8 +61,7 @@ module Scheduling
               channel: appointment.channel,
               scheduled_at: appointment.scheduled_at.iso8601
             },
-            topic: OutboxPublisher::TOPIC_MAPPING.fetch("appointment.booked"),
-            care_team_id: appointment.care_team_id
+          care_team_id: appointment.care_team_id
           )
         end
       end

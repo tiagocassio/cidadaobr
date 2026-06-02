@@ -35,6 +35,20 @@ RSpec.describe Routing::Commands::GenerateVisitRoutes do
     end
   end
 
+  it "records home_visit.route.generated platform event" do
+    with_tenant(membership) do
+      campaign = create(:home_visit_campaign, municipality: municipality, health_facility: facility, status: "targets_built")
+      citizen = create(:citizen, municipality: municipality, health_facility: facility, care_team: team)
+      create(:campaign_target, municipality: municipality, health_facility: facility, campaign: campaign, citizen: citizen)
+
+      expect {
+        described_class.call(campaign: campaign, route_date: Date.current)
+      }.to change(DomainEvent, :count).by(1)
+
+      expect(DomainEvent.order(:created_at).last.event_type).to eq(Cidadaobr::KafkaTopics::HOME_VISIT_ROUTE_GENERATED)
+    end
+  end
+
   it "does not create duplicate routes for the same date" do
     with_tenant(membership) do
       campaign = create(:home_visit_campaign, municipality: municipality, health_facility: facility, status: "targets_built")

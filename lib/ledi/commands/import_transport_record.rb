@@ -24,7 +24,7 @@ module Ledi
         }
       end
 
-      ActiveRecord::Base.transaction do
+      write_transaction do
         facility = resolve_facility(deserialized.header[:cnes_dado_serializado], tenant)
         care_team = resolve_care_team(deserialized.header[:ine_dado_serializado], facility, tenant)
         ibge_code = resolve_ibge_code(deserialized.header, tenant)
@@ -65,7 +65,7 @@ module Ledi
       ensure_refreshable!(existing)
       previous_transport_status = existing.status
 
-      ActiveRecord::Base.transaction do
+      write_transaction do
         facility = resolve_facility(deserialized.header[:cnes_dado_serializado], tenant)
         care_team = resolve_care_team(deserialized.header[:ine_dado_serializado], facility, tenant)
         ibge_code = resolve_ibge_code(deserialized.header, tenant)
@@ -145,11 +145,10 @@ module Ledi
       end
 
       RecordPlatformEvent.call(
-        event_type: "clinical.record.imported",
+        event_type: Cidadaobr::KafkaTopics::CLINICAL_RECORD_IMPORTED,
         aggregate_type: "ClinicalRecord",
         aggregate_id: clinical_record.id,
         payload: payload,
-        topic: OutboxPublisher::TOPIC_MAPPING.fetch("clinical.record.imported"),
         care_team_id: care_team&.id
       )
     end

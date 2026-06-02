@@ -33,12 +33,11 @@ module Ledi
 
         if was_new
           RecordPlatformEvent.call(
-            event_type: "citizen.registered",
+            event_type: Cidadaobr::KafkaTopics::CITIZEN_REGISTERED,
             aggregate_type: "Citizen",
             aggregate_id: citizen.id,
             payload: { citizen_id: citizen.id, clinical_record_id: clinical_record.id },
-            topic: OutboxPublisher::TOPIC_MAPPING.fetch("citizen.registered"),
-            care_team_id: clinical_record.care_team_id
+          care_team_id: clinical_record.care_team_id
           )
         end
 

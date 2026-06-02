@@ -14,7 +14,7 @@ module Scheduling
 
       tenant = Cidadaobr::TenantContext.current_or_raise!
 
-      ActiveRecord::Base.transaction do
+      write_transaction do
         capacity_slot = SlotCapacity.find_for_booking!(@room_capacity_slot_id)
         validate_reschedule_slot!(@appointment, capacity_slot)
         @scheduled_at = BookingGuards.coerce_scheduled_at_for_slot!(@scheduled_at, capacity_slot)
@@ -40,7 +40,7 @@ module Scheduling
         @appointment.update!(scheduled_at: @scheduled_at, status: "scheduled")
 
         RecordPlatformEvent.call(
-          event_type: "appointment.rescheduled",
+          event_type: Cidadaobr::KafkaTopics::APPOINTMENT_RESCHEDULED,
           aggregate_type: "Appointment",
           aggregate_id: @appointment.id,
           payload: {
@@ -49,7 +49,6 @@ module Scheduling
             scheduled_at: @appointment.scheduled_at.iso8601,
             room_capacity_slot_id: capacity_slot.id
           },
-          topic: OutboxPublisher::TOPIC_MAPPING.fetch("appointment.rescheduled"),
           care_team_id: @appointment.care_team_id
         )
 

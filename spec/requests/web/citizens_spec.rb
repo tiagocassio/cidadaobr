@@ -37,6 +37,9 @@ RSpec.describe "Web citizens", type: :request do
 
     citizen = with_tenant(admin_membership) { Citizen.order(:created_at).last }
     expect(response).to redirect_to(web_citizen_path(citizen))
+
+    event = with_tenant(admin_membership) { DomainEvent.order(:created_at).last }
+    expect(event.event_type).to eq(Cidadaobr::KafkaTopics::CITIZEN_REGISTERED)
   end
 
   it "creates a citizen with domicílio and micro-area" do

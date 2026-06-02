@@ -11,7 +11,7 @@ module Scheduling
 
       tenant = Cidadaobr::TenantContext.current_or_raise!
 
-      ActiveRecord::Base.transaction do
+      write_transaction do
         @appointment.update!(status: "completed")
 
         encounter = Encounter.create!(
@@ -25,14 +25,13 @@ module Scheduling
         )
 
         RecordPlatformEvent.call(
-          event_type: "appointment.completed",
+          event_type: Cidadaobr::KafkaTopics::APPOINTMENT_COMPLETED,
           aggregate_type: "Appointment",
           aggregate_id: @appointment.id,
           payload: {
             appointment_id: @appointment.id,
             encounter_id: encounter.id
           },
-          topic: OutboxPublisher::TOPIC_MAPPING.fetch("appointment.completed"),
           care_team_id: @appointment.care_team_id
         )
 

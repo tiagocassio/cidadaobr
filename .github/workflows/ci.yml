@@ -50,6 +50,15 @@ jobs:
       - name: Lint code for consistent style
         run: bin/rubocop -f github
 
+  controller_writes_gate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: No AR writes in controllers (ADR-0006)
+        run: bin/ci_controller_writes
+
   test:
     runs-on: ubuntu-latest
 

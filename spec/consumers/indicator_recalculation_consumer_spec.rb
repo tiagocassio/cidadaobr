@@ -18,13 +18,13 @@ RSpec.describe IndicatorRecalculationConsumer do
     envelope = {
       "event_id" => SecureRandom.uuid,
       "municipality_id" => municipality.id,
-      "event_type" => "appointment.no_show",
+      "event_type" => Cidadaobr::KafkaTopics::APPOINTMENT_NOSHOW,
       "payload" => { "appointment_id" => SecureRandom.uuid }
     }
 
     allow(Indicators::RecalculateForAppointment).to receive(:call)
 
-    consume_envelope(envelope, topic_name: "appointment.noshow")
+    consume_envelope(envelope, topic_name: Cidadaobr::KafkaTopics::APPOINTMENT_NOSHOW)
 
     expect(Indicators::RecalculateForAppointment).to have_received(:call).with(
       appointment_id: envelope.dig("payload", "appointment_id")
@@ -35,13 +35,13 @@ RSpec.describe IndicatorRecalculationConsumer do
     envelope = {
       "event_id" => SecureRandom.uuid,
       "municipality_id" => municipality.id,
-      "event_type" => "appointment.cancelled",
+      "event_type" => Cidadaobr::KafkaTopics::APPOINTMENT_CANCELLED,
       "payload" => { "appointment_id" => SecureRandom.uuid }
     }
 
     allow(Indicators::RecalculateForAppointment).to receive(:call)
 
-    consume_envelope(envelope, topic_name: "appointment.cancelled")
+    consume_envelope(envelope, topic_name: Cidadaobr::KafkaTopics::APPOINTMENT_CANCELLED)
 
     expect(Indicators::RecalculateForAppointment).to have_received(:call).with(
       appointment_id: envelope.dig("payload", "appointment_id")
@@ -101,7 +101,7 @@ RSpec.describe IndicatorRecalculationConsumer do
     }
 
     expect do
-      with_tenant(facility_membership) { consume_envelope(envelope, topic_name: "appointment.booked") }
+      with_tenant(facility_membership) { consume_envelope(envelope, topic_name: Cidadaobr::KafkaTopics::APPOINTMENT_BOOKED) }
     end.not_to raise_error
 
     expect(KafkaProcessedEvent.find_by(event_id: envelope["event_id"])).to be_present

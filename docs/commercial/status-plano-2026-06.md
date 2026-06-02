@@ -1,6 +1,8 @@
 # CidadãoBR Saúde — Status e próximos passos (jun/2026)
 
 **Plano mestre:** [padrão_ledi_e-sus_4f004208.plan.md](../padrão_ledi_e-sus_4f004208.plan.md)  
+**Roteiro organizado (fases × épicos × tasks):** [roteiro-organizado-fases-epicos.md](../roteiro-organizado-fases-epicos.md)  
+**EPIC-00 — volta aos trilhos:** [epic-00-remediation.md](../epic-00-remediation.md) + [ADR-0006](../adr/0006-platform-write-contract.md)
 **Decisão PO:** [roadmap-decision-fase5.md](roadmap-decision-fase5.md) — Opção A (Fase 5 antes de mobile/Fase 6)  
 **HEAD referência:** `6949e68` — FCD web, RLS, campanhas (após `25bd047` do plano)
 
@@ -11,10 +13,10 @@
 | Fase | Status | Gate |
 |------|--------|------|
 | **0–2** | Concluída | RLS, CQRS, Kafka, LEDI core, ops web |
-| **3** | Parcial | Agenda web + API `/api/v1/citizen` (app Flutter = Fase 8) |
+| **3** | Parcial (só API) | EPIC-03 `done`; EPIC-04 API TASK-04-01..05 (`partial` gaps OpenAPI) — **Flutter = Fase 8** |
 | **4** | Concluída | 17 indicadores, painel, gaps; repasse **ilustrativo** ([ADR-0003](../adr/0003-epic05-mvp-scope.md)) |
 | **4b** | **Concluída (gate)** | 52/53 BPs `done`; 1 `partial` (C2.E) — **não bloqueia** roadmap ([ADR-0005](../adr/0005-methodology-coverage.md)) |
-| **5** | **Em curso** | Código ~90–95%; specs E2E ok; **falta piloto UI** |
+| **5** | **Em curso** | Código ~90–95%; specs E2E ok; **EPIC-00 Onda B** (eventos campanha/rota) feita 2026-06-02; **falta piloto UI** |
 | **12** | ~40% (paralelo) | Release referência; **bloqueia Fase 6** clínica |
 | **6–8** | Pendente | Flutter só Fase 8 |
 
@@ -110,6 +112,8 @@ O MS publica calendários **por faixa etária**, cada um com **Normal** (UI/cida
 ### Prioridade 1 — Fechar Fase 5 (S10)
 
 1. ~~Rodar specs de gate~~ — **concluído** 2026-06-01 (`6949e68`): 21 examples, 0 failures.
+
+1b. ~~**EPIC-00 Onda B**~~ — **concluído** 2026-06-02: eventos `campaign.targets.built`, `home_visit.route.*`, `visit_route.supplies.*`; `CommandBus` em `HomeVisitCampaignsController`; specs em `spec/lib/{campaigns,routing,inventory}/`.
 
 2. **Piloto UI** (~30–60 min): campanha domiciliar completa; wizard vacina; romaneio; mapa de rotas.
 

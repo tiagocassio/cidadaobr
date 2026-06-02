@@ -7,25 +7,7 @@ class OutboxPublisher
   MAX_PUBLISH_ATTEMPTS = OutboxMessage::MAX_PUBLISH_ATTEMPTS
   RECLAIMED_STALE_MESSAGE = "Reclaimed stale publishing claim"
 
-  TOPIC_MAPPING = {
-    "platform.bootstrapped" => "domain.outbox",
-    "citizen.registered" => "citizen.registered",
-    "clinical.record.imported" => "clinical.record.imported",
-    "clinical.record.validated" => "clinical.record.validated",
-    "clinical.record.validation_failed" => "clinical.record.validation_failed",
-    "clinical.record.persisted" => "clinical.record.persisted",
-    "ledi.batch.submitted" => "ledi.batch.ready",
-    "ledi.batch.status_changed" => "ledi.batch.statuschanged",
-    "appointment.booked" => "appointment.booked",
-    "appointment.rescheduled" => "appointment.rescheduled",
-    "appointment.checked_in" => "appointment.checkedin",
-    "appointment.completed" => "appointment.completed",
-    "appointment.cancelled" => "appointment.cancelled",
-    "appointment.no_show" => "appointment.noshow",
-    "indicator.gap.detected" => "indicator.gap.detected",
-    "indicator.team_score.updated" => "indicator.team.score.updated",
-    "supply.provisioning.rejected" => "supply.provisioning.rejected"
-  }.freeze
+  TOPIC_MAPPING = Cidadaobr::KafkaTopics::EVENT_TO_TOPIC
 
   # Sweeps every municipality under RLS (O(municipalities) tenant switches per loop).
   # Claim order is per-tenant FIFO, not global cross-municipality FIFO.
@@ -111,7 +93,7 @@ class OutboxPublisher
       with_municipal_tenant(municipality.id) do
         next unless outbox_work_present?
 
-        [outbox_work_priority_timestamp, municipality.id]
+        [ outbox_work_priority_timestamp, municipality.id ]
       end
     end.sort_by(&:first).map(&:last)
   end

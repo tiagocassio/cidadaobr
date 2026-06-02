@@ -50,7 +50,20 @@ module Web
 
     def repopulate_household_form!
       @household ||= scoped_households.build
-      assign_household_from_params(@household)
+      valid, invalid_coordinates = preview_assign_household_from_params(@household)
+      @household.errors.add(:base, t("cidadaobr.households.flash.invalid_coordinates")) if invalid_coordinates
+      @household unless valid
+    end
+
+    def household_command_attributes
+      raw = household_permitted_raw
+      attrs = sanitize_household_facility_team!(
+        raw.except(:latitude, :longitude, :family_reference, :housing_conditions).to_h.stringify_keys
+      )
+      attrs["latitude"] = raw[:latitude]
+      attrs["longitude"] = raw[:longitude]
+      attrs["housing_conditions"] = household_housing_conditions_from_params
+      attrs
     end
 
     def household_scalar_attributes
@@ -81,84 +94,44 @@ module Web
 
     def sanitize_household_facility_team!(attrs)
       if facility_scope?
-        attrs[:health_facility_id] = current_membership.health_facility_id
-        if attrs[:care_team_id].present?
-          attrs[:care_team_id] = scoped_care_teams.find_by(id: attrs[:care_team_id])&.id
+        attrs["health_facility_id"] = current_membership.health_facility_id
+        if attrs["care_team_id"].present?
+          attrs["care_team_id"] = scoped_care_teams.find_by(id: attrs["care_team_id"])&.id
         end
       else
-        if attrs[:health_facility_id].present?
-          attrs[:health_facility_id] = scoped_health_facilities.find_by(id: attrs[:health_facility_id])&.id
+        if attrs["health_facility_id"].present?
+          attrs["health_facility_id"] = scoped_health_facilities.find_by(id: attrs["health_facility_id"])&.id
         end
-        if attrs[:care_team_id].present?
-          attrs[:care_team_id] = scoped_care_teams.find_by(id: attrs[:care_team_id])&.id
+        if attrs["care_team_id"].present?
+          attrs["care_team_id"] = scoped_care_teams.find_by(id: attrs["care_team_id"])&.id
         end
       end
       attrs
-    end
-
-    def apply_household_municipality!(household)
-      household.municipality = current_municipality
-      household.ibge_code = current_municipality.ibge_code
-    end
-
-    def default_household_from_citizen!(household, citizen)
-      household.health_facility_id ||= citizen.health_facility_id
-      household.care_team_id ||= citizen.care_team_id
     end
 
     def household_member_family_reference?
       ActiveModel::Type::Boolean.new.cast(params.dig(:household, :family_reference))
     end
 
-    def assign_household_from_params(household)
+    def preview_assign_household_from_params(household)
       raw = household_permitted_raw
       location, invalid_coordinates = household_location_from_params(raw)
       return [ false, true ] if invalid_coordinates
 
       attrs = sanitize_household_facility_team!(
-        raw.except(:latitude, :longitude, :family_reference, :housing_conditions).to_h
+        raw.except(:latitude, :longitude, :family_reference, :housing_conditions).to_h.stringify_keys
       )
-      attrs[:location] = location
-      attrs[:no_street_number] = ActiveModel::Type::Boolean.new.cast(attrs[:no_street_number]) || false
-      attrs[:outside_micro_area] = ActiveModel::Type::Boolean.new.cast(attrs[:outside_micro_area]) || false
-      attrs[:animals_on_premises] = ActiveModel::Type::Boolean.new.cast(attrs[:animals_on_premises]) || false
+      attrs["location"] = location
+      attrs["no_street_number"] = ActiveModel::Type::Boolean.new.cast(attrs["no_street_number"]) || false
+      attrs["outside_micro_area"] = ActiveModel::Type::Boolean.new.cast(attrs["outside_micro_area"]) || false
+      attrs["animals_on_premises"] = ActiveModel::Type::Boolean.new.cast(attrs["animals_on_premises"]) || false
       household.assign_attributes(attrs)
       household.housing_conditions = household_housing_conditions_from_params
       household.web_fcd_registration = true
-      apply_household_municipality!(household)
+      household.municipality = current_municipality
+      household.ibge_code = current_municipality.ibge_code
 
       [ household.valid?, false ]
-    end
-
-    def save_citizen_with_optional_household!
-      @household = scoped_households.build if household_form_requested?
-
-      saved = false
-      ActiveRecord::Base.transaction do
-        saved = yield
-        if saved && @household
-          valid, invalid_coordinates = assign_household_from_params(@household)
-          if invalid_coordinates
-            @household.errors.add(:base, t("cidadaobr.households.flash.invalid_coordinates"))
-            saved = false
-          elsif !valid || !persist_household_for_citizen!(@citizen, @household)
-            saved = false
-          end
-        end
-        raise ActiveRecord::Rollback unless saved
-      end
-      saved
-    end
-
-    def persist_household_for_citizen!(citizen, household)
-      default_household_from_citizen!(household, citizen)
-      return false unless household.save
-
-      household.household_members.create!(
-        citizen: citizen,
-        family_reference: household_member_family_reference?
-      )
-      true
     end
   end
 end

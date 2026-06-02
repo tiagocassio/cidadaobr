@@ -2,60 +2,66 @@
 
 module Routing
   module Commands
-    class ClearVisitRoutes
+    class ClearVisitRoutes < ApplicationCommand
       Result = Data.define(:routes_removed, :targets_reset, :message)
 
-      class << self
-        def call(campaign:, route_date:)
-          routes = campaign.visit_routes.where(route_date: route_date)
-          if routes.joins(:visit_route_provisioning).where(visit_route_provisionings: { status: "dispatched" }).exists?
-            return Result.new(
-              0,
-              0,
-              I18n.t("cidadaobr.campaigns.home_visit.flash.clear_routes_dispatched")
-            )
-          end
+      def initialize(campaign:, route_date:)
+        @campaign = campaign
+        @route_date = route_date
+      end
 
-          ActiveRecord::Base.transaction do
-            clear!(campaign: campaign, route_date: route_date)
-          end
+      def call
+        routes = @campaign.visit_routes.where(route_date: @route_date)
+        if routes.joins(:visit_route_provisioning).where(visit_route_provisionings: { status: "dispatched" }).exists?
+          return Result.new(
+            0,
+            0,
+            I18n.t("cidadaobr.campaigns.home_visit.flash.clear_routes_dispatched")
+          )
         end
 
-        def clear!(campaign:, route_date:, sync_provisioning: true)
-          routes = campaign.visit_routes.where(route_date: route_date)
-          target_ids = VisitRouteStop
-            .where(visit_route_id: routes.select(:id))
-            .where.not(campaign_target_id: nil)
-            .pluck(:campaign_target_id)
-          routes_removed = routes.count
+        write_transaction { perform_clear!(sync_provisioning: true) }
+      end
 
-          Inventory::Commands::ReleaseReservedSupplies.call_for_routes(routes: routes)
-          routes.destroy_all
-          targets_reset = 0
-          if target_ids.any?
-            targets_reset = CampaignTarget
-              .where(id: target_ids)
-              .update_all(status: "pending", updated_at: Time.current)
-          end
+      def self.clear!(campaign:, route_date:, sync_provisioning: true)
+        new(campaign: campaign, route_date: route_date).perform_clear!(sync_provisioning: sync_provisioning)
+      end
 
-          if campaign.visit_routes.none? && campaign.status == "routes_generated"
-            campaign.update!(status: "targets_built")
-          end
+      def self.sync_provisioning!(campaign)
+        campaign.reload
+        if campaign.visit_routes.none?
+          campaign.home_visit_campaign_provisioning&.destroy
+        else
+          Inventory::PreviewCampaignProvisioning.rollup!(campaign: campaign)
+        end
+      end
 
-          sync_provisioning!(campaign) if sync_provisioning
+      private
 
-          Result.new(routes_removed, targets_reset, nil)
+      def perform_clear!(sync_provisioning:)
+        routes = @campaign.visit_routes.where(route_date: @route_date)
+        target_ids = VisitRouteStop
+          .where(visit_route_id: routes.select(:id))
+          .where.not(campaign_target_id: nil)
+          .pluck(:campaign_target_id)
+        routes_removed = routes.count
+
+        Inventory::Commands::ReleaseReservedSupplies.call_for_routes(routes: routes)
+        routes.destroy_all
+        targets_reset = 0
+        if target_ids.any?
+          targets_reset = CampaignTarget
+            .where(id: target_ids)
+            .update_all(status: "pending", updated_at: Time.current)
         end
 
-        def sync_provisioning!(campaign)
-          campaign.reload
-          if campaign.visit_routes.none?
-            campaign.home_visit_campaign_provisioning&.destroy
-          else
-            Inventory::PreviewCampaignProvisioning.rollup!(campaign: campaign)
-          end
+        if @campaign.visit_routes.none? && @campaign.status == "routes_generated"
+          @campaign.update!(status: "targets_built")
         end
 
+        self.class.sync_provisioning!(@campaign) if sync_provisioning
+
+        Result.new(routes_removed, targets_reset, nil)
       end
     end
   end

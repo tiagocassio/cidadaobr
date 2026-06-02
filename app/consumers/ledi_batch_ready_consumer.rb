@@ -32,7 +32,7 @@ class LediBatchReadyConsumer < ApplicationConsumer
           batch.update!(status: "submitted")
 
           RecordPlatformEvent.call(
-            event_type: "ledi.batch.status_changed",
+            event_type: Cidadaobr::KafkaTopics::LEDI_BATCH_STATUSCHANGED,
             aggregate_type: "LediBatch",
             aggregate_id: batch.id,
             payload: {
@@ -41,7 +41,6 @@ class LediBatchReadyConsumer < ApplicationConsumer
               previous_status: previous_status,
               status: batch.status
             },
-            topic: OutboxPublisher::TOPIC_MAPPING.fetch("ledi.batch.status_changed"),
             care_team_id: batch.care_team_id
           )
         end

@@ -10,12 +10,12 @@ module Scheduling
       # Absences after check-in use MarkAppointmentNoShow (no_show), not cancel.
       raise Scheduling::Errors::InvalidTransitionError unless @appointment.status.in?(%w[scheduled confirmed])
 
-      ActiveRecord::Base.transaction do
+      write_transaction do
         @appointment.update!(status: "cancelled")
         SlotRelease.release_appointment_slot!(@appointment)
 
         RecordPlatformEvent.call(
-          event_type: "appointment.cancelled",
+          event_type: Cidadaobr::KafkaTopics::APPOINTMENT_CANCELLED,
           aggregate_type: "Appointment",
           aggregate_id: @appointment.id,
           payload: {
@@ -23,7 +23,6 @@ module Scheduling
             citizen_id: @appointment.citizen_id,
             status: @appointment.status
           },
-          topic: OutboxPublisher::TOPIC_MAPPING.fetch("appointment.cancelled"),
           care_team_id: @appointment.care_team_id
         )
 

@@ -49,34 +49,7 @@ module Inventory
       end
 
       def persist!(campaign:)
-        ActiveRecord::Base.transaction do
-          lock_stock_for_campaign!(campaign)
-
-          result = call(
-            campaign: campaign,
-            available_doses: available_doses_for(campaign: campaign),
-            room_capacity_per_day: campaign.room_capacity_per_day
-          )
-
-          campaign.supply_provisioning&.destroy
-
-          provisioning = SupplyProvisioning.create!(
-            municipality: campaign.municipality,
-            health_facility: campaign.health_facility,
-            provisionable: campaign,
-            status: result.feasible ? "approved" : "rejected",
-            required_items: result.lines.map(&:to_h),
-            available_items: result.lines.map { |line| line.to_h.merge(available: line.available) },
-            shortages: result.shortages,
-            capacity_ok: result.capacity_ok,
-            rejection_reason: result.feasible ? nil : result.shortages.join("; ")
-          )
-
-          emit_rejection_event!(campaign: campaign, provisioning: provisioning) unless result.feasible
-
-          campaign.update!(status: result.feasible ? "provisioning_approved" : "draft")
-          result
-        end
+        Inventory::Commands::PersistVaccinationProvisioning.call(campaign: campaign)
       end
 
       def available_doses_for(campaign:)
@@ -187,10 +160,9 @@ module Inventory
 
       def emit_rejection_event!(campaign:, provisioning:)
         RecordPlatformEvent.call(
-          event_type: "supply.provisioning.rejected",
+          event_type: Cidadaobr::KafkaTopics::SUPPLY_PROVISIONING_REJECTED,
           aggregate_type: "SupplyProvisioning",
           aggregate_id: provisioning.id,
-          topic: "supply.provisioning.rejected",
           payload: {
             provisionable_type: campaign.class.name,
             provisionable_id: campaign.id,

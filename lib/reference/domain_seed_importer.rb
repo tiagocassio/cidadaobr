@@ -63,7 +63,7 @@ module Reference
       def active_path
         return SEED_PATH if ActiveModel::Type::Boolean.new.cast(ENV["REFERENCE_USE_DB_SEED"])
         return SEED_PATH if Rails.env.production?
-        return VENDOR_PATH if Rails.env.development? && VENDOR_PATH.exist?
+        return VENDOR_PATH if VENDOR_PATH.exist?
 
         SEED_PATH
       end

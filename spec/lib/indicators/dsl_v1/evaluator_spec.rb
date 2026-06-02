@@ -2452,6 +2452,9 @@ RSpec.describe Indicators::DslV1::Evaluator do
   end
 
   it "computes B3 team score from extraction procedure ratio" do
+    quadrimester = Indicators::Quadrimester.current
+    encounter_at = 1.month.ago
+
     esb_team = with_tenant(membership) do
       create(:care_team, :esb, municipality: municipality, health_facility: facility)
     end
@@ -2475,7 +2478,7 @@ RSpec.describe Indicators::DslV1::Evaluator do
               }
             ]
           },
-          encounter_at: 1.month.ago
+          encounter_at: encounter_at
         )
       end
     end
@@ -2484,7 +2487,7 @@ RSpec.describe Indicators::DslV1::Evaluator do
       described_class.team_score(
         expression: expression_for("B3"),
         citizens: Citizen.where(id: citizens.map(&:id)),
-        quadrimester: "2026-Q1",
+        quadrimester: quadrimester,
         care_team_id: esb_team.id
       )
     end

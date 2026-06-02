@@ -2,13 +2,14 @@
 
 # Recalculates indicators referenced by appointment_in_quadrimester (see RuleCatalog.appointment_dependent_codes).
 class IndicatorRecalculationConsumer < ApplicationConsumer
-  APPOINTMENT_TOPICS = %w[
-    appointment.booked
-    appointment.checkedin
-    appointment.rescheduled
-    appointment.completed
-    appointment.cancelled
-    appointment.noshow
+  APPOINTMENT_TOPICS = [
+    Cidadaobr::KafkaTopics::APPOINTMENT_BOOKED,
+    Cidadaobr::KafkaTopics::APPOINTMENT_WALK_IN_BOOKED,
+    Cidadaobr::KafkaTopics::APPOINTMENT_CHECKEDIN,
+    Cidadaobr::KafkaTopics::APPOINTMENT_RESCHEDULED,
+    Cidadaobr::KafkaTopics::APPOINTMENT_COMPLETED,
+    Cidadaobr::KafkaTopics::APPOINTMENT_CANCELLED,
+    Cidadaobr::KafkaTopics::APPOINTMENT_NOSHOW
   ].freeze
 
   def consume

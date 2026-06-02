@@ -15,11 +15,11 @@ module Ledi
 
       previous_status = @batch.status
 
-      ActiveRecord::Base.transaction do
+      write_transaction do
         @batch.update!(status: "rejected", rejection_reason: @reason, rejected_at: Time.current)
 
         RecordPlatformEvent.call(
-          event_type: "ledi.batch.status_changed",
+          event_type: Cidadaobr::KafkaTopics::LEDI_BATCH_STATUSCHANGED,
           aggregate_type: "LediBatch",
           aggregate_id: @batch.id,
           payload: {
@@ -30,7 +30,6 @@ module Ledi
             rejection_reason: @batch.rejection_reason,
             rejected_at: @batch.rejected_at.iso8601
           },
-          topic: OutboxPublisher::TOPIC_MAPPING.fetch("ledi.batch.status_changed"),
           care_team_id: @batch.care_team_id
         )
       end

@@ -26,16 +26,17 @@ module Web
     end
 
     def create
-      @household = scoped_households.build
-      valid, invalid_coordinates = assign_household_from_params(@household)
+      result = CommandBus.dispatch(
+        Territory::Commands::CreateHousehold,
+        household_attributes: household_command_attributes,
+        municipality: current_municipality
+      )
+      @household = result.household
 
-      if invalid_coordinates
+      if result.invalid_coordinates
         @household.errors.add(:base, t("cidadaobr.households.flash.invalid_coordinates"))
         render :new, status: :unprocessable_entity
-        return
-      end
-
-      if valid && @household.save
+      elsif result.success
         redirect_to web_household_path(@household), notice: t("cidadaobr.households.flash.created")
       else
         render :new, status: :unprocessable_entity
@@ -46,15 +47,18 @@ module Web
     end
 
     def update
-      valid, invalid_coordinates = assign_household_from_params(@household)
+      result = CommandBus.dispatch(
+        Territory::Commands::UpdateHousehold,
+        household: @household,
+        household_attributes: household_command_attributes,
+        municipality: current_municipality
+      )
+      @household = result.household
 
-      if invalid_coordinates
+      if result.invalid_coordinates
         @household.errors.add(:base, t("cidadaobr.households.flash.invalid_coordinates"))
         render :edit, status: :unprocessable_entity
-        return
-      end
-
-      if valid && @household.save
+      elsif result.success
         redirect_to web_household_path(@household), notice: t("cidadaobr.households.flash.updated")
       else
         render :edit, status: :unprocessable_entity

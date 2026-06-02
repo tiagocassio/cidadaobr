@@ -9,8 +9,8 @@ RSpec.describe OutboxPublisher, type: :service do
       id: SecureRandom.uuid,
       domain_event_id: domain_event_id,
       municipality_id: SecureRandom.uuid,
-      topic: "domain.outbox",
-      event_type: "platform.bootstrapped",
+      topic: "domain-outbox",
+      event_type: Cidadaobr::KafkaTopics::DOMAIN_OUTBOX,
       payload: { "event_id" => domain_event_id },
       status: "pending"
     )
@@ -28,7 +28,7 @@ RSpec.describe OutboxPublisher, type: :service do
       hash_including(kafka_sent_at: kind_of(Time), status: "published", published_at: kind_of(Time))
     )
     expect(producer).to have_received(:produce_sync).with(
-      hash_including(topic: "domain.outbox", key: domain_event_id)
+      hash_including(topic: "domain-outbox", key: domain_event_id)
     )
   end
 
@@ -111,11 +111,11 @@ RSpec.describe OutboxPublisher, type: :service do
       with_tenant(membership) do
         CommandBus.dispatch(
           RecordPlatformEvent,
-          event_type: "platform.bootstrapped",
+          event_type: Cidadaobr::KafkaTopics::DOMAIN_OUTBOX,
           aggregate_type: "Platform",
           aggregate_id: SecureRandom.uuid,
           payload: { ok: true },
-          topic: "domain.outbox",
+          topic: "domain-outbox",
           metadata: {}
         )
 
@@ -145,11 +145,11 @@ RSpec.describe OutboxPublisher, type: :service do
         2.times do |index|
           CommandBus.dispatch(
             RecordPlatformEvent,
-            event_type: "platform.bootstrapped",
+            event_type: Cidadaobr::KafkaTopics::DOMAIN_OUTBOX,
             aggregate_type: "Platform",
             aggregate_id: SecureRandom.uuid,
             payload: { index: index },
-            topic: "domain.outbox",
+            topic: "domain-outbox",
             metadata: {}
           )
         end
@@ -173,11 +173,11 @@ RSpec.describe OutboxPublisher, type: :service do
       with_tenant(membership) do
         CommandBus.dispatch(
           RecordPlatformEvent,
-          event_type: "platform.bootstrapped",
+          event_type: Cidadaobr::KafkaTopics::DOMAIN_OUTBOX,
           aggregate_type: "Platform",
           aggregate_id: SecureRandom.uuid,
           payload: { ok: true },
-          topic: "domain.outbox",
+          topic: "domain-outbox",
           metadata: {}
         )
 
@@ -205,11 +205,11 @@ RSpec.describe OutboxPublisher, type: :service do
       with_tenant(membership) do
         CommandBus.dispatch(
           RecordPlatformEvent,
-          event_type: "platform.bootstrapped",
+          event_type: Cidadaobr::KafkaTopics::DOMAIN_OUTBOX,
           aggregate_type: "Platform",
           aggregate_id: SecureRandom.uuid,
           payload: { ok: true },
-          topic: "domain.outbox",
+          topic: "domain-outbox",
           metadata: {}
         )
 
@@ -235,11 +235,11 @@ RSpec.describe OutboxPublisher, type: :service do
       with_tenant(membership) do
         CommandBus.dispatch(
           RecordPlatformEvent,
-          event_type: "platform.bootstrapped",
+          event_type: Cidadaobr::KafkaTopics::DOMAIN_OUTBOX,
           aggregate_type: "Platform",
           aggregate_id: SecureRandom.uuid,
           payload: { ok: true },
-          topic: "domain.outbox",
+          topic: "domain-outbox",
           metadata: {}
         )
 
@@ -281,11 +281,11 @@ RSpec.describe OutboxPublisher, type: :service do
         2.times do
           CommandBus.dispatch(
             RecordPlatformEvent,
-            event_type: "platform.bootstrapped",
+            event_type: Cidadaobr::KafkaTopics::DOMAIN_OUTBOX,
             aggregate_type: "Platform",
             aggregate_id: SecureRandom.uuid,
             payload: { from: "first" },
-            topic: "domain.outbox",
+            topic: "domain-outbox",
             metadata: {}
           )
         end
@@ -294,11 +294,11 @@ RSpec.describe OutboxPublisher, type: :service do
       with_tenant(other_membership) do
         CommandBus.dispatch(
           RecordPlatformEvent,
-          event_type: "platform.bootstrapped",
+          event_type: Cidadaobr::KafkaTopics::DOMAIN_OUTBOX,
           aggregate_type: "Platform",
           aggregate_id: SecureRandom.uuid,
           payload: { from: "second" },
-          topic: "domain.outbox",
+          topic: "domain-outbox",
           metadata: {}
         )
       end
@@ -319,11 +319,11 @@ RSpec.describe OutboxPublisher, type: :service do
       with_tenant(membership) do
         CommandBus.dispatch(
           RecordPlatformEvent,
-          event_type: "platform.bootstrapped",
+          event_type: Cidadaobr::KafkaTopics::DOMAIN_OUTBOX,
           aggregate_type: "Platform",
           aggregate_id: SecureRandom.uuid,
           payload: { ok: true },
-          topic: "domain.outbox",
+          topic: "domain-outbox",
           metadata: {}
         )
 
@@ -349,11 +349,11 @@ RSpec.describe OutboxPublisher, type: :service do
       with_tenant(membership) do
         CommandBus.dispatch(
           RecordPlatformEvent,
-          event_type: "platform.bootstrapped",
+          event_type: Cidadaobr::KafkaTopics::DOMAIN_OUTBOX,
           aggregate_type: "Platform",
           aggregate_id: SecureRandom.uuid,
           payload: { ok: true },
-          topic: "domain.outbox",
+          topic: "domain-outbox",
           metadata: {}
         )
 
@@ -380,11 +380,11 @@ RSpec.describe OutboxPublisher, type: :service do
       with_tenant(membership) do
         CommandBus.dispatch(
           RecordPlatformEvent,
-          event_type: "platform.bootstrapped",
+          event_type: Cidadaobr::KafkaTopics::DOMAIN_OUTBOX,
           aggregate_type: "Platform",
           aggregate_id: SecureRandom.uuid,
           payload: { ok: true },
-          topic: "domain.outbox",
+          topic: "domain-outbox",
           metadata: {}
         )
 
@@ -412,11 +412,11 @@ RSpec.describe OutboxPublisher, type: :service do
       with_tenant(membership) do
         CommandBus.dispatch(
           RecordPlatformEvent,
-          event_type: "platform.bootstrapped",
+          event_type: Cidadaobr::KafkaTopics::DOMAIN_OUTBOX,
           aggregate_type: "Platform",
           aggregate_id: SecureRandom.uuid,
           payload: { ok: true },
-          topic: "domain.outbox",
+          topic: "domain-outbox",
           metadata: {}
         )
 
@@ -443,11 +443,11 @@ RSpec.describe OutboxPublisher, type: :service do
       with_tenant(membership) do
         CommandBus.dispatch(
           RecordPlatformEvent,
-          event_type: "platform.bootstrapped",
+          event_type: Cidadaobr::KafkaTopics::DOMAIN_OUTBOX,
           aggregate_type: "Platform",
           aggregate_id: SecureRandom.uuid,
           payload: { ok: true },
-          topic: "domain.outbox",
+          topic: "domain-outbox",
           metadata: {}
         )
 
@@ -476,11 +476,11 @@ RSpec.describe OutboxPublisher, type: :service do
       with_tenant(membership) do
         CommandBus.dispatch(
           RecordPlatformEvent,
-          event_type: "platform.bootstrapped",
+          event_type: Cidadaobr::KafkaTopics::DOMAIN_OUTBOX,
           aggregate_type: "Platform",
           aggregate_id: SecureRandom.uuid,
           payload: { ok: true },
-          topic: "domain.outbox",
+          topic: "domain-outbox",
           metadata: {}
         )
 
@@ -503,11 +503,11 @@ RSpec.describe OutboxPublisher, type: :service do
       with_tenant(membership) do
         CommandBus.dispatch(
           RecordPlatformEvent,
-          event_type: "platform.bootstrapped",
+          event_type: Cidadaobr::KafkaTopics::DOMAIN_OUTBOX,
           aggregate_type: "Platform",
           aggregate_id: SecureRandom.uuid,
           payload: { ok: true },
-          topic: "domain.outbox",
+          topic: "domain-outbox",
           metadata: {}
         )
 
@@ -531,11 +531,11 @@ RSpec.describe OutboxPublisher, type: :service do
       with_tenant(membership) do
         CommandBus.dispatch(
           RecordPlatformEvent,
-          event_type: "platform.bootstrapped",
+          event_type: Cidadaobr::KafkaTopics::DOMAIN_OUTBOX,
           aggregate_type: "Platform",
           aggregate_id: SecureRandom.uuid,
           payload: { ok: true },
-          topic: "domain.outbox",
+          topic: "domain-outbox",
           metadata: {}
         )
 

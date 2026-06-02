@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# Topic names: Cidadaobr::KafkaTopics (hyphen-separated, no dots or underscores).
 set -euo pipefail
 
 BOOTSTRAP="${KAFKA_BOOTSTRAP_SERVERS:-localhost:9092}"
@@ -6,19 +7,37 @@ PARTITIONS="${KAFKA_TOPIC_PARTITIONS:-1}"
 REPLICATION="${KAFKA_TOPIC_REPLICATION:-1}"
 
 TOPICS=(
-  clinical.record.persisted
-  ledi.batch.ready
-  ledi.batch.statuschanged
-  appointment.booked
-  appointment.checkedin
-  appointment.rescheduled
-  appointment.completed
-  appointment.cancelled
-  appointment.noshow
-  indicator.gap.detected
-  indicator.team.score.updated
-  citizen.registered
-  domain.outbox
+  appointment-booked
+  appointment-cancelled
+  appointment-checkedin
+  appointment-completed
+  appointment-noshow
+  appointment-rescheduled
+  campaign-targets-built
+  care-team-created
+  care-team-updated
+  citizen-registered
+  citizen-updated
+  clinical-record-imported
+  clinical-record-persisted
+  clinical-record-validated
+  clinical-record-validation-failed
+  domain-outbox
+  home-visit-route-generated
+  home-visit-route-published
+  immunobiological-lot-received
+  indicator-gap-detected
+  indicator-team-score-updated
+  appointment-walk-in-booked
+  ledi-batch-submitted
+  ledi-batch-statuschanged
+  reference-release-published
+  supply-provisioning-rejected
+  vaccination-campaign-draft-invalidated
+  vaccination-campaign-published
+  vaccination-provisioning-approved
+  visit-route-supplies-dispatched
+  visit-route-supplies-reserved
 )
 
 if command -v docker >/dev/null 2>&1 && docker compose ps kafka 2>/dev/null | grep -q "running\|Up"; then

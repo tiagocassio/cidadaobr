@@ -31,8 +31,8 @@ RSpec.describe Ledi::ValidateClinicalRecord do
       expect(validation_result.valid).to be(true)
       expect(record.validation_status).to eq("valid")
       expect(record.transport_record.status).to eq("validated")
-      expect(DomainEvent.where(event_type: "clinical.record.validated").count).to eq(1)
-      expect(DomainEvent.where(event_type: "clinical.record.persisted").count).to eq(1)
+      expect(DomainEvent.where(event_type: Cidadaobr::KafkaTopics::CLINICAL_RECORD_VALIDATED).count).to eq(1)
+      expect(DomainEvent.where(event_type: Cidadaobr::KafkaTopics::CLINICAL_RECORD_PERSISTED).count).to eq(1)
       validation_result
     end
 
@@ -49,10 +49,10 @@ RSpec.describe Ledi::ValidateClinicalRecord do
     end
 
     validated = with_tenant(membership) do
-      DomainEvent.find_by!(event_type: "clinical.record.validated", aggregate_id: clinical_record.id)
+      DomainEvent.find_by!(event_type: Cidadaobr::KafkaTopics::CLINICAL_RECORD_VALIDATED, aggregate_id: clinical_record.id)
     end
     persisted = with_tenant(membership) do
-      DomainEvent.find_by!(event_type: "clinical.record.persisted", aggregate_id: clinical_record.id)
+      DomainEvent.find_by!(event_type: Cidadaobr::KafkaTopics::CLINICAL_RECORD_PERSISTED, aggregate_id: clinical_record.id)
     end
 
     expect(validated.care_team_id).to eq(care_team.id)
@@ -71,7 +71,7 @@ RSpec.describe Ledi::ValidateClinicalRecord do
       expect(record.validation_status).to eq("invalid")
       expect(record.validation_errors).not_to be_empty
       expect(record.transport_record.status).to eq("draft")
-      expect(DomainEvent.where(event_type: "clinical.record.validation_failed").count).to eq(1)
+      expect(DomainEvent.where(event_type: Cidadaobr::KafkaTopics::CLINICAL_RECORD_VALIDATION_FAILED).count).to eq(1)
       validation_result
     end
 

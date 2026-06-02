@@ -54,8 +54,13 @@ module Web
           return
         end
 
-        if @campaign.save
-          redirect_to web_campaigns_home_visit_campaign_path(@campaign),
+        result = CommandBus.dispatch(
+          ::Campaigns::Commands::CreateHomeVisitCampaign,
+          campaign: @campaign,
+          municipality: current_municipality
+        )
+        if result.success
+          redirect_to web_campaigns_home_visit_campaign_path(result.campaign),
                       notice: t("cidadaobr.campaigns.home_visit.flash.created")
         else
           render :new, status: :unprocessable_entity
@@ -63,7 +68,7 @@ module Web
       end
 
       def build_targets
-        result = ::Campaigns::Commands::BuildCampaignTargetList.call(campaign: @campaign)
+        result = CommandBus.dispatch(::Campaigns::Commands::BuildCampaignTargetList, campaign: @campaign)
         redirect_after_build_targets!(result, web_campaigns_home_visit_campaign_path(@campaign))
       end
 
@@ -75,7 +80,8 @@ module Web
           return
         end
 
-        result = Routing::Commands::GenerateVisitRoutes.call(
+        result = CommandBus.dispatch(
+          Routing::Commands::GenerateVisitRoutes,
           campaign: @campaign,
           route_date: route_date,
           regenerate: ActiveModel::Type::Boolean.new.cast(params[:regenerate])
@@ -114,7 +120,7 @@ module Web
           return
         end
 
-        result = Routing::Commands::ClearVisitRoutes.call(campaign: @campaign, route_date: route_date)
+        result = CommandBus.dispatch(Routing::Commands::ClearVisitRoutes, campaign: @campaign, route_date: route_date)
         if result.message.present?
           redirect_to web_campaigns_home_visit_campaign_path(@campaign, route_date: route_date.iso8601),
                       alert: result.message
@@ -136,7 +142,11 @@ module Web
           return
         end
 
-        result = Routing::Commands::PublishVisitRoutes.call(campaign: @campaign, route_date: route_date)
+        result = CommandBus.dispatch(
+          Routing::Commands::PublishVisitRoutes,
+          campaign: @campaign,
+          route_date: route_date
+        )
         if result.message.present?
           redirect_to web_campaigns_home_visit_campaign_path(@campaign, route_date: route_date.iso8601),
                       alert: result.message
@@ -190,7 +200,11 @@ module Web
           return
         end
 
-        result = Inventory::Commands::ReserveVisitRouteSupplies.call(campaign: @campaign, route_date: route_date)
+        result = CommandBus.dispatch(
+          Inventory::Commands::ReserveVisitRouteSupplies,
+          campaign: @campaign,
+          route_date: route_date
+        )
         if result.blocked
           redirect_after_reserve_provisioning(alert: result.message)
           return
@@ -215,7 +229,8 @@ module Web
         totals = params.require(:totals).map do |line|
           line.permit(:key, :label, :quantity_required, :unit, :supply_item_code, :immunobiological_product_id).to_h
         end
-        Inventory::Commands::UpdateCampaignProvisioning.call(
+        CommandBus.dispatch(
+          Inventory::Commands::UpdateCampaignProvisioning,
           campaign: @campaign,
           totals: totals,
           route_date: route_date
@@ -248,7 +263,8 @@ module Web
           return
         end
 
-        result = Inventory::Commands::DispatchTeamSupplyKit.call(
+        result = CommandBus.dispatch(
+          Inventory::Commands::DispatchTeamSupplyKit,
           campaign: @campaign,
           care_team: care_team,
           dispatch_date: route_date

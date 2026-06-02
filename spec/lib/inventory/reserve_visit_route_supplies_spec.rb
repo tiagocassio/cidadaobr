@@ -71,6 +71,54 @@ RSpec.describe Inventory::Commands::ReserveVisitRouteSupplies do
     end
   end
 
+  it "records visit_route.supplies.reserved platform event" do
+    with_tenant(membership) do
+      create(
+        :immunobiological_lot,
+        municipality: municipality,
+        health_facility: facility,
+        immunobiological_product: product,
+        quantity_on_hand: 10,
+        expires_on: 1.year.from_now.to_date
+      )
+      campaign = create(
+        :home_visit_campaign,
+        municipality: municipality,
+        health_facility: facility,
+        target_audience_definition: { "immunobiological_product_id" => product.id }
+      )
+      route = create(:visit_route, home_visit_campaign: campaign, care_team: care_team, municipality: municipality, health_facility: facility)
+      VisitRouteProvisioning.create!(
+        municipality: municipality,
+        health_facility: facility,
+        visit_route: route,
+        status: "calculated",
+        lines_json: [
+          {
+            "key" => "immunobiological",
+            "label" => product.name,
+            "quantity_required" => 2,
+            "unit" => "dose",
+            "immunobiological_product_id" => product.id
+          }
+        ]
+      )
+      HomeVisitCampaignProvisioning.create!(
+        municipality: municipality,
+        health_facility: facility,
+        home_visit_campaign: campaign,
+        status: "calculated",
+        totals_json: []
+      )
+
+      expect {
+        described_class.call(campaign: campaign)
+      }.to change(DomainEvent, :count).by(1)
+
+      expect(DomainEvent.order(:created_at).last.event_type).to eq(Cidadaobr::KafkaTopics::VISIT_ROUTE_SUPPLIES_RESERVED)
+    end
+  end
+
   it "releases reserved stock when routes are cleared" do
     with_tenant(membership) do
       lot = create(

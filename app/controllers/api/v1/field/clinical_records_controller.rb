@@ -6,7 +6,7 @@ module Api
       class ClinicalRecordsController < Api::BaseController
         def validate
           clinical_record = ClinicalRecord.find_by!(id: params[:id])
-          result = Ledi::ValidateClinicalRecord.call(clinical_record_id: clinical_record.id)
+          result = CommandBus.dispatch(Ledi::ValidateClinicalRecord, clinical_record_id: clinical_record.id)
           clinical_record.reload
 
           @clinical_record = clinical_record

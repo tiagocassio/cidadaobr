@@ -8,23 +8,23 @@ module Web
 
     def create
       citizen = @citizen || scoped_citizens.find(household_member_params[:citizen_id])
-      @household_member = @household.household_members.build(
+      member = CommandBus.dispatch(
+        Territory::Commands::LinkCitizenToHousehold,
+        household: @household,
         citizen: citizen,
         family_reference: ActiveModel::Type::Boolean.new.cast(household_member_params[:family_reference]) || false
-      )
+      ).household_member
 
-      if @household_member.save
-        redirect_to redirect_path(citizen), notice: t("cidadaobr.household_members.flash.linked")
-      else
-        redirect_to redirect_path(citizen), alert: @household_member.errors.full_messages.to_sentence
-      end
+      redirect_to redirect_path(citizen), notice: t("cidadaobr.household_members.flash.linked")
+    rescue ActiveRecord::RecordInvalid => e
+      redirect_to redirect_path(citizen), alert: e.record.errors.full_messages.to_sentence
     end
 
     def destroy
       member = HouseholdMember.joins(:household).merge(scoped_households).find(params[:id])
       household = member.household
       citizen = member.citizen
-      member.destroy!
+      CommandBus.dispatch(Territory::Commands::UnlinkHouseholdMember, household_member: member)
       redirect_to params[:citizen_id].present? ? web_citizen_path(citizen) : web_household_path(household),
                   notice: t("cidadaobr.household_members.flash.removed")
     end

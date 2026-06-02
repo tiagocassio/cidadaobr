@@ -7,19 +7,20 @@ module Web
     before_action :set_household, only: :create
 
     def create
-      @household_animal = @household.household_animals.build(household_animal_params)
-
-      if @household_animal.save
-        redirect_to web_household_path(@household), notice: t("cidadaobr.household_animals.flash.created")
-      else
-        redirect_to web_household_path(@household), alert: @household_animal.errors.full_messages.to_sentence
-      end
+      CommandBus.dispatch(
+        Territory::Commands::RegisterHouseholdAnimal,
+        household: @household,
+        attributes: household_animal_params.to_h
+      )
+      redirect_to web_household_path(@household), notice: t("cidadaobr.household_animals.flash.created")
+    rescue ActiveRecord::RecordInvalid => e
+      redirect_to web_household_path(@household), alert: e.record.errors.full_messages.to_sentence
     end
 
     def destroy
       animal = HouseholdAnimal.joins(:household).merge(scoped_households).find(params[:id])
       household = animal.household
-      animal.destroy!
+      CommandBus.dispatch(Territory::Commands::RemoveHouseholdAnimal, household_animal: animal)
       redirect_to web_household_path(household), notice: t("cidadaobr.household_animals.flash.removed")
     end
 

@@ -1,0 +1,16 @@
+---
+description: Platform write contract for domain commands (ADR-0006)
+globs: lib/**/commands/**/*.rb,app/commands/**/*.rb
+alwaysApply: false
+---
+
+# Domain commands (ADR-0006)
+
+Mutations live in `lib/<context>/commands/`, not controllers.
+
+- Use `write_transaction` (from `ApplicationCommand`) and validate tenant scope.
+- Prefer inheriting `ApplicationCommand`; expose via `CommandBus.dispatch`.
+- Call `RecordPlatformEvent` when the change crosses contexts, uses a type in `Cidadaobr::KafkaTopics::ALL`, or is an audit-worthy transition (`event_type:` constant only; topic defaults to the same string).
+- Gold pattern: `Scheduling::BookAppointment`, `Ledi::ValidateClinicalRecord`.
+
+Skill: `.cursor/skills/cidadaobr-platform-write-refactor/SKILL.md`

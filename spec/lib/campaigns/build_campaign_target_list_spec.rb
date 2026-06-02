@@ -26,6 +26,27 @@ RSpec.describe Campaigns::Commands::BuildCampaignTargetList do
     end
   end
 
+  it "records campaign.targets.built platform event and outbox message" do
+    with_tenant(membership) do
+      create(:citizen, municipality: municipality, health_facility: facility, care_team: team, birth_date: 70.years.ago.to_date)
+      campaign = create(
+        :home_visit_campaign,
+        municipality: municipality,
+        health_facility: facility,
+        target_audience_definition: { "min_age" => 60 }
+      )
+
+      expect {
+        described_class.call(campaign: campaign)
+      }.to change(DomainEvent, :count).by(1)
+        .and change(OutboxMessage, :count).by(1)
+
+      event = DomainEvent.order(:created_at).last
+      expect(event.event_type).to eq(Cidadaobr::KafkaTopics::CAMPAIGN_TARGETS_BUILT)
+      expect(OutboxMessage.last.topic).to eq(Cidadaobr::KafkaTopics::CAMPAIGN_TARGETS_BUILT)
+    end
+  end
+
   it "removes pending targets outside the new audience scope" do
     with_tenant(membership) do
       elder = create(:citizen, municipality: municipality, health_facility: facility, care_team: team, birth_date: 70.years.ago.to_date)

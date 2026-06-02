@@ -444,6 +444,7 @@ INE/CNES    →  QUEM (equipe / UBS) recebe ou perde repasse
 | Seção | Conteúdo |
 |-------|----------|
 | [Glossário](#glossário-de-siglas-e-termos) | Siglas LEDI, indicadores CVAT/C1–C7, B1–B6 e M1–M2, stack |
+| [**Roteiro organizado**](roteiro-organizado-fases-epicos.md) | **SSOT** — Fases × Épicos × Stories × Tasks (status jun/2026) |
 | [Roteiro por etapas](#roteiro-de-desenvolvimento-por-etapas-para-agentes) | Épicos → Tarefas → Subtarefas (export Scrum/Kanban) |
 | [Backlog CSV](#formato-de-exportação-para-scrumkanban) | Colunas para Jira, Linear, Azure Boards, Trello |
 | [Modelo de banco A–L](#modelo-de-banco-recomendado-operacional--ledi) | Tabelas en-US por grupo (incl. roteiro domiciliar L) |
@@ -562,23 +563,30 @@ Sprint 5 (bootstrap repos Flutter) **adiado para Fase 8**. “Celular” em EPIC
 
 **Pré-requisitos Fase 5 (metodologia):** Fases 4/4b concluídas; repasse ilustrativo — [ADR-0003](docs/adr/0003-epic05-mvp-scope.md). Matriz **52/53 `done`** — [ADR-0005](docs/adr/0005-methodology-coverage.md) + [matriz](docs/indicators/methodology-coverage-matrix.md).
 
-**Kafka dev:** `bin/kafka_create_topics` (inclui `appointment.noshow`).
+**Kafka dev:** `bin/kafka_create_topics` (agenda, campanhas/rotas `campaign.targets.built`, `home_visit.route.*`, `visit_route.supplies.*`, etc.).
+
+**EPIC-00 remediação:** Onda B (eventos campanha/rota + `CommandBus` em `HomeVisitCampaignsController`) — **concluída 2026-06-02**; ver [epic-00-remediation.md](docs/epic-00-remediation.md). Skill: `.cursor/skills/cidadaobr-platform-write-refactor/`.
 
 ### Épicos
 
-| Épico | Status | Nota |
-|-------|--------|------|
-| EPIC-00 | Concluído | RLS, CQRS, Kafka, auth |
-| EPIC-01 | Concluído (MVP) | LEDI 7.4.0; catálogo seed manual; sync automático = **EPIC-12** |
-| EPIC-02 | Concluído | Ops web (Fase 2) |
-| EPIC-03 | Concluído | No-show + relatório ocupação |
-| EPIC-04 | Parcial (API F3) | TASK-04-01..05; app Flutter = **Fase 8** |
-| EPIC-05 | Concluído (MVP) | Painel, gaps, DSL; repasse ilustrativo |
-| EPIC-05b | Concluído | Matriz **52/53 `done`**; V_SAT via `TeamSatisfactionSurveyScore` + import; 1 `partial` (C2.E) |
-| EPIC-06 | **~95%** | Wizard vacina + specs gate ok (`6949e68`); **piloto UI** pendente |
-| EPIC-07 | **~90%** | Fluxo HTTP E2E verde; mapa + romaneio; piloto UI + TASK-07-09 pendente |
-| EPIC-12 | **~40%** | Jobs + API reference em `main`; release versionada + gate EPIC-09 pendente |
-| EPIC-08 | Pendente (Fase 8) | App Campo |
+**Visão consolidada:** [roteiro-organizado-fases-epicos.md](roteiro-organizado-fases-epicos.md).
+
+| Épico | Fase | Status | Nota |
+|-------|------|--------|------|
+| EPIC-00 | 0 | Concluído | RLS, CQRS, Kafka, auth; **Onda B** conformidade writes (jun/2026) |
+| EPIC-01 | 1 | Concluído (MVP) | LEDI 7.4.0; catálogo seed manual; sync automático = **EPIC-12** |
+| EPIC-02 | 2 | Concluído | Ops web |
+| EPIC-03 | 3 | Concluído | Agenda web + no-show |
+| EPIC-04 | **3** API / **8** App | Parcial (API) | F3: TASK-04-01..05; F8: TASK-04-06/07 Flutter |
+| EPIC-05 | 4 | Concluído (MVP) | Painel, gaps, DSL; repasse ilustrativo |
+| EPIC-05b | 4b | Concluído | Matriz **52/53 `done`**; C2.E `partial` |
+| EPIC-06 | 5 | **~95%** | Wizard vacina; **piloto UI** pendente |
+| EPIC-07 | 5 | **~90%** | E2E ok; piloto UI + polish TASK-07-03/06/09 |
+| EPIC-12 | T | **~40%** | Jobs + `/reference/*`; release versionada pendente; **bloqueia F6** |
+| EPIC-09 | 6 / 8 UI | Pendente | PEC, walk-in; Field UI na F8 |
+| EPIC-10 | 6 API / 8 UI | Pendente | panic/tele/meds API; telas Flutter F8 |
+| EPIC-11 | 7 | Pendente | IA + SIAPS |
+| EPIC-08 | 8 | Pendente | App Campo Flutter |
 
 ### Tasks (Fase 4–5 — snapshot)
 
@@ -592,10 +600,10 @@ Sprint 5 (bootstrap repos Flutter) **adiado para Fase 8**. “Celular” em EPIC
 | TASK-06-04 WEB-CAMP-01 wizard | Partial — wizard 4 passos; validação E2E pendente |
 | TASK-07-01..02 | Done (MVP) |
 | TASK-07-03 Preview provisionamento | Partial |
-| TASK-07-04 GenerateVisitRoutes | Partial — nearest-neighbor + clustering; TSP ótimo pós-gate |
-| TASK-07-05 ReserveVisitRouteSupplies | Partial — command + specs; E2E campanha pendente |
+| TASK-07-04 GenerateVisitRoutes | Partial — NN+clustering + **`home_visit.route.generated`**; TSP ótimo pós-gate |
+| TASK-07-05 ReserveVisitRouteSupplies | Partial — command + **`visit_route.supplies.reserved`**; gate UI piloto pendente |
 | TASK-07-06 WEB-CAMP-06 | Partial — `preview_provisioning` + `update_provisioning`; UX déficit/blocked a polir |
-| TASK-07-07 DispatchTeamSupplyKit | Partial — command + `team_supply_dispatches` index/show |
+| TASK-07-07 DispatchTeamSupplyKit | Partial — command + **`visit_route.supplies.dispatched`** + romaneio web |
 | TASK-07-08 WEB-CAMP-03 mapa | Partial — `visit_route_map_controller` + `route_map` |
 | TASK-07-09 WEB-CAMP-04 progresso | Parcial — `VisitRouteProgress` + specs; polish UX opcional |
 
@@ -603,9 +611,9 @@ Sprint 5 (bootstrap repos Flutter) **adiado para Fase 8**. “Celular” em EPIC
 
 ## Roteiro de continuação (S10+)
 
-**Onde estamos (2026-06-01):** Fases **0–4b** concluídas (C2.E `partial` — proxy PNI; **não bloqueia**). **Fase 5** — EPIC-06/07 no código (`6949e68`); specs E2E ok; **gate UI piloto pendente**. **EPIC-12** ~40%; bloqueia Fase 6. **PNI:** calendários MS por faixa + **atualização anual versionada** (EPIC-12) — ver [status-plano-2026-06.md](docs/commercial/status-plano-2026-06.md).
+**Onde estamos (2026-06-02):** Fases **0–4b** concluídas (C2.E `partial` — proxy PNI; **não bloqueia**). **Fase 5** — EPIC-06/07 no código; specs E2E ok; **EPIC-00 Onda B** (eventos campanha/rota + `CommandBus` gestão domiciliar) **concluída**; **gate UI piloto pendente**. **EPIC-12** ~40%; bloqueia Fase 6.
 
-**Objetivo imediato:** fechar **Gate Fase 5 (UI)**; paralelo **EPIC-12**; onda 2 PNI após gate F5.
+**Objetivo imediato:** fechar **Gate Fase 5 (UI)**; paralelo **EPIC-12** e **Onda C** (cadastro web → commands); onda 2 PNI após gate F5.
 
 ### Visão por fases
 
@@ -638,8 +646,9 @@ flowchart LR
 
 | Ordem | Sprint | Task | Status | Entrega restante |
 |-------|--------|------|--------|------------------|
+| 0 | **S10** | **EPIC-00 Onda B** | **Feito** | Eventos `campaign.targets.built`, `home_visit.route.*`, `visit_route.supplies.*`; `TOPIC_MAPPING` + specs |
 | 1 | **S10** | **Gate UI piloto** | Pendente | Campanha domiciliar + vacina + romaneio + mapa na web (logins seed) |
-| 2 | **S10** | **Specs gate** | Feito (revalidar) | `stock_and_campaigns_spec` + `reserve_visit_route_supplies` — 21 examples |
+| 2 | **S10** | **Specs gate** | Feito (revalidar) | `stock_and_campaigns_spec` + commands campanha/rota |
 | 3 | **S10** | **TASK-07-06** | Parcial | Polir WEB-CAMP-06: déficit por item, `blocked`, override manual |
 | 4 | **S10** | **TASK-06-04 UI** | Parcial | Wizard vacina validado na UI (spec já verde) |
 | 5 | **S11** | **TASK-07-09** | Parcial | WEB-CAMP-04 — specs ok; polish UX opcional |
@@ -2208,6 +2217,8 @@ pt-BR:
 
 ### Arquitetura: Event Sourcing + CQRS + EDA
 
+**Contrato oficial (jun/2026):** modelo **híbrido** — tabelas operacionais + `domain_events`/outbox para integração; não replay ES obrigatório. Regras de escrita e remediação: [ADR-0006](docs/adr/0006-platform-write-contract.md), [epic-00-remediation.md](docs/epic-00-remediation.md).
+
 ```mermaid
 flowchart TB
   subgraph write [Write side]
@@ -2515,7 +2526,11 @@ flowchart TB
 
 ## Roteiro de desenvolvimento por etapas (para agentes)
 
+> **Navegação rápida:** matriz reorganizada por fase com status — **[roteiro-organizado-fases-epicos.md](roteiro-organizado-fases-epicos.md)**. Esta seção mantém detalhe de subtarefas e export CSV.
+
 Backlog estruturado para **exportação Scrum/Kanban** em **quatro níveis**: **Épico** (`EPIC-NN`) → **História** (`STORY-NN-NN`, valor de negócio) → **Tarefa** (`TASK-NN-NN`, entrega técnica) → **Subtarefa** (`SUB-NN-NN-NN`, implementação). Cada item tem `depends_on`, `legacy_ref`, `labels` e `phase` (0–8). Código **en-US**; UI **pt-BR**; narrativas de história em **pt-BR**.
+
+**Fase 3:** inclui apenas EPIC-03 + EPIC-04 **API** (TASK-04-01..05). TASK-04-06/07 e qualquer app Flutter pertencem à **Fase 8** — não usar “parcial F3” por ausência de mobile.
 
 **Decisão de roadmap (2026-05-29):** Fases **0–7** = monólito Rails + web gestão + APIs JSON. Fase **8** = repos Flutter (`mobile-shared`, `citizen`, `field`). Não iniciar apps mobile durante entrega web.
 
@@ -2551,7 +2566,7 @@ flowchart LR
 | **0** | Foundation | Monólito Rails, ES/CQRS, Kafka, auth | — |
 | **1** | LEDI Core | Ingestão e validação fichas; cadastro | — |
 | **2** | Ops + Web base | UBS, equipes, cidadãos, domicílio | Web gestão |
-| **3** | Scheduling + Citizen API | Agenda web + `/api/v1/citizen` | Web agenda |
+| **3** | Scheduling + Citizen **API** | Agenda web + `/api/v1/citizen` (TASK-04-01..05); **sem Flutter** | Web agenda + API |
 | **4** | Indicators MVP | 17 indicadores, gaps, painel gestor | Web indicadores |
 | **4b** | Methodology coverage | 48 packs, BPs C2–C7, audit trail, matriz cobertura | Web indicadores + docs |
 | **5** | Campaigns (web) | Campanhas, estoque, rotas, romaneio | Web campanhas |
@@ -2602,7 +2617,7 @@ Subtask,SUB-00-01-01,TASK-00-01,EPIC-00,[Core] CidadãoBR Saúde — rails new +
 | `depends_on` | IDs bloqueantes (vírgula se múltiplos) |
 | `legacy_ref` | Mapeamento ids antigos F*, WEB-*, FIELD-* |
 
-**Arquivo futuro no repo:** `docs/backlog/aps-municipal-backlog.csv` (gerado a partir desta seção).
+**Arquivo no repo:** [`docs/backlog/aps-municipal-backlog.csv`](backlog/aps-municipal-backlog.csv) — sincronizado com [roteiro-organizado-fases-epicos.md](roteiro-organizado-fases-epicos.md) (jun/2026).
 
 ---
 
@@ -2863,8 +2878,8 @@ Cada história agrupa uma ou mais **Tasks**. Na exportação CSV, `parent_id` da
 | STORY-04-03 | **TASK-04-03** | [Core] CidadãoBR Saúde — Projeção citizen_immunization_records | EPIC-01 | F3-09 |
 | STORY-04-03 | **TASK-04-04** | [Cidadão] CidadãoBR Saúde — API-CITIZEN-02 carteira e cobertura | TASK-04-03 | F3-10 |
 | STORY-04-03 | **TASK-04-05** | [Cidadão] CidadãoBR Saúde — API-CITIZEN-03 agendar vacinação | EPIC-03 | F3-11 |
-| STORY-04-02 | **TASK-04-06** | [Cidadão] CidadãoBR Saúde — App shell Minha UBS — consultas | TASK-04-02 | F3-08 |
-| STORY-04-03 | **TASK-04-07** | [Cidadão] CidadãoBR Saúde — Carteira vacinal e agendar vacina | TASK-04-04 | F3-12 |
+| STORY-04-02 | **TASK-04-06** | [Cidadão] CidadãoBR Saúde — App shell Minha UBS — consultas | TASK-04-02 + `cidadaobr-mobile-shared` | F8-01 |
+| STORY-04-03 | **TASK-04-07** | [Cidadão] CidadãoBR Saúde — Carteira vacinal e agendar vacina | TASK-04-04 + `cidadaobr-mobile-shared` | F8-02 |
 
 **TASK-04-06** — [Cidadão] CidadãoBR Saúde — App shell Minha UBS — consultas **(Fase 8)**
 - **SUB-04-06-01** — [Cidadão] CidadãoBR Saúde — Scaffold repo `cidadaobr-citizen` + dependência `cidadaobr-mobile-shared`

@@ -13,11 +13,11 @@ RSpec.describe CommandBus, type: :service do
     with_tenant(membership) do
       created_event = CommandBus.dispatch(
         RecordPlatformEvent,
-        event_type: "platform.bootstrapped",
+        event_type: Cidadaobr::KafkaTopics::DOMAIN_OUTBOX,
         aggregate_type: "Platform",
         aggregate_id: SecureRandom.uuid,
         payload: { boot: true },
-        topic: "domain.outbox"
+        topic: Cidadaobr::KafkaTopics::DOMAIN_OUTBOX
       )
 
       expect(created_event).to be_persisted

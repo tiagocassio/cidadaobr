@@ -123,11 +123,11 @@ bin/rails ledi:catalog:seed                    # recarrega regras/campos LEDI
 bin/rails ledi:catalog:import_xsd              # stub para importação futura via XSD
 ```
 
-Fluxo Fase 1: importar transporte → validar ficha → submeter lote (`ledi.batch.ready` no Kafka). Envio HTTP ao PEC fica para EPIC-09.
+Fluxo Fase 1: importar transporte → validar ficha → submeter lote (`ledi-batch-submitted` no Kafka). Envio HTTP ao PEC fica para EPIC-09.
 
 Variável opcional `LEDI_PEC_STUB_REJECT=true` faz o consumer `LediBatchReadyConsumer` simular rejeição automática do PEC em desenvolvimento (não usar em produção).
 
-Eventos novos (`ledi.batch.status_changed`, `appointment.*`) entram na outbox via `RecordPlatformEvent`. Publique com `bin/rails outbox:publish` (ou agende o task) até existirem consumidores de negócio dedicados (EPIC-09 / EPIC-03). Karafka já registra rotas placeholder em `PlatformEventConsumer`.
+Eventos novos (constantes em `Cidadaobr::KafkaTopics`, mesmo nome no tópico Kafka) entram na outbox via `RecordPlatformEvent`. Publique com `bin/rails outbox:publish` (ou agende o task) até existirem consumidores de negócio dedicados (EPIC-09 / EPIC-03). Karafka já registra rotas placeholder em `PlatformEventConsumer`.
 
 ## Serviços
 

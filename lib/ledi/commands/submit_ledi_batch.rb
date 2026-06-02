@@ -11,7 +11,7 @@ module Ledi
       ledi_version = Rails.application.config.ledi.fetch(:version)
       team_id = team_id_for_batch(tenant)
 
-      ActiveRecord::Base.transaction do
+      write_transaction do
         transport_records = scoped_validated_transport_records(tenant, team_id: team_id)
         raise Errors::EmptyBatchError, "No validated transport records available for batch submission" if transport_records.none?
 
@@ -29,7 +29,7 @@ module Ledi
         transport_records.update_all(ledi_batch_id: batch.id, batch_number: batch_number, updated_at: Time.current)
 
         RecordPlatformEvent.call(
-          event_type: "ledi.batch.submitted",
+          event_type: Cidadaobr::KafkaTopics::LEDI_BATCH_SUBMITTED,
           aggregate_type: "LediBatch",
           aggregate_id: batch.id,
           payload: {
@@ -38,7 +38,6 @@ module Ledi
             transport_record_ids: transport_records.pluck(:id),
             ledi_version: batch.ledi_version
           },
-          topic: OutboxPublisher::TOPIC_MAPPING.fetch("ledi.batch.submitted"),
           care_team_id: batch.care_team_id
         )
 

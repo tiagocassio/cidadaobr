@@ -29,15 +29,20 @@ module Web
     end
 
     def create
-      @citizen = scoped_citizens.build(citizen_params)
-      @citizen.municipality = current_municipality
+      result = CommandBus.dispatch(
+        Territory::Commands::RegisterCitizen,
+        citizen_attributes: citizen_params.to_h,
+        household_attributes: household_form_requested? ? household_command_attributes : nil,
+        family_reference: household_member_family_reference?
+      )
+      @citizen = result.citizen
+      @household = result.household
 
-      saved = save_citizen_with_optional_household! { @citizen.save }
-
-      if saved
+      if result.success
         notice = @household ? t("cidadaobr.citizens.flash.created_with_household") : t("cidadaobr.citizens.flash.created")
         redirect_to web_citizen_path(@citizen), notice: notice
       else
+        add_invalid_coordinates_flash!(result)
         repopulate_household_form! if household_form_requested?
         render :new, status: :unprocessable_entity
       end
@@ -48,12 +53,21 @@ module Web
     end
 
     def update
-      saved = save_citizen_with_optional_household! { @citizen.update(citizen_params) }
+      result = CommandBus.dispatch(
+        Territory::Commands::UpdateCitizen,
+        citizen: @citizen,
+        citizen_attributes: citizen_params.to_h,
+        household_attributes: household_form_requested? ? household_command_attributes : nil,
+        family_reference: household_member_family_reference?
+      )
+      @citizen = result.citizen
+      @household = result.household
 
-      if saved
+      if result.success
         notice = @household ? t("cidadaobr.citizens.flash.updated_with_household") : t("cidadaobr.citizens.flash.updated")
         redirect_to web_citizen_path(@citizen), notice: notice
       else
+        add_invalid_coordinates_flash!(result)
         repopulate_household_form! if household_form_requested?
         render :edit, status: :unprocessable_entity
       end
@@ -67,6 +81,12 @@ module Web
 
     def set_form_collections
       set_household_form_collections
+    end
+
+    def add_invalid_coordinates_flash!(result)
+      return unless result.invalid_coordinates
+
+      @citizen.errors.add(:base, t("cidadaobr.households.flash.invalid_coordinates"))
     end
 
     def citizen_params

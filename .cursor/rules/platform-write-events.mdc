@@ -1,0 +1,13 @@
+---
+description: Platform events and outbox (TOPIC_MAPPING must stay in sync)
+globs: app/services/outbox_publisher.rb,lib/**/commands/**/*.rb,app/jobs/**/*outbox*
+alwaysApply: false
+---
+
+# Events & outbox
+
+- `event_type` and Kafka `topic` are the same string from `Cidadaobr::KafkaTopics` (hyphen-only). `RecordPlatformEvent` defaults `topic` to `event_type`. Add constant + `bin/kafka_create_topics` in the same PR ([ADR-0008](../../../docs/adr/0008-platform-scoped-outbox.md)).
+- Payload must be JSON-safe; include tenant/care_team fields expected by `Cidadaobr::EventEnvelope`.
+- Request/command specs should assert `DomainEvent` + `OutboxMessage` for integration events.
+
+Do not read `domain_events` in user-facing screens.

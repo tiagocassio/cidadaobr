@@ -18,7 +18,7 @@ RSpec.describe Ledi::ImportTransportRecord do
 
     result = with_tenant(membership) do
       import_result = described_class.call(payload_binary: binary)
-      expect(DomainEvent.where(event_type: "clinical.record.imported").count).to eq(1)
+      expect(DomainEvent.where(event_type: Cidadaobr::KafkaTopics::CLINICAL_RECORD_IMPORTED).count).to eq(1)
       import_result
     end
 
@@ -99,8 +99,8 @@ RSpec.describe Ledi::ImportTransportRecord do
       expect(second[:transport_record].id).to eq(first[:transport_record].id)
       expect(second[:clinical_record].payload_json.dig("identificacao_usuario_cidadao", "cpf_cidadao")).to eq("52998224725")
       expect(second[:clinical_record].validation_status).to eq("pending")
-      expect(DomainEvent.where(event_type: "clinical.record.imported").count).to eq(2)
-      imported_event = DomainEvent.order(:version).where(event_type: "clinical.record.imported").last
+      expect(DomainEvent.where(event_type: Cidadaobr::KafkaTopics::CLINICAL_RECORD_IMPORTED).count).to eq(2)
+      imported_event = DomainEvent.order(:version).where(event_type: Cidadaobr::KafkaTopics::CLINICAL_RECORD_IMPORTED).last
       expect(imported_event.payload).to include(
         "refreshed" => true,
         "previous_transport_status" => "draft"

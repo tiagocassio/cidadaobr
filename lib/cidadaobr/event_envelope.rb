@@ -22,6 +22,18 @@ module Cidadaobr
       )
     end
 
+    def self.from_platform_event(event)
+      new(
+        event_id: event.id,
+        municipality_id: nil,
+        health_facility_id: nil,
+        care_team_id: nil,
+        event_type: event.event_type,
+        payload: event.payload,
+        occurred_at: event.occurred_at
+      )
+    end
+
     def to_h
       {
         event_id: event_id,

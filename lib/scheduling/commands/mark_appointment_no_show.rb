@@ -9,12 +9,12 @@ module Scheduling
     def call
       raise Scheduling::Errors::InvalidTransitionError unless @appointment.status.in?(%w[scheduled confirmed checked_in in_progress])
 
-      ActiveRecord::Base.transaction do
+      write_transaction do
         @appointment.update!(status: "no_show")
         SlotRelease.release_appointment_slot!(@appointment)
 
         RecordPlatformEvent.call(
-          event_type: "appointment.no_show",
+          event_type: Cidadaobr::KafkaTopics::APPOINTMENT_NOSHOW,
           aggregate_type: "Appointment",
           aggregate_id: @appointment.id,
           payload: {
@@ -22,7 +22,6 @@ module Scheduling
             citizen_id: @appointment.citizen_id,
             status: @appointment.status
           },
-          topic: OutboxPublisher::TOPIC_MAPPING.fetch("appointment.no_show"),
           care_team_id: @appointment.care_team_id
         )
 

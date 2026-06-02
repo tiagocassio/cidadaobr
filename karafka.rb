@@ -10,46 +10,52 @@ class KarafkaApp < Karafka::App
   end
 
   routes.draw do
-    # Transient MissingClinicalRecordError retries until ClinicalRecordPersistedConsumer::PROJECTION_RETRY_GRACE elapses, then the message is dropped.
-    topic "clinical.record.persisted" do
+    # Publish-only topics: see Cidadaobr::KafkaTopics::ALL vs ROUTED and docs/adr/0007-kafka-topic-consumer-policy.md
+
+    topic Cidadaobr::KafkaTopics::CLINICAL_RECORD_PERSISTED do
       consumer ClinicalRecordPersistedConsumer
     end
 
-    topic "ledi.batch.ready" do
+    topic Cidadaobr::KafkaTopics::LEDI_BATCH_SUBMITTED do
       consumer LediBatchReadyConsumer
     end
 
-    topic "ledi.batch.statuschanged" do
+    topic Cidadaobr::KafkaTopics::LEDI_BATCH_STATUSCHANGED do
       consumer PlatformEventConsumer
     end
 
-    %w[
-      appointment.booked
-      appointment.checkedin
-      appointment.rescheduled
-      appointment.completed
-      appointment.cancelled
-      appointment.noshow
+    [
+      Cidadaobr::KafkaTopics::APPOINTMENT_BOOKED,
+      Cidadaobr::KafkaTopics::APPOINTMENT_WALK_IN_BOOKED,
+      Cidadaobr::KafkaTopics::APPOINTMENT_CHECKEDIN,
+      Cidadaobr::KafkaTopics::APPOINTMENT_RESCHEDULED,
+      Cidadaobr::KafkaTopics::APPOINTMENT_COMPLETED,
+      Cidadaobr::KafkaTopics::APPOINTMENT_CANCELLED,
+      Cidadaobr::KafkaTopics::APPOINTMENT_NOSHOW
     ].each do |topic_name|
       topic topic_name do
         consumer IndicatorRecalculationConsumer
       end
     end
 
-    topic "indicator.gap.detected" do
+    topic Cidadaobr::KafkaTopics::INDICATOR_GAP_DETECTED do
       consumer PlatformEventConsumer
     end
 
-    topic "indicator.team.score.updated" do
+    topic Cidadaobr::KafkaTopics::INDICATOR_TEAM_SCORE_UPDATED do
       consumer PlatformEventConsumer
     end
 
-    topic "citizen.registered" do
+    topic Cidadaobr::KafkaTopics::CITIZEN_REGISTERED do
       consumer CitizenRegisteredConsumer
     end
 
-    topic "domain.outbox" do
+    topic Cidadaobr::KafkaTopics::DOMAIN_OUTBOX do
       consumer DomainOutboxConsumer
+    end
+
+    topic Cidadaobr::KafkaTopics::REFERENCE_RELEASE_PUBLISHED do
+      consumer ReferenceDataReleasePublishedConsumer
     end
   end
 end

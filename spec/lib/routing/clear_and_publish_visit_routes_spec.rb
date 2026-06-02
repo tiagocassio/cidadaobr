@@ -153,6 +153,68 @@ RSpec.describe Routing::Commands::PublishVisitRoutes do
     end
   end
 
+  it "records home_visit.route.published platform event and outbox message" do
+    with_tenant(membership) do
+      product = create(:immunobiological_product, municipality: municipality)
+      create(
+        :immunobiological_lot,
+        municipality: municipality,
+        health_facility: facility,
+        immunobiological_product: product,
+        quantity_on_hand: 100
+      )
+      campaign = create(
+        :home_visit_campaign,
+        municipality: municipality,
+        health_facility: facility,
+        status: "routes_generated",
+        target_audience_definition: { "immunobiological_product_id" => product.id }
+      )
+      route = create(
+        :visit_route,
+        municipality: municipality,
+        health_facility: facility,
+        home_visit_campaign: campaign,
+        care_team: team,
+        route_date: Date.current,
+        status: "draft"
+      )
+      VisitRouteProvisioning.create!(
+        municipality: municipality,
+        health_facility: facility,
+        visit_route: route,
+        status: "calculated",
+        lines_json: [
+          {
+            "key" => "immunobiological",
+            "label" => product.name,
+            "quantity_required" => 1,
+            "unit" => "dose",
+            "immunobiological_product_id" => product.id
+          }
+        ]
+      )
+      HomeVisitCampaignProvisioning.create!(
+        municipality: municipality,
+        health_facility: facility,
+        home_visit_campaign: campaign,
+        status: "calculated",
+        totals_json: []
+      )
+      Inventory::Commands::ReserveVisitRouteSupplies.call(campaign: campaign)
+
+      expect {
+        described_class.call(campaign: campaign, route_date: Date.current)
+      }.to change(DomainEvent, :count).by_at_least(1)
+
+      event = DomainEvent.where(event_type: Cidadaobr::KafkaTopics::HOME_VISIT_ROUTE_PUBLISHED).order(:created_at).last
+      expect(event).to be_present
+      expect(OutboxMessage.find_by(domain_event_id: event.id).topic).to eq(
+        Cidadaobr::KafkaTopics::HOME_VISIT_ROUTE_PUBLISHED
+      )
+    end
+  end
+
   it "publishes routes for one date when another date has unreserved draft routes" do
     with_tenant(membership) do
       product = create(:immunobiological_product, municipality: municipality)

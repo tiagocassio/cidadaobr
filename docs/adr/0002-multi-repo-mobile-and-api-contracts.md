@@ -22,8 +22,8 @@ CidadãoBR Saúde ships three client surfaces: municipal web (Hotwire in `cidada
 
 ## Kafka topics (gestão / indicadores)
 
-- Platform `event_type` `appointment.no_show` maps to Kafka topic **`appointment.noshow`** (dots/underscore rules in `OutboxPublisher::TOPIC_MAPPING`).
-- Provision `appointment.noshow` in each environment before deploying consumers that subscribe via `IndicatorRecalculationConsumer`.
+- `event_type` and Kafka topic are the same hyphen-separated string (`Cidadaobr::KafkaTopics`).
+- Provision topics via `bin/kafka_create_topics` before deploying consumers (`IndicatorRecalculationConsumer`, etc.).
 - Recalculation on that topic runs `RuleCatalog.appointment_dependent_codes` only (e.g. C1), not linkage indicators that use encounters/clinical predicates alone.
 
 ## Consequences

@@ -25,13 +25,13 @@ module Web
       @membership = @user.user_municipality_memberships.build(sanitized_membership_params(for_create: true))
       @membership.municipality = current_municipality
 
-      saved = false
-      ActiveRecord::Base.transaction do
-        saved = @user.save && @membership.save
-        raise ActiveRecord::Rollback unless saved
-      end
+      result = CommandBus.dispatch(
+        Platform::Commands::RegisterMunicipalUser,
+        user: @user,
+        membership: @membership
+      )
 
-      if saved
+      if result.success
         redirect_to web_users_path, notice: t("cidadaobr.users.flash.created")
       else
         @membership = @user.user_municipality_memberships.first || UserMunicipalityMembership.new(sanitized_membership_params)
@@ -46,13 +46,15 @@ module Web
     def update
       @membership = @user.user_municipality_memberships.find_by!(municipality_id: current_municipality.id)
 
-      success = false
-      ActiveRecord::Base.transaction do
-        success = @user.update(user_update_params) && @membership.update(sanitized_membership_params)
-        raise ActiveRecord::Rollback unless success
-      end
+      result = CommandBus.dispatch(
+        Platform::Commands::UpdateMunicipalUser,
+        user: @user,
+        membership: @membership,
+        user_attributes: user_update_params,
+        membership_attributes: sanitized_membership_params
+      )
 
-      if success
+      if result.success
         redirect_to web_users_path, notice: t("cidadaobr.users.flash.updated")
       else
         render :edit, status: :unprocessable_entity

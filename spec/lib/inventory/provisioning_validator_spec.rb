@@ -123,8 +123,8 @@ RSpec.describe Inventory::ProvisioningValidator do
       }.to change(OutboxMessage, :count).by(1)
 
       message = OutboxMessage.last
-      expect(message.event_type).to eq("supply.provisioning.rejected")
-      expect(message.topic).to eq("supply.provisioning.rejected")
+      expect(message.event_type).to eq(Cidadaobr::KafkaTopics::SUPPLY_PROVISIONING_REJECTED)
+      expect(message.topic).to eq(Cidadaobr::KafkaTopics::SUPPLY_PROVISIONING_REJECTED)
     end
   end
 

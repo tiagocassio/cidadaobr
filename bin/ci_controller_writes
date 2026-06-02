@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+# ADR-0006: fail CI if controllers mutate domain via ActiveRecord directly.
+set -euo pipefail
+
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+cd "$ROOT"
+
+PATTERN='\.(create|update|save|destroy)!\('
+
+if command -v rg >/dev/null 2>&1; then
+  hits=$(rg -n "$PATTERN" app/controllers --glob '*.rb' 2>/dev/null || true)
+else
+  hits=$(grep -rnE "$PATTERN" app/controllers --include='*.rb' 2>/dev/null || true)
+fi
+
+if [ -n "${hits// }" ]; then
+  echo "Controller write gate failed: ActiveRecord mutations in controllers are forbidden."
+  echo "Use CommandBus.dispatch(...) — see docs/adr/0006-platform-write-contract.md"
+  echo
+  echo "$hits"
+  exit 1
+fi
+
+echo "Controller write gate: OK"

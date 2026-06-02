@@ -69,7 +69,9 @@ RSpec.describe IndicatorRecalculationConsumer, type: :consumer do
     consumer = described_class.new
     message = instance_double("Karafka message", payload: envelope.to_json)
     allow(consumer).to receive(:messages).and_return([ message ])
-    allow(consumer).to receive(:topic).and_return(instance_double("Karafka topic", name: "appointment.booked"))
+    allow(consumer).to receive(:topic).and_return(
+      instance_double("Karafka topic", name: Cidadaobr::KafkaTopics::APPOINTMENT_BOOKED)
+    )
 
     expect(Indicators::RecalculateForAppointment).to receive(:call).with(appointment_id: appointment.id).once
 
@@ -87,7 +89,9 @@ RSpec.describe IndicatorRecalculationConsumer, type: :consumer do
     consumer = described_class.new
     message = instance_double("Karafka message", payload: envelope.to_json)
     allow(consumer).to receive(:messages).and_return([ message ])
-    allow(consumer).to receive(:topic).and_return(instance_double("Karafka topic", name: "appointment.booked"))
+    allow(consumer).to receive(:topic).and_return(
+      instance_double("Karafka topic", name: Cidadaobr::KafkaTopics::APPOINTMENT_BOOKED)
+    )
 
     membership_b = create(
       :user_municipality_membership,

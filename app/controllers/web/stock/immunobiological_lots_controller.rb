@@ -26,23 +26,11 @@ module Web
           return
         end
 
-        ActiveRecord::Base.transaction do
-          if @lot.save
-            StockMovement.create!(
-              municipality: @lot.municipality,
-              health_facility: @lot.health_facility,
-              immunobiological_lot: @lot,
-              movement_type: "inbound",
-              quantity: @lot.quantity_on_hand,
-              reference_type: @lot.class.name,
-              reference_id: @lot.id,
-              notes: "Initial lot receipt"
-            )
-
-            redirect_to web_stock_immunobiological_lots_path, notice: t("cidadaobr.stock.lots.flash.created")
-          else
-            render :new, status: :unprocessable_entity
-          end
+        result = CommandBus.dispatch(Inventory::Commands::ReceiveImmunobiologicalLot, lot: @lot)
+        if result.success
+          redirect_to web_stock_immunobiological_lots_path, notice: t("cidadaobr.stock.lots.flash.created")
+        else
+          render :new, status: :unprocessable_entity
         end
       end
 

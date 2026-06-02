@@ -11,7 +11,7 @@ RSpec.describe DomainEvent, type: :model do
       DomainEvent.append!(
         aggregate_type: "Platform",
         aggregate_id: SecureRandom.uuid,
-        event_type: "platform.bootstrapped",
+        event_type: Cidadaobr::KafkaTopics::DOMAIN_OUTBOX,
         payload: { status: "ok" },
         metadata: {},
         occurred_at: Time.current,

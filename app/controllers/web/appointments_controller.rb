@@ -52,7 +52,8 @@ module Web
 
       scheduled_at = Time.zone.parse("#{slot.slot_date} #{slot.starts_at.strftime('%H:%M:%S')}")
 
-      appointment = Scheduling::BookAppointment.call(
+      appointment = CommandBus.dispatch(
+        Scheduling::BookAppointment,
         citizen_id: citizen.id,
         appointment_service_type_id: attrs.fetch(:appointment_service_type_id),
         consultation_room_id: room.id,
@@ -94,7 +95,8 @@ module Web
       room = scoped_consultation_rooms.find(attrs.fetch(:consultation_room_id))
       citizen = scoped_citizens.find(attrs.fetch(:citizen_id))
 
-      appointment = Scheduling::BookWalkInAppointment.call(
+      appointment = CommandBus.dispatch(
+        Scheduling::BookWalkInAppointment,
         citizen_id: citizen.id,
         appointment_service_type_id: attrs.fetch(:appointment_service_type_id),
         consultation_room_id: room.id,
@@ -113,21 +115,21 @@ module Web
     end
 
     def check_in
-      Scheduling::CheckInAppointment.call(appointment: @appointment)
+      CommandBus.dispatch(Scheduling::CheckInAppointment, appointment: @appointment)
       redirect_to_reception_for(@appointment, notice: t("cidadaobr.appointments.flash.check_in"))
     rescue Scheduling::Errors::InvalidTransitionError
       redirect_to_reception_for(@appointment, alert: t("cidadaobr.appointments.flash.check_in_failed"))
     end
 
     def complete
-      Scheduling::CompleteAppointment.call(appointment: @appointment)
+      CommandBus.dispatch(Scheduling::CompleteAppointment, appointment: @appointment)
       redirect_to_reception_for(@appointment, notice: t("cidadaobr.appointments.flash.completed"))
     rescue Scheduling::Errors::InvalidTransitionError
       redirect_to_reception_for(@appointment, alert: t("cidadaobr.appointments.flash.complete_failed"))
     end
 
     def cancel
-      Scheduling::CancelAppointment.call(appointment: @appointment)
+      CommandBus.dispatch(Scheduling::CancelAppointment, appointment: @appointment)
       redirect_to web_appointments_path(facility_scope_params(@appointment.health_facility_id)), notice: t("cidadaobr.appointments.flash.cancelled")
     rescue Scheduling::Errors::InvalidTransitionError
       redirect_to web_appointment_path(@appointment), alert: t("cidadaobr.appointments.flash.cancel_failed")
@@ -136,7 +138,7 @@ module Web
     end
 
     def no_show
-      Scheduling::MarkAppointmentNoShow.call(appointment: @appointment)
+      CommandBus.dispatch(Scheduling::MarkAppointmentNoShow, appointment: @appointment)
       redirect_to_reception_for(@appointment, notice: t("cidadaobr.appointments.flash.no_show"))
     rescue Scheduling::Errors::InvalidTransitionError
       redirect_to_reception_for(@appointment, alert: t("cidadaobr.appointments.flash.no_show_failed"))
@@ -152,7 +154,8 @@ module Web
       )
       scheduled_at = Time.zone.parse("#{slot.slot_date} #{slot.starts_at.strftime('%H:%M:%S')}")
 
-      Scheduling::RescheduleAppointment.call(
+      CommandBus.dispatch(
+        Scheduling::RescheduleAppointment,
         appointment: @appointment,
         scheduled_at: scheduled_at,
         room_capacity_slot_id: slot.id

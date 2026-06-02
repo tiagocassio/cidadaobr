@@ -21,10 +21,16 @@ module Web
     end
 
     def create
-      @care_team = scoped_care_teams.build(care_team_params)
-      @care_team.municipality = current_municipality
+      @care_team = scoped_care_teams.build
+      result = CommandBus.dispatch(
+        Territory::Commands::CreateCareTeam,
+        care_team: @care_team,
+        attributes: care_team_params,
+        municipality: current_municipality
+      )
+      @care_team = result.care_team
 
-      if @care_team.save
+      if result.success
         redirect_to web_care_team_path(@care_team), notice: t("cidadaobr.care_teams.flash.created")
       else
         render :new, status: :unprocessable_entity
@@ -35,7 +41,14 @@ module Web
     end
 
     def update
-      if @care_team.update(care_team_params)
+      result = CommandBus.dispatch(
+        Territory::Commands::UpdateCareTeam,
+        care_team: @care_team,
+        attributes: care_team_params
+      )
+      @care_team = result.care_team
+
+      if result.success
         redirect_to web_care_team_path(@care_team), notice: t("cidadaobr.care_teams.flash.updated")
       else
         render :edit, status: :unprocessable_entity
@@ -53,7 +66,7 @@ module Web
     end
 
     def care_team_params
-      permitted = params.require(:care_team).permit(:name, :ine, :health_facility_id)
+      permitted = params.require(:care_team).permit(:name, :ine, :health_facility_id, :team_kind)
       if facility_scope?
         permitted[:health_facility_id] = current_membership.health_facility_id
       elsif permitted[:health_facility_id].present?
