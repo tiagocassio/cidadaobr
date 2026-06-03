@@ -1,9 +1,9 @@
 <section>
-  <%= link_to t("cidadaobr.campaigns.back"), wizard_web_campaigns_vaccination_campaign_path(campaign, step: 2), class: "text-sm text-slate-600 underline" %>
+  <%= link_to t("cidadaobr.campaigns.back"), wizard_web_campaigns_vaccination_campaign_path(@campaign, step: 2), class: "text-sm text-slate-600 underline" %>
   <h2 class="mt-2 mb-6 text-2xl font-bold"><%= t("cidadaobr.campaigns.vaccination_wizard.step_provisioning") %></h2>
 
   <div class="mb-4 rounded-lg border border-slate-200 bg-white p-6 text-sm">
-    <% if provisioning_result&.lines&.any? %>
+    <% if @provisioning_result&.lines&.any? %>
     <table class="min-w-full">
       <thead>
         <tr class="text-left">
@@ -13,7 +13,7 @@
         </tr>
       </thead>
       <tbody>
-        <% provisioning_result.lines.each do |line| %>
+        <% @provisioning_result.lines.each do |line| %>
           <tr class="border-t <%= line.required > line.available ? 'bg-red-50' : '' %>">
             <td class="py-2"><%= line.label %></td>
             <td class="py-2"><%= line.required %> <%= line.unit %></td>
@@ -22,9 +22,9 @@
         <% end %>
       </tbody>
     </table>
-    <% if provisioning_result.shortages.any? %>
+    <% if @provisioning_result.shortages.any? %>
       <ul class="mt-4 list-disc pl-5 text-red-800">
-        <% provisioning_result.shortages.each do |shortage| %>
+        <% @provisioning_result.shortages.each do |shortage| %>
           <li><%= shortage %></li>
         <% end %>
       </ul>
@@ -35,7 +35,7 @@
   </div>
 
   <%= button_to t("cidadaobr.campaigns.vaccination_wizard.validate_provisioning"),
-        update_wizard_web_campaigns_vaccination_campaign_path(campaign, step: 3),
+        update_wizard_web_campaigns_vaccination_campaign_path(@campaign, step: 3),
         method: :patch,
         class: "rounded bg-emerald-700 px-4 py-2 font-semibold text-white" %>
 </section>

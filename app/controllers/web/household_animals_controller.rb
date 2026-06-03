@@ -31,7 +31,7 @@ module Web
     end
 
     def household_animal_params
-      params.require(:household_animal).permit(:species, :quantity, :notes)
+      params.expect(household_animal: %i[species quantity notes])
     end
   end
 end

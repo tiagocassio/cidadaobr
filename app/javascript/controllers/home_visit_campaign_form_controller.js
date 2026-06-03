@@ -1,7 +1,7 @@
 import { Controller } from "@hotwired/stimulus"
 
 export default class extends Controller {
-  static targets = [ "kind", "componentsSection", "rows", "rowTemplate", "row", "addRowButton", "removeButton", "destroyField" ]
+  static targets = [ "rows", "rowTemplate", "row", "removeButton", "destroyField" ]
 
   static values = {
     clearLabel: String,
@@ -9,34 +9,11 @@ export default class extends Controller {
   }
 
   connect() {
-    this.toggleComponents()
     this.updateRemoveButtonLabels()
-  }
-
-  toggleComponents() {
-    if (!this.hasKindTarget || !this.hasComponentsSectionTarget) return
-
-    const composite = this.kindTarget.value === "composite"
-    this.componentsSectionTarget.classList.toggle("hidden", !composite)
-    this.setComponentFieldsDisabled(!composite)
-
-    if (this.hasAddRowButtonTarget) {
-      this.addRowButtonTarget.disabled = !composite
-    }
-  }
-
-  setComponentFieldsDisabled(disabled) {
-    this.rowTargets.forEach((row) => {
-      row.querySelectorAll("select, input").forEach((field) => {
-        if (field.type === "hidden") return
-        field.disabled = disabled
-      })
-    })
   }
 
   addRow(event) {
     event.preventDefault()
-    if (!this.hasKindTarget || this.kindTarget.value !== "composite") return
     if (!this.hasRowTemplateTarget || !this.hasRowsTarget) return
 
     const content = this.rowTemplateTarget.innerHTML.replaceAll("NEW_RECORD", Date.now().toString())
@@ -46,10 +23,10 @@ export default class extends Controller {
 
   removeRow(event) {
     event.preventDefault()
-    const row = event.target.closest("[data-supply-item-form-target='row']")
+    const row = event.target.closest("[data-home-visit-campaign-form-target='row']")
     if (!row || !this.hasRowsTarget) return
 
-    if (this.rowTargets.length <= 1) {
+    if (this.visibleRows().length <= 1) {
       this.clearRow(row)
       return
     }
@@ -64,13 +41,13 @@ export default class extends Controller {
       if (field.tagName === "SELECT") field.selectedIndex = 0
       else if (field.type === "number") field.value = "1"
     })
-    const destroyField = row.querySelector("[data-supply-item-form-target='destroyField']")
+    const destroyField = row.querySelector("[data-home-visit-campaign-form-target='destroyField']")
     if (destroyField) destroyField.value = "false"
     row.classList.remove("hidden")
   }
 
   markRowDestroyed(row) {
-    const destroyField = row.querySelector("[data-supply-item-form-target='destroyField']")
+    const destroyField = row.querySelector("[data-home-visit-campaign-form-target='destroyField']")
     const idField = row.querySelector("input[name*='[id]']")
 
     if (destroyField && idField?.value) {
@@ -82,12 +59,15 @@ export default class extends Controller {
     row.remove()
   }
 
+  visibleRows() {
+    return this.rowTargets.filter((row) => !row.classList.contains("hidden"))
+  }
+
   updateRemoveButtonLabels() {
-    const visibleRows = this.rowTargets.filter((row) => !row.classList.contains("hidden"))
-    const singleRow = visibleRows.length <= 1
+    const singleRow = this.visibleRows().length <= 1
 
     this.removeButtonTargets.forEach((button) => {
-      const row = button.closest("[data-supply-item-form-target='row']")
+      const row = button.closest("[data-home-visit-campaign-form-target='row']")
       if (!row || row.classList.contains("hidden")) return
       button.textContent = singleRow ? this.clearLabelValue : this.removeLabelValue
     })

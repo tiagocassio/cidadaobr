@@ -10,15 +10,15 @@ module Inventory
         stop_count = campaign.campaign_targets.count
         lines = []
 
-        campaign.supply_plan.each do |entry|
-          item = SupplyLineReference.resolve_plan_item(municipality_id: campaign.municipality_id, entry: entry)
+        campaign.supply_plans.includes(:supply_item).each do |plan|
+          item = plan.supply_item
           next unless item
 
           lines << Line.new(
             key: item.id,
-            label: entry.stringify_keys["name"].presence || item.name,
-            quantity_required: (entry.stringify_keys["quantity_per_visit"].to_d * stop_count).ceil,
-            unit: entry.stringify_keys["unit"].presence || item.unit,
+            label: item.name,
+            quantity_required: (plan.quantity_per_visit.to_d * stop_count).ceil,
+            unit: item.unit,
             calculation_source: "campaign_plan:#{stop_count}×stops",
             supply_item_id: item.id,
             immunobiological_product_id: nil
@@ -48,6 +48,15 @@ module Inventory
       def rollup_snapshot(campaign:, route_date: nil)
         state = build_rollup_state(campaign: campaign, route_date: route_date)
         RollupView.new(status: state[:status], totals_json: state[:totals_json])
+      end
+
+      def refresh_route_provisionings!(campaign:, route_date: nil)
+        campaign_routes_scope(campaign: campaign, route_date: route_date).find_each do |route|
+          provisioning = route.visit_route_provisioning
+          next if provisioning&.status.in?(%w[reserved dispatched])
+
+          persist_route!(route: route)
+        end
       end
 
       def rollup!(campaign:, route_date: nil)
@@ -81,7 +90,8 @@ module Inventory
           campaign: campaign,
           existing_status: record.status,
           blocked: blocked,
-          route_date: route_date
+          route_date: route_date,
+          totals_empty: totals.blank?
         )
 
         record.update!(totals_json: totals, status: status)
@@ -178,7 +188,8 @@ module Inventory
           end
         end
 
-        blocked = totals.values.any? do |line|
+        totals_json = totals.values
+        blocked = totals_json.any? do |line|
           available = available_for_line(campaign: campaign, line: line)
           line["quantity_available"] = available
           line["deficit"] = [ line["quantity_required"].to_i - available, 0 ].max
@@ -190,10 +201,11 @@ module Inventory
           campaign: campaign,
           existing_status: existing_status,
           blocked: blocked,
-          route_date: route_date
+          route_date: route_date,
+          totals_empty: totals_json.blank?
         )
 
-        { totals_json: totals.values, status: status }
+        { totals_json: totals_json, status: status }
       end
 
       def provisioning_routes_scope(campaign:, route_date: nil)
@@ -209,8 +221,9 @@ module Inventory
       def merge_line_into_totals!(totals, line, accumulate:)
         attrs = line.is_a?(Line) ? line_to_bucket_attrs(line) : line.stringify_keys
         line_key = bucket_key_for(attrs)
+        new_bucket = !totals.key?(line_key)
         bucket = totals[line_key]
-        bucket["key"] = line_key
+        bucket["key"] = attrs["key"].presence || line_key if new_bucket
         bucket["label"] = attrs["label"]
         bucket["unit"] = attrs["unit"]
         bucket["supply_item_id"] = attrs["supply_item_id"]
@@ -238,9 +251,11 @@ module Inventory
         }
       end
 
-      def resolve_provisioning_status(campaign:, existing_status:, blocked:, route_date: nil)
+      def resolve_provisioning_status(campaign:, existing_status:, blocked:, route_date: nil, totals_empty: false)
         if blocked
           "blocked"
+        elsif totals_empty
+          "draft"
         elsif routes_pending_reserve?(campaign: campaign, route_date: route_date)
           "calculated"
         elsif existing_status.in?(%w[reserved dispatched])

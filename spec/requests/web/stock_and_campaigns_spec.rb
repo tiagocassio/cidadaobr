@@ -77,10 +77,10 @@ RSpec.describe "Web stock and campaigns", type: :request do
             kind: "composite",
             description: "Kit por parada",
             active: true,
-            components: [
-              { component_item_id: syringe.id, quantity_per_unit: 1 },
-              { component_item_id: lancet.id, quantity_per_unit: 2 }
-            ]
+            supply_item_components_attributes: {
+              "0" => { component_item_id: syringe.id, quantity_per_unit: 1 },
+              "1" => { component_item_id: lancet.id, quantity_per_unit: 2 }
+            }
           }
         }
       }.to change { with_tenant(membership) { SupplyItem.where(kind: "composite").count } }.by(1)
@@ -103,10 +103,10 @@ RSpec.describe "Web stock and campaigns", type: :request do
             kind: "composite",
             description: "Kit",
             active: true,
-            components: [
-              { component_item_id: syringe.id, quantity_per_unit: 1 },
-              { component_item_id: syringe.id, quantity_per_unit: 2 }
-            ]
+            supply_item_components_attributes: {
+              "0" => { component_item_id: syringe.id, quantity_per_unit: 1 },
+              "1" => { component_item_id: syringe.id, quantity_per_unit: 2 }
+            }
           }
         }
       }.not_to change { with_tenant(membership) { SupplyItem.where(name: "Kit inválido").count } }
@@ -125,7 +125,7 @@ RSpec.describe "Web stock and campaigns", type: :request do
         active: false
       )
       kit = with_tenant(membership) do
-        item = SupplyItem.create!(
+        item = SupplyItem.new(
           municipality: municipality,
           category: "visit_kit",
           name: "Kit com inativo",
@@ -133,12 +133,12 @@ RSpec.describe "Web stock and campaigns", type: :request do
           kind: "composite",
           description: "Kit"
         )
-        SupplyItemComponent.create!(
+        item.supply_item_components.build(
           municipality: municipality,
-          composite_item: item,
           component_item: inactive_syringe,
           quantity_per_unit: 1
         )
+        item.save!
         item
       end
 
@@ -152,7 +152,7 @@ RSpec.describe "Web stock and campaigns", type: :request do
       syringe = create(:supply_item, municipality: municipality, name: "Seringa", category: "syringe")
       lancet = create(:supply_item, municipality: municipality, name: "Lanceta", category: "lancet")
       kit = with_tenant(membership) do
-        item = SupplyItem.create!(
+        item = SupplyItem.new(
           municipality: municipality,
           category: "visit_kit",
           name: "Kit antigo",
@@ -160,14 +160,16 @@ RSpec.describe "Web stock and campaigns", type: :request do
           kind: "composite",
           description: "Kit"
         )
-        SupplyItemComponent.create!(
+        item.supply_item_components.build(
           municipality: municipality,
-          composite_item: item,
           component_item: syringe,
           quantity_per_unit: 1
         )
+        item.save!
         item
       end
+
+      existing_component = with_tenant(membership) { kit.supply_item_components.first }
 
       patch web_stock_supply_item_path(kit), params: {
         supply_item: {
@@ -177,9 +179,13 @@ RSpec.describe "Web stock and campaigns", type: :request do
           kind: "composite",
           description: "Kit revisado",
           active: true,
-          components: [
-            { component_item_id: lancet.id, quantity_per_unit: 3 }
-          ]
+          supply_item_components_attributes: {
+            "0" => {
+              id: existing_component.id,
+              component_item_id: lancet.id,
+              quantity_per_unit: 3
+            }
+          }
         }
       }
 
@@ -196,7 +202,7 @@ RSpec.describe "Web stock and campaigns", type: :request do
     it "re-renders edit when composite update has invalid components" do
       syringe = create(:supply_item, municipality: municipality, name: "Seringa", category: "syringe")
       kit = with_tenant(membership) do
-        item = SupplyItem.create!(
+        item = SupplyItem.new(
           municipality: municipality,
           category: "visit_kit",
           name: "Kit antigo",
@@ -204,12 +210,12 @@ RSpec.describe "Web stock and campaigns", type: :request do
           kind: "composite",
           description: "Kit"
         )
-        SupplyItemComponent.create!(
+        item.supply_item_components.build(
           municipality: municipality,
-          composite_item: item,
           component_item: syringe,
           quantity_per_unit: 1
         )
+        item.save!
         item
       end
 
@@ -221,10 +227,10 @@ RSpec.describe "Web stock and campaigns", type: :request do
           kind: "composite",
           description: "Kit",
           active: true,
-          components: [
-            { component_item_id: syringe.id, quantity_per_unit: 1 },
-            { component_item_id: syringe.id, quantity_per_unit: 2 }
-          ]
+          supply_item_components_attributes: {
+            "0" => { component_item_id: syringe.id, quantity_per_unit: 1 },
+            "1" => { component_item_id: syringe.id, quantity_per_unit: 2 }
+          }
         }
       }
 
@@ -406,6 +412,63 @@ RSpec.describe "Web stock and campaigns", type: :request do
   end
 
   describe "home visit campaigns" do
+    it "creates a campaign with an explicit supply plan from the catalog" do
+      item = with_tenant(membership) do
+        create(:supply_item, municipality: municipality, name: "Kit visita", unit: "kit", kind: "simple")
+      end
+
+      expect {
+        post web_campaigns_home_visit_campaigns_path, params: {
+          home_visit_campaign: {
+            name: "Visita idosos",
+            health_facility_id: facility.id,
+            starts_on: Date.current,
+            ends_on: Date.current + 30.days,
+            target_audience_definition: { min_age: 60 },
+            supply_plans_attributes: {
+              "0" => { supply_item_id: item.id, quantity_per_visit: 1 }
+            }
+          }
+        }
+      }.to change { with_tenant(membership) { HomeVisitCampaign.count } }.by(1)
+
+      campaign = with_tenant(membership) { HomeVisitCampaign.order(:created_at).last }
+      plan = with_tenant(membership) { campaign.supply_plans.includes(:supply_item).first }
+      expect(plan.supply_item_id).to eq(item.id)
+      expect(plan.quantity_per_visit.to_d).to eq(BigDecimal("1"))
+      expect(plan.supply_item.unit).to eq("kit")
+      expect(with_tenant(membership) { campaign.supply_plans.count }).to eq(1)
+      expect(response).to redirect_to(web_campaigns_home_visit_campaign_path(campaign))
+    end
+
+    it "updates the supply plan on an editable campaign" do
+      campaign = with_tenant(membership) do
+        create(:home_visit_campaign, municipality: municipality, health_facility: facility, status: "draft")
+      end
+      item = with_tenant(membership) do
+        create(:supply_item, municipality: municipality, name: "Lanceta", unit: "unit")
+      end
+
+      patch web_campaigns_home_visit_campaign_path(campaign), params: {
+        home_visit_campaign: {
+          name: campaign.name,
+          health_facility_id: facility.id,
+          starts_on: campaign.starts_on,
+          ends_on: campaign.ends_on,
+          target_audience_definition: campaign.target_audience_definition,
+          supply_plans_attributes: {
+            "0" => { supply_item_id: item.id, quantity_per_visit: 2 }
+          }
+        }
+      }
+
+      expect(response).to redirect_to(web_campaigns_home_visit_campaign_path(campaign))
+      plan = with_tenant(membership) { campaign.reload.supply_plans.includes(:supply_item).first }
+      expect(plan.supply_item_id).to eq(item.id)
+      expect(plan.quantity_per_visit.to_d).to eq(BigDecimal("2"))
+      expect(with_tenant(membership) { campaign.supply_plans.count }).to eq(1)
+    end
+
     it "does not persist provisioning rollup on preview GET" do
       campaign = with_tenant(membership) do
         create(:home_visit_campaign, municipality: municipality, health_facility: facility, status: "targets_built")

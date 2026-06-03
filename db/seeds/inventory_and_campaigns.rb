@@ -67,18 +67,17 @@ visit_kit.assign_attributes(
   unit: "kit",
   active: true
 )
-visit_kit.save!
 
 [
   [ syringe, 1 ],
   [ lancet, 2 ]
 ].each do |component_item, quantity_per_unit|
-  SupplyItemComponent.find_or_initialize_by(composite_item: visit_kit, component_item: component_item).tap do |component|
-    component.municipality = municipality
-    component.quantity_per_unit = quantity_per_unit
-    component.save!
-  end
+  component = visit_kit.supply_item_components.find_or_initialize_by(component_item: component_item)
+  component.municipality = municipality
+  component.quantity_per_unit = quantity_per_unit
 end
+
+visit_kit.save!
 
 vaccination_room = ConsultationRoom.find_or_initialize_by(
   municipality: municipality,

@@ -41,7 +41,7 @@
       <%= form.collection_select :care_team_id, @care_teams, :id, :name, { include_blank: t("cidadaobr.common.empty") }, class: "w-full rounded border border-slate-300 px-3 py-2" %>
     </div>
 
-    <%= render "household_fields" %>
+    <%= render "household_fields", citizen_form: form %>
 
     <%= form.submit t("cidadaobr.common.save"), class: "rounded bg-emerald-700 px-4 py-2 font-semibold text-white" %>
   <% end %>

@@ -98,7 +98,7 @@ module Inventory
           item = SupplyLineReference.resolve_item(municipality_id: @campaign.municipality_id, attrs: line)
           if item.blank?
             line["quantity_reserved"] = 0
-            shortages << "#{line['label']}: missing supply item"
+            shortages << "#{line['label']}: missing supply item code"
           else
             allocations = []
             shortfall = false

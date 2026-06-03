@@ -66,7 +66,7 @@ module Web
     end
 
     def care_team_params
-      permitted = params.require(:care_team).permit(:name, :ine, :health_facility_id, :team_kind)
+      permitted = params.expect(care_team: %i[name ine health_facility_id team_kind])
       if facility_scope?
         permitted[:health_facility_id] = current_membership.health_facility_id
       elsif permitted[:health_facility_id].present?

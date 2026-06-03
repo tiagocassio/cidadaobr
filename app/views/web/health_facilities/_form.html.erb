@@ -1,34 +1,30 @@
-<section>
-  <h2 class="mb-6 text-2xl font-bold"><%= @health_facility.persisted? ? @health_facility.name : t("cidadaobr.health_facilities.new_title") %></h2>
-
-  <%= form_with model: [:web, @health_facility], class: "max-w-xl space-y-4 rounded-lg border border-slate-200 bg-white p-6" do |form| %>
-    <% if @health_facility.errors.any? %>
-      <div class="rounded bg-red-50 px-4 py-2 text-sm text-red-800"><%= @health_facility.errors.full_messages.to_sentence %></div>
-    <% end %>
-
-    <div>
-      <%= form.label :name, class: "mb-1 block text-sm font-medium" %>
-      <%= form.text_field :name, required: true, class: "w-full rounded border border-slate-300 px-3 py-2" %>
-    </div>
-    <div>
-      <%= form.label :cnes, class: "mb-1 block text-sm font-medium" %>
-      <%= form.text_field :cnes, required: true, class: "w-full rounded border border-slate-300 px-3 py-2" %>
-    </div>
-    <div>
-      <%= form.label :facility_service_kind, class: "mb-1 block text-sm font-medium" %>
-      <%= form.select :facility_service_kind, options_for_select(health_facility_service_kind_options, @health_facility.facility_service_kind), {}, class: "w-full rounded border border-slate-300 px-3 py-2" %>
-    </div>
-    <div class="grid grid-cols-2 gap-4">
-      <div>
-        <%= label_tag :health_facility_latitude, t("cidadaobr.health_facilities.latitude"), class: "mb-1 block text-sm font-medium" %>
-        <%= number_field_tag "health_facility[latitude]", @health_facility.coordinates&.dig(:lat), step: "any", class: "w-full rounded border border-slate-300 px-3 py-2" %>
-      </div>
-      <div>
-        <%= label_tag :health_facility_longitude, t("cidadaobr.health_facilities.longitude"), class: "mb-1 block text-sm font-medium" %>
-        <%= number_field_tag "health_facility[longitude]", @health_facility.coordinates&.dig(:lng), step: "any", class: "w-full rounded border border-slate-300 px-3 py-2" %>
-      </div>
-    </div>
-    <p class="text-xs text-slate-500"><%= t("cidadaobr.health_facilities.location_hint") %></p>
-    <%= form.submit t("cidadaobr.common.save"), class: "rounded bg-emerald-700 px-4 py-2 font-semibold text-white" %>
+<%= form_with model: [:web, @health_facility], class: "max-w-xl space-y-4 rounded-lg border border-slate-200 bg-white p-6" do |form| %>
+  <% if @health_facility.errors.any? %>
+    <div class="rounded bg-red-50 px-4 py-2 text-sm text-red-800"><%= @health_facility.errors.full_messages.to_sentence %></div>
   <% end %>
-</section>
+
+  <div>
+    <%= form.label :name, class: "mb-1 block text-sm font-medium" %>
+    <%= form.text_field :name, required: true, class: "w-full rounded border border-slate-300 px-3 py-2" %>
+  </div>
+  <div>
+    <%= form.label :cnes, class: "mb-1 block text-sm font-medium" %>
+    <%= form.text_field :cnes, required: true, class: "w-full rounded border border-slate-300 px-3 py-2" %>
+  </div>
+  <div>
+    <%= form.label :facility_service_kind, class: "mb-1 block text-sm font-medium" %>
+    <%= form.select :facility_service_kind, options_for_select(health_facility_service_kind_options, @health_facility.facility_service_kind), {}, class: "w-full rounded border border-slate-300 px-3 py-2" %>
+  </div>
+  <div class="grid grid-cols-2 gap-4">
+    <div>
+      <%= form.label :latitude, t("cidadaobr.health_facilities.latitude"), class: "mb-1 block text-sm font-medium" %>
+      <%= form.number_field :latitude, step: "any", class: "w-full rounded border border-slate-300 px-3 py-2" %>
+    </div>
+    <div>
+      <%= form.label :longitude, t("cidadaobr.health_facilities.longitude"), class: "mb-1 block text-sm font-medium" %>
+      <%= form.number_field :longitude, step: "any", class: "w-full rounded border border-slate-300 px-3 py-2" %>
+    </div>
+  </div>
+  <p class="text-xs text-slate-500"><%= t("cidadaobr.health_facilities.location_hint") %></p>
+  <%= form.submit t("cidadaobr.common.save"), class: "rounded bg-emerald-700 px-4 py-2 font-semibold text-white" %>
+<% end %>

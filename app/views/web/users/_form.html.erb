@@ -40,10 +40,7 @@
       </div>
       <div>
         <%= membership_form.label :role_code, class: "mb-1 block text-sm font-medium" %>
-        <%= membership_form.select :role_code,
-          user_membership_role_options,
-          {},
-          class: "w-full rounded border border-slate-300 px-3 py-2" %>
+        <%= membership_form.select :role_code, user_membership_role_options, {}, class: "w-full rounded border border-slate-300 px-3 py-2" %>
       </div>
       <div>
         <%= membership_form.label :health_facility_id, class: "mb-1 block text-sm font-medium" %>

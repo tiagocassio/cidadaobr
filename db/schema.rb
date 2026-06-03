@@ -10,8 +10,9 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_06_02_130000) do
+ActiveRecord::Schema[8.1].define(version: 2026_06_02_150000) do
   # These are extensions that must be enabled in order to support this database
+  enable_extension "fuzzystrmatch"
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
   enable_extension "postgis"
@@ -270,6 +271,19 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_02_130000) do
     t.index ["home_visit_campaign_id"], name: "index_home_visit_campaign_provisionings_on_campaign", unique: true
   end
 
+  create_table "home_visit_campaign_supply_plans", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.uuid "home_visit_campaign_id", null: false
+    t.uuid "municipality_id", null: false
+    t.decimal "quantity_per_visit", precision: 12, scale: 3, null: false
+    t.uuid "supply_item_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["home_visit_campaign_id", "supply_item_id"], name: "idx_campaign_supply_plans_on_campaign_and_item", unique: true
+    t.index ["home_visit_campaign_id"], name: "idx_on_home_visit_campaign_id_0b2bb31717"
+    t.index ["municipality_id"], name: "index_home_visit_campaign_supply_plans_on_municipality_id"
+    t.index ["supply_item_id"], name: "index_home_visit_campaign_supply_plans_on_supply_item_id"
+  end
+
   create_table "home_visit_campaigns", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.datetime "created_at", null: false
     t.date "ends_on", null: false
@@ -278,7 +292,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_02_130000) do
     t.string "name", null: false
     t.date "starts_on", null: false
     t.string "status", default: "draft", null: false
-    t.jsonb "supply_plan", default: [], null: false
     t.jsonb "target_audience_definition", default: {}, null: false
     t.datetime "updated_at", null: false
     t.decimal "waste_factor", precision: 5, scale: 4, default: "0.0", null: false
@@ -847,6 +860,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_02_130000) do
   add_foreign_key "facility_micro_area_coverages", "micro_areas"
   add_foreign_key "health_facilities", "municipalities"
   add_foreign_key "home_visit_campaign_provisionings", "home_visit_campaigns"
+  add_foreign_key "home_visit_campaign_supply_plans", "home_visit_campaigns"
+  add_foreign_key "home_visit_campaign_supply_plans", "municipalities"
+  add_foreign_key "home_visit_campaign_supply_plans", "supply_items"
   add_foreign_key "home_visit_campaigns", "health_facilities"
   add_foreign_key "household_animals", "households"
   add_foreign_key "immunobiological_lots", "health_facilities"

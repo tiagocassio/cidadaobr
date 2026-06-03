@@ -1,10 +1,4 @@
-<%= form_with model: [:web, household], class: "space-y-4" do |form| %>
-  <%= render "fields",
-        household: household,
-        health_facilities: health_facilities,
-        care_teams: care_teams,
-        micro_areas: micro_areas,
-        show_include_toggle: false,
-        include_checked: true %>
+<%= form_with model: [:web, @household], class: "space-y-4" do |form| %>
+  <%= render "fields", form: form, show_include_toggle: false, include_checked: true %>
   <%= form.submit t("cidadaobr.common.save"), class: "rounded bg-emerald-700 px-4 py-2 font-semibold text-white" %>
 <% end %>

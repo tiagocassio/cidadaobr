@@ -1,0 +1,28 @@
+<div class="grid gap-2 md:grid-cols-[1fr_120px_80px] md:items-end" data-home-visit-campaign-form-target="row">
+  <%= form.hidden_field :id %>
+  <%= form.hidden_field :_destroy, value: false, data: { home_visit_campaign_form_target: "destroyField" } %>
+  <div>
+    <%= form.label :supply_item_id, class: "sr-only" %>
+    <%= form.collection_select :supply_item_id,
+                               @supply_items,
+                               :id,
+                               ->(item) { "#{item.name} (#{item.unit})" },
+                               { prompt: t("cidadaobr.campaigns.home_visit.select_supply_item") },
+                               class: "w-full rounded border border-slate-300 px-3 py-2 text-sm" %>
+  </div>
+  <div>
+    <%= form.label :quantity_per_visit, class: "mb-1 block text-xs font-medium text-slate-600 md:sr-only" %>
+    <%= form.number_field :quantity_per_visit,
+                          min: 0.001,
+                          step: 0.001,
+                          class: "w-full rounded border border-slate-300 px-3 py-2 text-sm" %>
+  </div>
+  <div class="flex md:justify-end">
+    <button type="button"
+            class="text-sm text-red-700 underline"
+            data-home-visit-campaign-form-target="removeButton"
+            data-action="home-visit-campaign-form#removeRow">
+      <%= t("cidadaobr.common.remove") %>
+    </button>
+  </div>
+</div>

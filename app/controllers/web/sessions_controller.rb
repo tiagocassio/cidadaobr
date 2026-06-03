@@ -8,10 +8,11 @@ module Web
     end
 
     def create
-      user = User.find_by(email: params[:email]&.downcase)
-      membership = user&.active_membership_for(params[:municipality_id])
+      credentials = session_params
+      user = User.find_by(email: credentials[:email]&.downcase)
+      membership = user&.active_membership_for(credentials[:municipality_id])
 
-      if user&.authenticate(params[:password]) && membership
+      if user&.authenticate(credentials[:password]) && membership
         sign_in_user!(user, membership)
         redirect_to web_root_path, notice: t("cidadaobr.sessions.flash.signed_in")
       else
@@ -23,6 +24,12 @@ module Web
     def destroy
       sign_out_user!
       redirect_to web_login_path, notice: t("cidadaobr.sessions.flash.signed_out")
+    end
+
+    private
+
+    def session_params
+      params.permit(:email, :password, :municipality_id)
     end
   end
 end

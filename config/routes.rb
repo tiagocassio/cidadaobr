@@ -71,7 +71,7 @@ Rails.application.routes.draw do
           post :publish
         end
       end
-      resources :home_visit_campaigns, only: %i[index show new create] do
+      resources :home_visit_campaigns, only: %i[index show new create edit update] do
         member do
           post :build_targets
           post :generate_routes

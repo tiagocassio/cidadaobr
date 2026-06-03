@@ -361,4 +361,32 @@ RSpec.describe Inventory::PreviewCampaignProvisioning do
       expect(record.status).to eq("calculated")
     end
   end
+
+  it "sets draft status when rollup totals are empty" do
+    with_tenant(membership) do
+      campaign = create(:home_visit_campaign, municipality: municipality, health_facility: facility)
+      team = create(:care_team, municipality: municipality, health_facility: facility)
+      route = create(
+        :visit_route,
+        municipality: municipality,
+        health_facility: facility,
+        home_visit_campaign: campaign,
+        care_team: team,
+        route_date: Date.current,
+        status: "draft"
+      )
+      VisitRouteProvisioning.create!(
+        municipality: municipality,
+        health_facility: facility,
+        visit_route: route,
+        status: "calculated",
+        lines_json: []
+      )
+
+      record = described_class.rollup!(campaign: campaign, route_date: Date.current)
+
+      expect(record.totals_json).to eq([])
+      expect(record.status).to eq("draft")
+    end
+  end
 end

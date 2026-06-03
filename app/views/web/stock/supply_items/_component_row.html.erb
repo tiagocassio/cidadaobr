@@ -1,17 +1,23 @@
 <div class="grid gap-2 md:grid-cols-[1fr_120px_80px] md:items-end" data-supply-item-form-target="row">
+  <%= form.hidden_field :id %>
+  <%= form.hidden_field :_destroy, value: false, data: { supply_item_form_target: "destroyField" } %>
   <div>
-    <%= select_tag "supply_item[components][#{index}][component_item_id]",
-                   options_for_select([ [ t("cidadaobr.stock.supply_items.select_component"), "" ] ] + component_select_options, line["component_item_id"]),
-                   class: "w-full rounded border border-slate-300 px-3 py-2 text-sm",
-                   data: { supply_item_form_target: "componentField" } %>
+    <%= form.label :component_item_id, class: "sr-only" %>
+    <%= form.collection_select :component_item_id,
+                               @simple_items,
+                               :id,
+                               ->(item) { "#{item.name} (#{t("activerecord.attributes.supply_item/category.#{item.category}", default: item.category)})" },
+                               { prompt: t("cidadaobr.stock.supply_items.select_component") },
+                               class: "w-full rounded border border-slate-300 px-3 py-2 text-sm",
+                               data: { supply_item_form_target: "componentField" } %>
   </div>
   <div>
-    <%= number_field_tag "supply_item[components][#{index}][quantity_per_unit]",
-                         line["quantity_per_unit"],
-                         min: 0.001,
-                         step: 0.001,
-                         class: "w-full rounded border border-slate-300 px-3 py-2 text-sm",
-                         data: { supply_item_form_target: "componentField" } %>
+    <%= form.label :quantity_per_unit, class: "sr-only" %>
+    <%= form.number_field :quantity_per_unit,
+                          min: 0.001,
+                          step: 0.001,
+                          class: "w-full rounded border border-slate-300 px-3 py-2 text-sm",
+                          data: { supply_item_form_target: "componentField" } %>
   </div>
   <div class="flex md:justify-end">
     <button type="button"

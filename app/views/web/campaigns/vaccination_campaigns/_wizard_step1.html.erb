@@ -2,11 +2,15 @@
   <%= link_to t("cidadaobr.campaigns.back"), web_campaigns_vaccination_campaigns_path, class: "text-sm text-slate-600 underline" %>
   <h2 class="mt-2 mb-6 text-2xl font-bold"><%= t("cidadaobr.campaigns.vaccination_wizard.step_define") %></h2>
 
-  <% url = campaign.persisted? ? web_campaigns_vaccination_campaign_path(campaign) : web_campaigns_vaccination_campaigns_path %>
-  <% method = campaign.persisted? ? :patch : :post %>
-  <%= form_with model: campaign, url: url, method: method, class: "max-w-xl space-y-4 rounded-lg border border-slate-200 bg-white p-6" do |form| %>
-    <% if campaign.errors.any? %>
-      <div class="rounded bg-red-50 px-4 py-2 text-sm text-red-800"><%= campaign.errors.full_messages.to_sentence %></div>
+  <% wizard_url = @campaign.persisted? ? web_campaigns_vaccination_campaign_path(@campaign) : web_campaigns_vaccination_campaigns_path %>
+  <% wizard_method = @campaign.persisted? ? :patch : :post %>
+
+  <%= form_with model: [:web, :campaigns, @campaign],
+                url: wizard_url,
+                method: wizard_method,
+                class: "max-w-xl space-y-4 rounded-lg border border-slate-200 bg-white p-6" do |form| %>
+    <% if @campaign.errors.any? %>
+      <div class="rounded bg-red-50 px-4 py-2 text-sm text-red-800"><%= @campaign.errors.full_messages.to_sentence %></div>
     <% end %>
 
     <div>

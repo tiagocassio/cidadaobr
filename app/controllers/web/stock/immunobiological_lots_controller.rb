@@ -21,7 +21,7 @@ module Web
         @lot = scoped_lots.build(lot_params)
         @lot.municipality = current_municipality
 
-        if add_scoped_param_errors(@lot, raw_facility_id: params.dig(:immunobiological_lot, :health_facility_id))
+        if scoped_lot_param_errors?
           render :new, status: :unprocessable_entity
           return
         end
@@ -49,16 +49,34 @@ module Web
       end
 
       def lot_params
-        permitted = params.require(:immunobiological_lot).permit(
-          :health_facility_id,
-          :immunobiological_product_id,
-          :lot_number,
-          :expires_on,
-          :manufacturer,
-          :quantity_on_hand
+        immunobiological_lot_permitted
+      end
+
+      def scoped_lot_param_errors?
+        permitted = immunobiological_lot_permitted
+        add_scoped_param_errors(
+          @lot,
+          raw_facility_id: permitted[:health_facility_id],
+          health_facility_id: permitted[:health_facility_id]
         )
-        permitted[:health_facility_id] = sanitize_scoped_health_facility_id(permitted[:health_facility_id])
-        permitted
+      end
+
+      def immunobiological_lot_permitted
+        return @immunobiological_lot_permitted if defined?(@immunobiological_lot_permitted)
+
+        @immunobiological_lot_permitted = params.expect(
+          immunobiological_lot: %i[
+            health_facility_id
+            immunobiological_product_id
+            lot_number
+            expires_on
+            manufacturer
+            quantity_on_hand
+          ]
+        )
+        @immunobiological_lot_permitted[:health_facility_id] =
+          sanitize_scoped_health_facility_id(@immunobiological_lot_permitted[:health_facility_id])
+        @immunobiological_lot_permitted
       end
     end
   end

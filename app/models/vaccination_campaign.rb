@@ -17,6 +17,10 @@ class VaccinationCampaign < ApplicationRecord
   validates :target_doses, :room_capacity_per_day, numericality: { greater_than_or_equal_to: 0 }
   validate :ends_on_after_starts_on
 
+  def target_audience_definition
+    super.presence || {}
+  end
+
   private
 
   def ends_on_after_starts_on

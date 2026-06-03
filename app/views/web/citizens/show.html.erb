@@ -35,8 +35,14 @@
       </ul>
 
       <% if municipality_scope? || facility_scope? %>
-        <%= form_with url: web_citizen_household_members_path(@citizen), class: "space-y-2" do |form| %>
-          <%= form.collection_select "household_member[household_id]", @households, :id, ->(h) { [h.street, h.street_number, h.neighborhood].compact.join(" · ") }, { prompt: t("cidadaobr.citizens.select_household") }, class: "w-full rounded border border-slate-300 px-3 py-2", required: true %>
+        <%= form_with scope: :household_member, url: web_citizen_household_members_path(@citizen), class: "space-y-2" do |form| %>
+          <%= form.collection_select :household_id,
+                                     @households,
+                                     :id,
+                                     ->(h) { [ h.street, h.street_number, h.neighborhood ].compact.join(" · ") },
+                                     { prompt: t("cidadaobr.citizens.select_household") },
+                                     class: "w-full rounded border border-slate-300 px-3 py-2",
+                                     required: true %>
           <%= form.submit t("cidadaobr.citizens.link_household"), class: "rounded bg-emerald-700 px-3 py-2 text-sm text-white" %>
         <% end %>
       <% end %>

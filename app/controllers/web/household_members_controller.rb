@@ -43,7 +43,7 @@ module Web
     end
 
     def household_member_params
-      params.require(:household_member).permit(:citizen_id, :household_id, :family_reference)
+      params.expect(household_member: %i[citizen_id household_id family_reference])
     end
 
     def redirect_path(citizen)

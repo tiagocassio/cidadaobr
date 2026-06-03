@@ -1,22 +1,34 @@
 <section>
   <h2 class="mb-6 text-2xl font-bold"><%= t("cidadaobr.appointments.new_title") %></h2>
 
-  <%= form_with url: web_appointments_path(facility_scope_params), class: "max-w-xl space-y-4 rounded-lg border border-slate-200 bg-white p-6" do |form| %>
+  <%= form_with model: [:web, @appointment], url: web_appointments_path(facility_scope_params), class: "max-w-xl space-y-4 rounded-lg border border-slate-200 bg-white p-6" do |form| %>
     <div>
-      <%= label_tag "appointment[citizen_id]", Citizen.human_attribute_name(:full_name), class: "mb-1 block text-sm font-medium" %>
-      <%= select_tag "appointment[citizen_id]", options_from_collection_for_select(@citizens, :id, ->(c) { c.full_name.presence || c.cpf }), class: "w-full rounded border border-slate-300 px-3 py-2", required: true %>
+      <%= form.label :citizen_id, Citizen.human_attribute_name(:full_name), class: "mb-1 block text-sm font-medium" %>
+      <%= form.collection_select :citizen_id,
+                                 @citizens,
+                                 :id,
+                                 ->(c) { c.full_name.presence || c.cpf },
+                                 {},
+                                 class: "w-full rounded border border-slate-300 px-3 py-2",
+                                 required: true %>
     </div>
     <div>
-      <%= label_tag "appointment[appointment_service_type_id]", t("cidadaobr.appointments.form.service_type"), class: "mb-1 block text-sm font-medium" %>
-      <%= select_tag "appointment[appointment_service_type_id]", options_from_collection_for_select(@service_types, :id, :name), class: "w-full rounded border border-slate-300 px-3 py-2", required: true %>
+      <%= form.label :appointment_service_type_id, t("cidadaobr.appointments.form.service_type"), class: "mb-1 block text-sm font-medium" %>
+      <%= form.collection_select :appointment_service_type_id, @service_types, :id, :name, {}, class: "w-full rounded border border-slate-300 px-3 py-2", required: true %>
     </div>
     <div>
-      <%= label_tag "appointment[consultation_room_id]", t("cidadaobr.appointments.room"), class: "mb-1 block text-sm font-medium" %>
-      <%= select_tag "appointment[consultation_room_id]", options_from_collection_for_select(@rooms, :id, :name), class: "w-full rounded border border-slate-300 px-3 py-2", required: true %>
+      <%= form.label :consultation_room_id, t("cidadaobr.appointments.room"), class: "mb-1 block text-sm font-medium" %>
+      <%= form.collection_select :consultation_room_id, @rooms, :id, :name, {}, class: "w-full rounded border border-slate-300 px-3 py-2", required: true %>
     </div>
     <div>
-      <%= label_tag "appointment[room_capacity_slot_id]", t("cidadaobr.appointments.form.slot"), class: "mb-1 block text-sm font-medium" %>
-      <%= select_tag "appointment[room_capacity_slot_id]", options_from_collection_for_select(@capacity_slots, :id, ->(s) { "#{s.slot_date.strftime('%d/%m/%Y')} — #{s.consultation_room.name} #{s.starts_at.strftime('%H:%M')}" }, @selected_room_capacity_slot_id), class: "w-full rounded border border-slate-300 px-3 py-2", required: true %>
+      <%= form.label :room_capacity_slot_id, t("cidadaobr.appointments.form.slot"), class: "mb-1 block text-sm font-medium" %>
+      <%= form.collection_select :room_capacity_slot_id,
+                                 @capacity_slots,
+                                 :id,
+                                 ->(s) { "#{s.slot_date.strftime('%d/%m/%Y')} — #{s.consultation_room.name} #{s.starts_at.strftime('%H:%M')}" },
+                                 { selected: @selected_room_capacity_slot_id },
+                                 class: "w-full rounded border border-slate-300 px-3 py-2",
+                                 required: true %>
       <p class="mt-1 text-xs text-slate-500"><%= t("cidadaobr.appointments.slot_hint") %></p>
     </div>
     <%= form.submit t("cidadaobr.appointments.book"), class: "rounded bg-emerald-700 px-4 py-2 font-semibold text-white" %>

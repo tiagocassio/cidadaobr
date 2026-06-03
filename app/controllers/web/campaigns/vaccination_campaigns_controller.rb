@@ -51,12 +51,7 @@ module Web
         @campaign.municipality = current_municipality
         @campaign.status = "draft"
 
-        if add_scoped_param_errors(
-          @campaign,
-          raw_facility_id: params.dig(:vaccination_campaign, :health_facility_id),
-          raw_room_id: params.dig(:vaccination_campaign, :consultation_room_id),
-          health_facility_id: sanitize_scoped_health_facility_id(params.dig(:vaccination_campaign, :health_facility_id))
-        )
+        if scoped_vaccination_param_errors?(@campaign)
           render_wizard(1, status: :unprocessable_entity)
           return
         end
@@ -79,12 +74,7 @@ module Web
       end
 
       def update
-        if add_scoped_param_errors(
-          @campaign,
-          raw_facility_id: params.dig(:vaccination_campaign, :health_facility_id),
-          raw_room_id: params.dig(:vaccination_campaign, :consultation_room_id),
-          health_facility_id: sanitize_scoped_health_facility_id(params.dig(:vaccination_campaign, :health_facility_id))
-        )
+        if scoped_vaccination_param_errors?(@campaign)
           render_wizard(1, status: :unprocessable_entity)
           return
         end
@@ -138,10 +128,7 @@ module Web
           attrs = audience_params
           definition = attrs[:target_audience_definition].merge("wizard_audience_saved" => true)
           attrs[:target_audience_definition] = definition
-          doses = params.dig(:vaccination_campaign, :target_doses)
-          if doses.present?
-            attrs[:target_doses] = doses
-          elsif @campaign.target_doses.to_i.zero?
+          if attrs[:target_doses].blank? && @campaign.target_doses.to_i.zero?
             count = preview_count_for_definition(definition)
             attrs[:target_doses] = count if count.positive?
           end
@@ -326,44 +313,77 @@ module Web
       end
 
       def campaign_params
-        permitted = params.require(:vaccination_campaign).permit(
-          :name,
-          :health_facility_id,
-          :immunobiological_product_id,
-          :consultation_room_id,
-          :campaign_kind,
-          :starts_on,
-          :ends_on,
-          :room_capacity_per_day
-        )
-        permitted[:health_facility_id] = sanitize_scoped_health_facility_id(permitted[:health_facility_id])
+        permitted = require_permitted(:vaccination_campaign, *vaccination_campaign_step1_permit_list)
+        sanitized_facility_id = sanitize_scoped_health_facility_id(permitted[:health_facility_id])
+        permitted[:health_facility_id] = sanitized_facility_id
         permitted[:consultation_room_id] = sanitize_scoped_consultation_room_id(
           permitted[:consultation_room_id],
-          health_facility_id: permitted[:health_facility_id]
+          health_facility_id: sanitized_facility_id
         )
         permitted
       end
 
+      def scoped_vaccination_param_errors?(record)
+        permitted = permit_optional(:vaccination_campaign, *vaccination_campaign_step1_permit_list) ||
+          ActionController::Parameters.new
+        sanitized_facility_id = sanitize_scoped_health_facility_id(permitted[:health_facility_id])
+        add_scoped_param_errors(
+          record,
+          raw_facility_id: permitted[:health_facility_id],
+          raw_room_id: permitted[:consultation_room_id],
+          health_facility_id: sanitized_facility_id
+        )
+      end
+
       def audience_params
-        raw = params.fetch(:vaccination_campaign, {}).fetch(:target_audience_definition, {})
-        raw = ActionController::Parameters.new(raw) if raw.is_a?(Hash)
-        permitted = raw.permit(:min_age, :max_age, :sex, care_team_ids: [], micro_area_codes: [])
+        permitted = require_permitted(:vaccination_campaign, *vaccination_campaign_audience_permit_list)
+        audience_permitted = permitted[:target_audience_definition] || ActionController::Parameters.new
         definition = @campaign.target_audience_definition.deep_dup
 
         %i[min_age max_age sex].each do |key|
-          next unless permitted.key?(key)
+          next unless audience_permitted.key?(key)
 
-          value = permitted[key]
+          value = audience_permitted[key]
           value.present? ? definition[key.to_s] = value : definition.delete(key.to_s)
         end
-        if raw.key?(:care_team_ids) || raw.key?("care_team_ids")
-          definition["care_team_ids"] = Array(permitted[:care_team_ids]).compact_blank
+        if audience_permitted.key?(:care_team_ids)
+          definition["care_team_ids"] = Array(audience_permitted[:care_team_ids]).compact_blank
         end
-        if raw.key?(:micro_area_codes) || raw.key?("micro_area_codes")
-          definition["micro_area_codes"] = Array(permitted[:micro_area_codes]).compact_blank
+        if audience_permitted.key?(:micro_area_codes)
+          definition["micro_area_codes"] = Array(audience_permitted[:micro_area_codes]).compact_blank
         end
 
-        { target_audience_definition: definition }
+        attrs = { target_audience_definition: definition }
+        attrs[:target_doses] = permitted[:target_doses] if permitted.key?(:target_doses)
+        attrs
+      end
+
+      def vaccination_campaign_step1_permit_list
+        %i[
+          name
+          health_facility_id
+          immunobiological_product_id
+          consultation_room_id
+          campaign_kind
+          starts_on
+          ends_on
+          room_capacity_per_day
+        ]
+      end
+
+      def vaccination_campaign_audience_permit_list
+        [
+          :target_doses,
+          {
+            target_audience_definition: [
+              :min_age,
+              :max_age,
+              :sex,
+              { care_team_ids: [] },
+              { micro_area_codes: [] }
+            ]
+          }
+        ]
       end
 
       def reject_mutations_when_active!
@@ -374,9 +394,9 @@ module Web
       end
 
       def normalized_audience_definition(definition)
-        hash = definition.to_h.stringify_keys.except("wizard_audience_saved")
-        hash["care_team_ids"] = Array(hash["care_team_ids"]).compact_blank.sort
-        hash["micro_area_codes"] = Array(hash["micro_area_codes"]).compact_blank.sort
+        hash = definition.to_h.with_indifferent_access.except(:wizard_audience_saved)
+        hash[:care_team_ids] = Array(hash[:care_team_ids]).compact_blank.sort
+        hash[:micro_area_codes] = Array(hash[:micro_area_codes]).compact_blank.sort
         hash
       end
 

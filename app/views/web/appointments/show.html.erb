@@ -23,14 +23,14 @@
       <h3 class="mb-4 text-lg font-semibold"><%= t("cidadaobr.appointments.reschedule") %></h3>
       <%= form_with url: reschedule_web_appointment_path(@appointment), method: :post, class: "flex flex-wrap items-end gap-4" do |form| %>
         <div>
-          <label class="mb-1 block text-sm font-medium" for="room_capacity_slot_id"><%= t("cidadaobr.appointments.new_time") %></label>
-          <select id="room_capacity_slot_id" name="room_capacity_slot_id" class="rounded border border-slate-300 px-3 py-2 text-sm" required>
-            <% @reschedule_slots.each do |slot| %>
-              <option value="<%= slot.id %>">
-                <%= slot.starts_at.strftime("%H:%M") %> · <%= slot.consultation_room.name %> (<%= slot.booked_count %>/<%= slot.capacity %>)
-              </option>
-            <% end %>
-          </select>
+          <%= form.label :room_capacity_slot_id, t("cidadaobr.appointments.new_time"), class: "mb-1 block text-sm font-medium" %>
+          <%= form.collection_select :room_capacity_slot_id,
+                                     @reschedule_slots,
+                                     :id,
+                                     ->(slot) { "#{slot.starts_at.strftime('%H:%M')} · #{slot.consultation_room.name} (#{slot.booked_count}/#{slot.capacity})" },
+                                     {},
+                                     class: "rounded border border-slate-300 px-3 py-2 text-sm",
+                                     required: true %>
         </div>
         <%= form.submit t("cidadaobr.appointments.reschedule"), class: "rounded bg-emerald-700 px-4 py-2 text-sm font-semibold text-white" %>
       <% end %>

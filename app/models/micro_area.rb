@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 class MicroArea < ApplicationRecord
+  attr_accessor :remove_coverage, :coverage_sw_lat, :coverage_sw_lng, :coverage_ne_lat, :coverage_ne_lng
   belongs_to :municipality
   belongs_to :care_team
   has_many :facility_micro_area_coverages, dependent: :destroy

@@ -5,12 +5,12 @@
       <p class="text-slate-600"><%= t("cidadaobr.indicators.dashboard.subtitle") %></p>
     </div>
 
-    <%= form_with url: web_indicators_root_path, method: :get, class: "flex items-end gap-2" do %>
+    <%= form_with url: web_indicators_root_path, method: :get, class: "flex items-end gap-2" do |form| %>
       <div>
-        <label class="mb-1 block text-sm text-slate-600" for="quadrimester"><%= t("cidadaobr.indicators.dashboard.quadrimester_label") %></label>
-        <input id="quadrimester" name="quadrimester" value="<%= @quadrimester %>" class="rounded border border-slate-300 px-3 py-2 text-sm" />
+        <%= form.label :quadrimester, t("cidadaobr.indicators.dashboard.quadrimester_label"), class: "mb-1 block text-sm text-slate-600" %>
+        <%= form.text_field :quadrimester, value: @quadrimester, class: "rounded border border-slate-300 px-3 py-2 text-sm" %>
       </div>
-      <button type="submit" class="rounded bg-slate-900 px-4 py-2 text-sm text-white"><%= t("cidadaobr.indicators.dashboard.filter") %></button>
+      <%= form.submit t("cidadaobr.indicators.dashboard.filter"), class: "rounded bg-slate-900 px-4 py-2 text-sm text-white" %>
     <% end %>
   </div>
 

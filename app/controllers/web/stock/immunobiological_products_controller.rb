@@ -57,7 +57,7 @@ module Web
       end
 
       def product_params
-        params.require(:immunobiological_product).permit(:code, :name, :target_species, :active)
+        params.expect(immunobiological_product: %i[code name target_species active])
       end
     end
   end

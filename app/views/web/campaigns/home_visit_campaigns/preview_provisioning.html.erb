@@ -5,23 +5,22 @@
 
   <% selectable_dates = (@route_dates + [ @route_date ]).uniq.sort %>
   <% if selectable_dates.any? %>
-    <form method="get" class="mb-4 flex flex-wrap items-end gap-3 text-sm">
-      <label class="flex flex-col gap-1">
-        <span class="font-medium"><%= t("cidadaobr.campaigns.home_visit.route_date") %></span>
-        <select name="route_date" class="rounded border border-slate-300 px-3 py-2">
-          <% selectable_dates.each do |date| %>
-            <option value="<%= date.iso8601 %>" <%= "selected" if date == @route_date %>><%= l(date) %></option>
-          <% end %>
-        </select>
-      </label>
-      <button type="submit" class="rounded border border-slate-300 px-3 py-2"><%= t("cidadaobr.campaigns.home_visit.apply_route_date") %></button>
-    </form>
+    <%= form_with url: preview_provisioning_web_campaigns_home_visit_campaign_path(@campaign), method: :get, class: "mb-4 flex flex-wrap items-end gap-3 text-sm" do |form| %>
+      <div class="flex flex-col gap-1">
+        <%= form.label :route_date, t("cidadaobr.campaigns.home_visit.route_date"), class: "font-medium" %>
+        <%= form.select :route_date,
+              options_for_select(selectable_dates.map { |date| [l(date), date.iso8601] }, @route_date.iso8601),
+              {},
+              class: "rounded border border-slate-300 px-3 py-2" %>
+      </div>
+      <%= form.submit t("cidadaobr.campaigns.home_visit.apply_route_date"), class: "rounded border border-slate-300 px-3 py-2" %>
+    <% end %>
     <p class="mb-4 text-sm text-slate-600"><%= t("cidadaobr.campaigns.home_visit.provisioning_route_date_hint") %></p>
   <% end %>
 
   <div class="mb-4 flex flex-wrap gap-2">
     <%= button_to t("cidadaobr.campaigns.home_visit.calculate_provisioning"), calculate_provisioning_web_campaigns_home_visit_campaign_path(@campaign, route_date: @route_date.iso8601), method: :post, class: "rounded bg-slate-800 px-3 py-2 text-sm font-semibold text-white" %>
-    <% if @rollup&.status.in?(%w[calculated blocked]) %>
+    <% if @rollup&.status.in?(%w[calculated blocked]) && @rollup.totals_json.present? %>
       <%= button_to t("cidadaobr.campaigns.home_visit.reserve_provisioning"), reserve_provisioning_web_campaigns_home_visit_campaign_path(@campaign, all_routes: true), method: :post, class: "rounded bg-amber-700 px-3 py-2 text-sm font-semibold text-white" %>
     <% end %>
   </div>
@@ -39,7 +38,7 @@
         <% editable = @rollup.status.in?(%w[calculated blocked]) %>
         <div class="overflow-x-auto">
           <% if editable %>
-            <%= form_with url: update_provisioning_web_campaigns_home_visit_campaign_path(@campaign, route_date: @route_date.iso8601), method: :patch, class: "space-y-4" do %>
+            <%= form_with url: update_provisioning_web_campaigns_home_visit_campaign_path(@campaign, route_date: @route_date.iso8601), method: :patch, class: "space-y-4" do |form| %>
               <table class="min-w-full text-sm">
                 <thead class="bg-slate-50 text-left">
                   <tr>
@@ -51,26 +50,29 @@
                 </thead>
                 <tbody>
                   <% @rollup.totals_json.each_with_index do |line, index| %>
+                    <% line_fields = ActiveSupport::HashWithIndifferentAccess.new(line) %>
                     <tr class="border-t border-slate-100 <%= line['deficit'].to_i.positive? ? 'bg-red-50' : '' %>">
-                      <td class="px-4 py-3">
-                        <%= line["label"] %>
-                        <%= hidden_field_tag "totals[#{index}][key]", line["key"] %>
-                        <%= hidden_field_tag "totals[#{index}][label]", line["label"] %>
-                        <%= hidden_field_tag "totals[#{index}][unit]", line["unit"] %>
-                        <%= hidden_field_tag "totals[#{index}][supply_item_id]", line["supply_item_id"] %>
-                        <%= hidden_field_tag "totals[#{index}][immunobiological_product_id]", line["immunobiological_product_id"] %>
-                      </td>
-                      <td class="px-4 py-3">
-                        <%= number_field_tag "totals[#{index}][quantity_required]", line["quantity_required"], min: 0, class: "w-24 rounded border border-slate-300 px-2 py-1" %>
-                        <%= line["unit"] %>
-                      </td>
-                      <td class="px-4 py-3"><%= line["quantity_available"] || "—" %></td>
-                      <td class="px-4 py-3"><%= line["deficit"].to_i.positive? ? line["deficit"] : "—" %></td>
+                      <%= form.fields_for :totals, line_fields, index: index do |line_form| %>
+                        <td class="px-4 py-3">
+                          <%= line["label"] %>
+                          <%= line_form.hidden_field :key %>
+                          <%= line_form.hidden_field :label %>
+                          <%= line_form.hidden_field :unit %>
+                          <%= line_form.hidden_field :supply_item_id %>
+                          <%= line_form.hidden_field :immunobiological_product_id %>
+                        </td>
+                        <td class="px-4 py-3">
+                          <%= line_form.number_field :quantity_required, min: 0, class: "w-24 rounded border border-slate-300 px-2 py-1" %>
+                          <%= line["unit"] %>
+                        </td>
+                        <td class="px-4 py-3"><%= line["quantity_available"] || "—" %></td>
+                        <td class="px-4 py-3"><%= line["deficit"].to_i.positive? ? line["deficit"] : "—" %></td>
+                      <% end %>
                     </tr>
                   <% end %>
                 </tbody>
               </table>
-              <%= submit_tag t("cidadaobr.campaigns.home_visit.save_provisioning"), class: "rounded border border-slate-300 px-3 py-2 text-sm" %>
+              <%= form.submit t("cidadaobr.campaigns.home_visit.save_provisioning"), class: "rounded border border-slate-300 px-3 py-2 text-sm" %>
             <% end %>
           <% else %>
             <table class="min-w-full text-sm">

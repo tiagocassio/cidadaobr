@@ -74,33 +74,45 @@ module Web
       @health_facilities = HealthFacility.where(municipality_id: current_municipality.id).order(:name)
     end
 
-    def micro_area_health_facility_ids
-      Array(params.dig(:micro_area, :health_facility_ids)).compact_blank
-    end
-
     def micro_area_params
-      permitted = params.require(:micro_area).permit(:code, :name, :care_team_id)
-      team = scoped_care_teams.find_by(id: permitted[:care_team_id])
-      permitted[:care_team_id] = team&.id
+      permitted = micro_area_permitted.slice(:code, :name, :care_team_id)
+      permitted[:care_team_id] = scoped_care_teams.find_by(id: permitted[:care_team_id])&.id
       permitted
     end
 
-    def coverage_params_present?
-      params.dig(:micro_area, :coverage_sw_lat).present?
+    def micro_area_permitted
+      @micro_area_permitted ||= params.expect(
+        micro_area: [
+          :code,
+          :name,
+          :care_team_id,
+          :coverage_sw_lat,
+          :coverage_sw_lng,
+          :coverage_ne_lat,
+          :coverage_ne_lng,
+          :remove_coverage,
+          { health_facility_ids: [] }
+        ]
+      )
+    end
+
+    def micro_area_health_facility_ids
+      Array(micro_area_permitted[:health_facility_ids]).compact_blank
     end
 
     def remove_coverage_requested?
-      ActiveModel::Type::Boolean.new.cast(params.dig(:micro_area, :remove_coverage))
+      ActiveModel::Type::Boolean.new.cast(micro_area_permitted[:remove_coverage])
     end
 
     def micro_area_coverage_bbox
-      return nil unless coverage_params_present?
+      permitted = micro_area_permitted
+      return nil if permitted[:coverage_sw_lat].blank?
 
       Territory::MicroAreaCoverage.build_polygon(
-        sw_lat: params.dig(:micro_area, :coverage_sw_lat),
-        sw_lng: params.dig(:micro_area, :coverage_sw_lng),
-        ne_lat: params.dig(:micro_area, :coverage_ne_lat),
-        ne_lng: params.dig(:micro_area, :coverage_ne_lng)
+        sw_lat: permitted[:coverage_sw_lat],
+        sw_lng: permitted[:coverage_sw_lng],
+        ne_lat: permitted[:coverage_ne_lat],
+        ne_lng: permitted[:coverage_ne_lng]
       )
     end
   end

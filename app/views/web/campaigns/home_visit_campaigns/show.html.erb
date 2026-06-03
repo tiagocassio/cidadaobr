@@ -3,20 +3,27 @@
   <h2 class="mt-2 mb-6 text-2xl font-bold"><%= @campaign.name %></h2>
 
   <% selectable_dates = (@route_dates + [ @route_date ]).uniq.sort %>
-  <form method="get" class="mb-4 flex flex-wrap items-end gap-3 text-sm">
-    <label class="flex flex-col gap-1">
-      <span class="font-medium"><%= t("cidadaobr.campaigns.home_visit.route_date") %></span>
-      <select name="route_date" class="rounded border border-slate-300 px-3 py-2">
-        <% selectable_dates.each do |date| %>
-          <option value="<%= date.iso8601 %>" <%= "selected" if date == @route_date %>><%= l(date) %></option>
-        <% end %>
-      </select>
-    </label>
-    <button type="submit" class="rounded border border-slate-300 px-3 py-2"><%= t("cidadaobr.campaigns.home_visit.apply_route_date") %></button>
-  </form>
+  <%= form_with url: web_campaigns_home_visit_campaign_path(@campaign), method: :get, class: "mb-4 flex flex-wrap items-end gap-3 text-sm" do |form| %>
+    <div class="flex flex-col gap-1">
+      <%= form.label :route_date, t("cidadaobr.campaigns.home_visit.route_date"), class: "font-medium" %>
+      <%= form.select :route_date,
+            options_for_select(selectable_dates.map { |date| [l(date), date.iso8601] }, @route_date.iso8601),
+            {},
+            class: "rounded border border-slate-300 px-3 py-2" %>
+    </div>
+    <%= form.submit t("cidadaobr.campaigns.home_visit.apply_route_date"), class: "rounded border border-slate-300 px-3 py-2" %>
+  <% end %>
 
   <% route_date_param = { route_date: @route_date.iso8601 } %>
   <div class="mb-6 flex flex-wrap gap-2">
+    <% if @campaign_editable %>
+      <%= link_to t("cidadaobr.campaigns.home_visit.edit_link"), edit_web_campaigns_home_visit_campaign_path(@campaign), class: "rounded border border-slate-300 px-3 py-2 text-sm" %>
+      <% if @supply_plan_display.empty? %>
+        <%= link_to t("cidadaobr.campaigns.home_visit.configure_supply_plan"),
+                    edit_web_campaigns_home_visit_campaign_path(@campaign, anchor: "supply-plan"),
+                    class: "rounded bg-amber-700 px-3 py-2 text-sm font-semibold text-white" %>
+      <% end %>
+    <% end %>
     <%= button_to t("cidadaobr.campaigns.build_targets_link"), build_targets_web_campaigns_home_visit_campaign_path(@campaign), method: :post, class: "rounded bg-slate-800 px-3 py-2 text-sm font-semibold text-white" %>
     <%= button_to t("cidadaobr.campaigns.home_visit.generate_routes"), generate_routes_web_campaigns_home_visit_campaign_path(@campaign, **route_date_param), method: :post, class: "rounded bg-emerald-700 px-3 py-2 text-sm font-semibold text-white" %>
     <% if @routes_for_date.any? %>
@@ -43,6 +50,34 @@
     <p><strong><%= t("cidadaobr.campaigns.targets_count") %>:</strong> <%= @targets_count %></p>
     <p><strong><%= HomeVisitCampaign.human_attribute_name(:status) %>:</strong> <%= @campaign.status %></p>
     <p><strong><%= t("cidadaobr.campaigns.provisioning_status") %>:</strong> <%= @provisioning&.status || "—" %></p>
+    <div class="mt-3">
+      <div class="flex flex-wrap items-center justify-between gap-2">
+        <p class="font-medium"><%= t("cidadaobr.campaigns.home_visit.supply_plan_title") %></p>
+        <% if @campaign_editable %>
+          <%= link_to(
+                @supply_plan_display.any? ? t("cidadaobr.campaigns.home_visit.edit_supply_plan") : t("cidadaobr.campaigns.home_visit.add_supply_plan_row"),
+                edit_web_campaigns_home_visit_campaign_path(@campaign, anchor: "supply-plan"),
+                class: "rounded bg-emerald-700 px-3 py-1.5 text-xs font-semibold text-white"
+              ) %>
+        <% end %>
+      </div>
+      <% if @supply_plan_display.any? %>
+        <ul class="mt-1 list-disc pl-5 text-slate-700">
+          <% @supply_plan_display.each do |line| %>
+            <li><%= line[:name] %> — <%= line[:quantity_per_visit] %> <%= line[:unit] %> / <%= t("cidadaobr.campaigns.home_visit.per_visit") %></li>
+          <% end %>
+        </ul>
+      <% else %>
+        <p class="mt-2 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-amber-900">
+          <%= t("cidadaobr.campaigns.home_visit.supply_plan_empty") %>
+          <% if @campaign_editable %>
+            <%= link_to t("cidadaobr.campaigns.home_visit.configure_supply_plan"),
+                        edit_web_campaigns_home_visit_campaign_path(@campaign, anchor: "supply-plan"),
+                        class: "ml-1 font-semibold underline" %>
+          <% end %>
+        </p>
+      <% end %>
+    </div>
     <% if @routes_for_date.any? %>
       <p class="text-slate-600"><%= t("cidadaobr.campaigns.home_visit.provisioning_day_label", date: l(@route_date)) %> — <%= t("cidadaobr.campaigns.home_visit.provisioning_campaign_status_hint") %></p>
     <% end %>

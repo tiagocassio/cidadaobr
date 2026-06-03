@@ -2,11 +2,11 @@
 
 <% case @step %>
 <% when 1 %>
-  <%= render "wizard_step1", campaign: @campaign %>
+  <%= render "wizard_step1" %>
 <% when 2 %>
-  <%= render "wizard_step2", campaign: @campaign, preview_count: @preview_count %>
+  <%= render "wizard_step2" %>
 <% when 3 %>
-  <%= render "wizard_step3", campaign: @campaign, provisioning_result: @provisioning_result, provisioning: @provisioning %>
+  <%= render "wizard_step3" %>
 <% when 4 %>
-  <%= render "wizard_step4", campaign: @campaign, targets_preview: @targets_preview %>
+  <%= render "wizard_step4" %>
 <% end %>

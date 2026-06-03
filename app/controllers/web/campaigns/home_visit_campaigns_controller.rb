@@ -4,16 +4,19 @@ module Web
   module Campaigns
     class HomeVisitCampaignsController < BaseController
       include BuildTargetsRedirect
+
       before_action :require_facility_or_municipality!
       before_action :require_facility_or_municipality_write!, only: %i[
-        new create build_targets generate_routes clear_routes publish_routes
+        new create edit update build_targets generate_routes clear_routes publish_routes
         calculate_provisioning reserve_provisioning update_provisioning dispatch_supplies
       ]
-      before_action :set_form_collections, only: %i[new create]
+      before_action :set_form_collections, only: %i[new create edit update]
+      before_action :prepare_supply_plan_rows, only: %i[edit]
       before_action :set_campaign, only: %i[
-        show build_targets generate_routes clear_routes publish_routes preview_provisioning
+        show edit update build_targets generate_routes clear_routes publish_routes preview_provisioning
         calculate_provisioning reserve_provisioning update_provisioning dispatch_supplies route_map
       ]
+      before_action :reject_campaign_edit_when_locked!, only: %i[edit update]
 
       def index
         @pagy, @campaigns = pagy(
@@ -25,6 +28,8 @@ module Web
         @targets_count = @campaign.campaign_targets.count
         @routes = @campaign.visit_routes.includes(:care_team, :visit_route_provisioning).order(:route_date, :sequence_number)
         @provisioning = @campaign.home_visit_campaign_provisioning
+        @supply_plan_display = @campaign.supply_plan_display_lines
+        @campaign_editable = campaign_editable?
         @route_date, @route_date_invalid = parse_route_date_with_validation
         flash.now[:alert] = t("cidadaobr.campaigns.home_visit.flash.invalid_route_date") if @route_date_invalid
         @route_dates = @campaign.visit_routes.distinct.order(:route_date).pluck(:route_date)
@@ -39,9 +44,9 @@ module Web
         @campaign = scoped_campaigns.build(
           starts_on: Date.current,
           ends_on: 30.days.from_now.to_date,
-          target_audience_definition: { "min_age" => 60 },
-          supply_plan: default_supply_plan
+          target_audience_definition: { "min_age" => 60 }
         )
+        prepare_supply_plan_rows
       end
 
       def create
@@ -49,7 +54,8 @@ module Web
         @campaign.municipality = current_municipality
         @campaign.status = "draft"
 
-        if add_scoped_param_errors(@campaign, raw_facility_id: params.dig(:home_visit_campaign, :health_facility_id))
+        if scoped_param_errors?(@campaign)
+          prepare_supply_plan_rows
           render :new, status: :unprocessable_entity
           return
         end
@@ -63,7 +69,32 @@ module Web
           redirect_to web_campaigns_home_visit_campaign_path(result.campaign),
                       notice: t("cidadaobr.campaigns.home_visit.flash.created")
         else
+          prepare_supply_plan_rows
           render :new, status: :unprocessable_entity
+        end
+      end
+
+      def edit
+      end
+
+      def update
+        if scoped_param_errors?(@campaign)
+          prepare_supply_plan_rows
+          render :edit, status: :unprocessable_entity
+          return
+        end
+
+        result = CommandBus.dispatch(
+          ::Campaigns::Commands::UpdateHomeVisitCampaign,
+          campaign: @campaign,
+          attributes: campaign_params
+        )
+        if result.success
+          redirect_to web_campaigns_home_visit_campaign_path(@campaign),
+                      notice: t("cidadaobr.campaigns.home_visit.flash.updated")
+        else
+          prepare_supply_plan_rows
+          render :edit, status: :unprocessable_entity
         end
       end
 
@@ -182,15 +213,16 @@ module Web
           return
         end
 
-        Inventory::PreviewCampaignProvisioning.rollup!(
+        result = CommandBus.dispatch(
+          Inventory::Commands::CalculateHomeVisitProvisioning,
           campaign: @campaign,
-          route_date: rollup_route_date(route_date)
+          route_date: route_date
         )
         redirect_to preview_provisioning_web_campaigns_home_visit_campaign_path(
           @campaign,
           route_date: route_date.iso8601
         ),
-                    notice: t("cidadaobr.campaigns.home_visit.flash.provisioning_calculated")
+                    **provisioning_calculate_flash(result.record)
       end
 
       def reserve_provisioning
@@ -226,13 +258,10 @@ module Web
           return
         end
 
-        totals = params.require(:totals).map do |line|
-          line.permit(:key, :label, :quantity_required, :unit, :supply_item_id, :immunobiological_product_id).to_h
-        end
         CommandBus.dispatch(
           Inventory::Commands::UpdateCampaignProvisioning,
           campaign: @campaign,
-          totals: totals,
+          totals: provisioning_totals_params,
           route_date: route_date
         )
         redirect_to preview_provisioning_web_campaigns_home_visit_campaign_path(
@@ -344,39 +373,113 @@ module Web
 
       def set_form_collections
         @facilities = scoped_health_facilities.order(:name)
+        load_supply_items_for_form
       end
 
-      def default_supply_plan
-        visit_kit = SupplyItem.composites.find_by(municipality_id: current_municipality.id, name: "Kit visita domiciliar")
-        return [] unless visit_kit
+      LOCKED_CAMPAIGN_STATUSES = %w[active completed cancelled].freeze
 
-        [
-          {
-            "supply_item_id" => visit_kit.id,
-            "quantity_per_visit" => 1,
-            "unit" => visit_kit.unit
-          }
-        ]
+      def reject_campaign_edit_when_locked!
+        return unless @campaign.status.in?(LOCKED_CAMPAIGN_STATUSES)
+
+        redirect_to web_campaigns_home_visit_campaign_path(@campaign),
+                    alert: t("cidadaobr.campaigns.home_visit.flash.campaign_locked")
       end
 
       def campaign_params
-        permitted = params.require(:home_visit_campaign).permit(
+        permitted = require_permitted(:home_visit_campaign, *home_visit_campaign_permit_list)
+        permitted[:health_facility_id] = sanitize_scoped_health_facility_id(permitted[:health_facility_id])
+        permitted
+      end
+
+      def scoped_param_errors?(record)
+        permitted = permit_optional(:home_visit_campaign, *home_visit_campaign_permit_list) ||
+          ActionController::Parameters.new
+        add_scoped_param_errors(
+          record,
+          raw_facility_id: permitted[:health_facility_id],
+          health_facility_id: sanitize_scoped_health_facility_id(permitted[:health_facility_id])
+        )
+      end
+
+      def provisioning_totals_params
+        rows = params.require(:totals)
+        lines = rows.is_a?(Array) ? rows : rows.values
+        lines.map do |line|
+          line = ActionController::Parameters.new(line) unless line.respond_to?(:permit)
+          line.permit(
+            :key,
+            :label,
+            :quantity_required,
+            :unit,
+            :supply_item_id,
+            :immunobiological_product_id
+          ).to_h
+        end
+      end
+
+      def load_supply_items_for_form
+        base = SupplyItem.where(municipality_id: current_municipality.id, active: true)
+        linked_ids = linked_supply_plan_item_ids
+
+        @supply_items = if linked_ids.any?
+          base.or(SupplyItem.where(municipality_id: current_municipality.id, id: linked_ids)).order(:name)
+        else
+          base.order(:name)
+        end
+      end
+
+      def linked_supply_plan_item_ids
+        submitted = permit_optional(:home_visit_campaign, *home_visit_campaign_permit_list)
+        rows = submitted&.dig(:supply_plans_attributes)
+        ids = (rows.present? ? rows.values : []).filter_map { |line| line[:supply_item_id].presence }
+        ids.concat(@campaign.supply_plan_item_ids) if @campaign&.persisted?
+        ids.uniq
+      end
+
+      def prepare_supply_plan_rows
+        return unless @campaign
+
+        while @campaign.supply_plans.reject(&:marked_for_destruction?).size < 1
+          @campaign.supply_plans.build(quantity_per_visit: 1)
+        end
+      end
+
+      def campaign_editable?
+        !@campaign.status.in?(LOCKED_CAMPAIGN_STATUSES)
+      end
+
+      def home_visit_campaign_permit_list
+        [
           :name,
           :health_facility_id,
           :starts_on,
           :ends_on,
           :waste_factor,
-          target_audience_definition: {},
-          supply_plan: [ %i[supply_item_id quantity_per_visit unit] ]
-        )
-        permitted[:health_facility_id] = sanitize_scoped_health_facility_id(permitted[:health_facility_id])
-        permitted
+          {
+            target_audience_definition: [
+              :min_age,
+              :max_age,
+              :sex,
+              { care_team_ids: [] },
+              { micro_area_codes: [] }
+            ]
+          },
+          {
+            supply_plans_attributes: [
+              :id,
+              :supply_item_id,
+              :quantity_per_visit,
+              :_destroy
+            ]
+          }
+        ]
       end
 
       def parse_route_date_with_validation
-        return [ Date.current, false ] if params[:route_date].blank?
+        route_date = params.permit(:route_date)[:route_date]
+        return [ Date.current, false ] if route_date.blank?
 
-        [ Date.iso8601(params[:route_date]), false ]
+        [ Date.iso8601(route_date), false ]
       rescue Date::Error
         [ Date.current, true ]
       end
@@ -413,10 +516,12 @@ module Web
         end
       end
 
-      def rollup_route_date(route_date)
-        return nil unless @campaign.visit_routes.exists?
-
-        @campaign.visit_routes.exists?(route_date: route_date) ? route_date : nil
+      def provisioning_calculate_flash(record)
+        if record.totals_json.blank?
+          { alert: t("cidadaobr.campaigns.home_visit.flash.provisioning_no_items_calculated") }
+        else
+          { notice: t("cidadaobr.campaigns.home_visit.flash.provisioning_calculated") }
+        end
       end
 
       def provisioning_reserve_needed?

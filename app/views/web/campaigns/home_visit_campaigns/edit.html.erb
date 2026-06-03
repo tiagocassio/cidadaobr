@@ -1,0 +1,7 @@
+<section>
+  <%= link_to t("cidadaobr.campaigns.home_visit.back"), web_campaigns_home_visit_campaign_path(@campaign), class: "text-sm text-slate-600 underline" %>
+  <h2 class="mt-2 mb-6 text-2xl font-bold"><%= t("cidadaobr.campaigns.home_visit.edit_title") %></h2>
+
+  <% @submit_label = t("cidadaobr.campaigns.home_visit.save") %>
+  <%= render "form" %>
+</section>

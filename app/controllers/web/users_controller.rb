@@ -74,18 +74,22 @@ module Web
     end
 
     def user_params
-      params.require(:user).permit(:email, :full_name, :password, :password_confirmation)
+      params.fetch(:user, ActionController::Parameters.new).permit(
+        :email, :full_name, :password, :password_confirmation
+      )
     end
 
     def user_update_params
-      permitted = params.require(:user).permit(:email, :full_name, :active, :password, :password_confirmation)
+      permitted = params.fetch(:user, ActionController::Parameters.new).permit(
+        :email, :full_name, :active, :password, :password_confirmation
+      )
       permitted.delete(:password) if permitted[:password].blank?
       permitted.delete(:password_confirmation) if permitted[:password_confirmation].blank?
       permitted
     end
 
     def membership_params
-      params.require(:user_municipality_membership).permit(:scope, :role_code, :health_facility_id, :active)
+      params.expect(user_municipality_membership: %i[scope role_code health_facility_id active])
     end
 
     def sanitized_membership_params(for_create: false)

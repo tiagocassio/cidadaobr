@@ -1,0 +1,75 @@
+<%= form_with model: [:web, :campaigns, @campaign],
+              class: "max-w-3xl space-y-4 rounded-lg border border-slate-200 bg-white p-6",
+              data: {
+                controller: "home-visit-campaign-form",
+                home_visit_campaign_form_clear_label_value: t("cidadaobr.campaigns.home_visit.clear_supply_plan_row"),
+                home_visit_campaign_form_remove_label_value: t("cidadaobr.common.remove")
+              } do |form| %>
+  <% if @campaign.errors.any? %>
+    <div class="rounded bg-red-50 px-4 py-2 text-sm text-red-800"><%= @campaign.errors.full_messages.to_sentence %></div>
+  <% end %>
+
+  <div>
+    <%= form.label :name, class: "mb-1 block text-sm font-medium" %>
+    <%= form.text_field :name, required: true, class: "w-full rounded border border-slate-300 px-3 py-2" %>
+  </div>
+  <div>
+    <%= form.label :health_facility_id, class: "mb-1 block text-sm font-medium" %>
+    <%= form.collection_select :health_facility_id, @facilities, :id, :name, {}, class: "w-full rounded border border-slate-300 px-3 py-2" %>
+  </div>
+  <div class="grid grid-cols-2 gap-4">
+    <div>
+      <%= form.label :starts_on, class: "mb-1 block text-sm font-medium" %>
+      <%= form.date_field :starts_on, required: true, class: "w-full rounded border border-slate-300 px-3 py-2" %>
+    </div>
+    <div>
+      <%= form.label :ends_on, class: "mb-1 block text-sm font-medium" %>
+      <%= form.date_field :ends_on, required: true, class: "w-full rounded border border-slate-300 px-3 py-2" %>
+    </div>
+  </div>
+
+  <%= form.fields_for :target_audience_definition do |audience_form| %>
+    <div>
+      <%= audience_form.label :min_age, t("cidadaobr.campaigns.min_age"), class: "mb-1 block text-sm font-medium" %>
+      <%= audience_form.number_field :min_age, min: 0, class: "w-full rounded border border-slate-300 px-3 py-2" %>
+    </div>
+  <% end %>
+
+  <div id="supply-plan" class="space-y-3 rounded-lg border border-slate-200 bg-slate-50 p-4">
+    <div class="flex items-center justify-between gap-2">
+      <h3 class="text-sm font-semibold"><%= t("cidadaobr.campaigns.home_visit.supply_plan_title") %></h3>
+      <button type="button"
+              class="rounded border border-emerald-700 bg-white px-3 py-1.5 text-sm font-semibold text-emerald-800"
+              data-action="home-visit-campaign-form#addRow">
+        <%= t("cidadaobr.campaigns.home_visit.add_supply_plan_row") %>
+      </button>
+    </div>
+    <p class="text-xs text-slate-600"><%= t("cidadaobr.campaigns.home_visit.supply_plan_hint") %></p>
+    <% if @supply_items.empty? %>
+      <p class="text-sm text-amber-800">
+        <%= t("cidadaobr.campaigns.home_visit.supply_plan_no_catalog") %>
+        <%= link_to t("cidadaobr.stock.supply_items.index_title"), web_stock_supply_items_path, class: "underline" %>
+      </p>
+    <% end %>
+
+    <div class="hidden md:grid md:grid-cols-[1fr_120px_80px] md:gap-2 md:text-xs md:font-medium md:text-slate-600">
+      <div><%= t("cidadaobr.campaigns.home_visit.item") %></div>
+      <div><%= t("cidadaobr.campaigns.home_visit.quantity_per_visit") %></div>
+      <div></div>
+    </div>
+
+    <div data-home-visit-campaign-form-target="rows" class="space-y-2">
+      <%= form.fields_for :supply_plans do |plan_fields| %>
+        <%= render "supply_plan_row", form: plan_fields %>
+      <% end %>
+    </div>
+
+    <template data-home-visit-campaign-form-target="rowTemplate">
+      <%= form.fields_for :supply_plans, HomeVisitCampaignSupplyPlan.new(quantity_per_visit: 1), child_index: "NEW_RECORD" do |plan_fields| %>
+        <%= render "supply_plan_row", form: plan_fields %>
+      <% end %>
+    </template>
+  </div>
+
+  <%= form.submit(@submit_label, class: "rounded bg-emerald-700 px-4 py-2 font-semibold text-white") %>
+<% end %>

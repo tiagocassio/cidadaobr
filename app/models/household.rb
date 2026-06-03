@@ -13,6 +13,8 @@ class Household < ApplicationRecord
 
   validates :municipality_id, :ibge_code, presence: true
 
+  attr_accessor :latitude, :longitude, :include, :family_reference
+
   scope :with_location, -> { where.not(location: nil) }
   scope :within_radius, ->(lng, lat, meters) {
     point = Cidadaobr::GeoPoint.build(lng: lng, lat: lat)
@@ -38,5 +40,17 @@ class Household < ApplicationRecord
     return nil unless location
 
     { lat: location.y, lng: location.x }
+  end
+
+  def latitude
+    @latitude.presence || coordinates&.dig(:lat)
+  end
+
+  def longitude
+    @longitude.presence || coordinates&.dig(:lng)
+  end
+
+  def housing_conditions
+    super.presence || {}
   end
 end

@@ -15,3 +15,6 @@ application.register("visit-route-map", VisitRouteMapController)
 
 import SupplyItemFormController from "./supply_item_form_controller"
 application.register("supply-item-form", SupplyItemFormController)
+
+import HomeVisitCampaignFormController from "./home_visit_campaign_form_controller"
+application.register("home-visit-campaign-form", HomeVisitCampaignFormController)

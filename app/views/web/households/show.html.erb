@@ -31,8 +31,14 @@
       </ul>
 
       <% if municipality_scope? || facility_scope? %>
-        <%= form_with url: web_household_household_members_path(@household), class: "space-y-2" do |form| %>
-          <%= form.collection_select "household_member[citizen_id]", @citizens_for_select, :id, ->(c) { c.full_name.presence || c.cpf || c.cns }, { prompt: t("cidadaobr.households.select_citizen") }, class: "w-full rounded border border-slate-300 px-3 py-2", required: true %>
+        <%= form_with scope: :household_member, url: web_household_household_members_path(@household), class: "space-y-2" do |form| %>
+          <%= form.collection_select :citizen_id,
+                                     @citizens_for_select,
+                                     :id,
+                                     ->(c) { c.full_name.presence || c.cpf || c.cns },
+                                     { prompt: t("cidadaobr.households.select_citizen") },
+                                     class: "w-full rounded border border-slate-300 px-3 py-2",
+                                     required: true %>
           <%= form.submit t("cidadaobr.households.add_member"), class: "rounded bg-emerald-700 px-3 py-2 text-sm text-white" %>
         <% end %>
       <% end %>
@@ -49,7 +55,7 @@
         <% end %>
       </ul>
 
-      <%= form_with model: [@household, @household_animal], url: web_household_household_animals_path(@household), class: "space-y-2" do |form| %>
+      <%= form_with model: [:web, @household, @household_animal], class: "space-y-2" do |form| %>
         <%= form.text_field :species, placeholder: t("cidadaobr.households.species_placeholder"), required: true, class: "w-full rounded border border-slate-300 px-3 py-2" %>
         <%= form.number_field :quantity, min: 1, value: 1, class: "w-full rounded border border-slate-300 px-3 py-2" %>
         <%= form.submit t("cidadaobr.households.add_animal"), class: "rounded bg-emerald-700 px-3 py-2 text-sm text-white" %>

@@ -1,17 +1,15 @@
 <% category_options = SupplyItem::CATEGORIES.map { |value| [t("activerecord.attributes.supply_item/category.#{value}", default: value.humanize), value] } %>
 <% kind_options = SupplyItem::KINDS.map { |value| [t("activerecord.attributes.supply_item/kind.#{value}", default: value.humanize), value] } %>
-<% component_select_options = simple_items.map { |simple_item| ["#{simple_item.name} (#{t("activerecord.attributes.supply_item/category.#{simple_item.category}", default: simple_item.category)})", simple_item.id] } %>
 
-<%= form_with model: item,
-              url: item.persisted? ? web_stock_supply_item_path(item) : web_stock_supply_items_path,
+<%= form_with model: [:web, :stock, @item],
               class: "max-w-3xl space-y-4 rounded-lg border border-slate-200 bg-white p-6",
               data: {
                 controller: "supply-item-form",
                 supply_item_form_clear_label_value: t("cidadaobr.stock.supply_items.clear_component_row"),
                 supply_item_form_remove_label_value: t("cidadaobr.common.remove")
               } do |form| %>
-  <% if item.errors.any? %>
-    <div class="rounded bg-red-50 px-4 py-2 text-sm text-red-800"><%= item.errors.full_messages.to_sentence %></div>
+  <% if @item.errors.any? %>
+    <div class="rounded bg-red-50 px-4 py-2 text-sm text-red-800"><%= @item.errors.full_messages.to_sentence %></div>
   <% end %>
 
   <div class="grid gap-4 md:grid-cols-2">
@@ -54,7 +52,7 @@
     <%= form.label :active, class: "text-sm" %>
   </div>
 
-  <div data-supply-item-form-target="componentsSection" class="<%= item.composite? ? "" : "hidden" %> space-y-3 rounded-lg border border-slate-200 bg-slate-50 p-4">
+  <div data-supply-item-form-target="componentsSection" class="<%= @item.composite? ? "" : "hidden" %> space-y-3 rounded-lg border border-slate-200 bg-slate-50 p-4">
     <div class="flex items-center justify-between">
       <h3 class="text-sm font-semibold"><%= t("cidadaobr.stock.supply_items.components_title") %></h3>
       <button type="button"
@@ -73,13 +71,15 @@
     </div>
 
     <div data-supply-item-form-target="rows" class="space-y-2">
-      <% component_lines.each_with_index do |line, index| %>
-        <%= render "component_row", index: index, line: line, component_select_options: component_select_options %>
+      <%= form.fields_for :supply_item_components do |component_fields| %>
+        <%= render "component_row", form: component_fields %>
       <% end %>
     </div>
 
     <template data-supply-item-form-target="rowTemplate">
-      <%= render "component_row", index: "NEW_INDEX", line: { "component_item_id" => "", "quantity_per_unit" => 1 }, component_select_options: component_select_options %>
+      <%= form.fields_for :supply_item_components, SupplyItemComponent.new(quantity_per_unit: 1), child_index: "NEW_RECORD" do |component_fields| %>
+        <%= render "component_row", form: component_fields %>
+      <% end %>
     </template>
   </div>
 

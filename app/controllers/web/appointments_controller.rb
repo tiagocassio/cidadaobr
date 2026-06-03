@@ -179,7 +179,7 @@ module Web
       @citizens = scoped_citizens.order(:full_name).limit(200)
       @service_types = AppointmentServiceType.where(municipality_id: current_municipality.id, active: true).order(:name)
       @rooms = scoped_consultation_rooms.where(health_facility_id: selected_facility_id, active: true).order(:name)
-      slot_date = params.dig(:appointment, :slot_date).presence&.then { Date.iso8601(_1) } || Date.current
+      slot_date = appointment_slot_date
       @capacity_slots = RoomCapacitySlot
         .where(health_facility_id: selected_facility_id, slot_date: slot_date)
         .where("booked_count < capacity")
@@ -198,8 +198,9 @@ module Web
     end
 
     def utilization_date_range
-      from = parse_date_param(params[:from_date], default: Date.current.beginning_of_month)
-      to = parse_date_param(params[:to_date], default: Date.current)
+      filter = params.permit(:from_date, :to_date, :health_facility_id)
+      from = parse_date_param(filter[:from_date], default: Date.current.beginning_of_month)
+      to = parse_date_param(filter[:to_date], default: Date.current)
       to = from if to < from
       [ from, to ]
     end
@@ -257,15 +258,52 @@ module Web
     end
 
     def appointment_params
-      params.require(:appointment).permit(:citizen_id, :appointment_service_type_id, :consultation_room_id, :room_capacity_slot_id, :care_team_id)
+      attrs = params.expect(
+        appointment: %i[
+          citizen_id
+          appointment_service_type_id
+          consultation_room_id
+          room_capacity_slot_id
+        ]
+      )
+      merge_optional_appointment_params(attrs)
+    end
+
+    def appointment_slot_date
+      return Date.current unless params.key?(:appointment)
+
+      slot_date = params.permit(appointment: [ :slot_date ])[:appointment]&.dig(:slot_date)
+      parse_date_param(slot_date, default: Date.current)
     end
 
     def walk_in_params
-      params.require(:appointment).permit(:citizen_id, :appointment_service_type_id, :consultation_room_id, :care_team_id)
+      attrs = params.expect(
+        appointment: %i[
+          citizen_id
+          appointment_service_type_id
+          consultation_room_id
+        ]
+      )
+      merge_optional_appointment_params(attrs)
+    end
+
+    def merge_optional_appointment_params(attrs)
+      optional = params.permit(appointment: %i[care_team_id slot_date])[:appointment]
+      attrs[:care_team_id] = optional[:care_team_id] if optional&.key?(:care_team_id)
+      attrs
     end
 
     def render_new_with_errors
-      attrs = appointment_params
+      attrs = params.permit(
+        appointment: %i[
+          citizen_id
+          appointment_service_type_id
+          consultation_room_id
+          room_capacity_slot_id
+          care_team_id
+          slot_date
+        ]
+      )[:appointment] || {}
       @appointment = Appointment.new(attrs.except(:room_capacity_slot_id))
       @selected_room_capacity_slot_id = attrs[:room_capacity_slot_id]
       set_form_collections

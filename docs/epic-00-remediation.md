@@ -33,7 +33,7 @@ O backlog marca EPIC-00 `done` na **infra** (Fase 0); este documento é o **gate
 | **territory (cadastro)** | `lib/territory/commands/*` | citizens, households, members, animals | citizen.registered/updated | **OK** (Onda C) |
 | **territory (ops)** | facilities, teams, micro_areas | controllers web | care_team.created/updated | **OK** (Onda H) |
 | **platform (users)** | `lib/platform/commands/*` | `UsersController` | — (auth local) | **OK** (Onda H) |
-| **inventory estoque** | lot + product commands | lots/products#create | lot.received | **OK** (Onda G) |
+| **inventory estoque** | lot, product, supply item + campaign provisioning commands | lots/products/supply_items + `HomeVisitCampaignsController` | lot.received | **OK** (Onda G) |
 | **routing helpers** | clear/update provisioning | `CommandBus` em `HomeVisitCampaignsController` | eventos via commands chamados | **OK** |
 | **reference (EPIC-12)** | `Reference::Commands::PublishRelease` | jobs | `reference-release-published` (platform outbox) | **OK** (S9) |
 
@@ -80,6 +80,8 @@ Eventos + `CommandBus` em `HomeVisitCampaignsController`.
 ### Onda G — Estoque — **concluída**
 
 - [x] `ReceiveImmunobiologicalLot`, `CreateImmunobiologicalProduct`, `UpdateImmunobiologicalProduct`
+- [x] `CreateSupplyItem`, `UpdateSupplyItem` (`SupplyItemComponentSync` em `lib/inventory/`)
+- [x] `CalculateHomeVisitProvisioning`, `UpdateCampaignProvisioning`, `ReserveVisitRouteSupplies`, `DispatchTeamSupplyKit`
 
 ### Onda H — Ops admin — **concluída (2026-06-02)**
 

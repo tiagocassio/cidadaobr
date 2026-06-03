@@ -301,7 +301,12 @@ module Cidadaobr
         connection.execute team_indicator_result_table_policies_for(:team_indicator_results)
       end
 
-      %i[immunobiological_products supply_items supply_item_components].each do |table_name|
+      %i[
+        immunobiological_products
+        supply_items
+        supply_item_components
+        home_visit_campaign_supply_plans
+      ].each do |table_name|
         next unless connection.table_exists?(table_name)
 
         connection.execute municipality_only_table_policies_for(table_name)

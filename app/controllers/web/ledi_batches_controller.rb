@@ -6,8 +6,9 @@ module Web
 
     def index
       ledi_batches = scoped_ledi_batches.includes(:health_facility, :care_team).order(created_at: :desc)
-      if params[:status].present? && LediBatch::STATUSES.include?(params[:status])
-        ledi_batches = ledi_batches.where(status: params[:status])
+      status = params.permit(:status)[:status]
+      if status.present? && LediBatch::STATUSES.include?(status)
+        ledi_batches = ledi_batches.where(status: status)
       end
       @pagy, @ledi_batches = pagy(ledi_batches)
     end

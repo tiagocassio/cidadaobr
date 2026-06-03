@@ -11,8 +11,9 @@ module Web
 
     def index
       citizens = scoped_citizens.includes(:health_facility, :care_team).order(:full_name, :cpf)
-      if params[:q].present?
-        query = "%#{ActiveRecord::Base.sanitize_sql_like(params[:q].strip)}%"
+      search_query = params.permit(:q)[:q]
+      if search_query.present?
+        query = "%#{ActiveRecord::Base.sanitize_sql_like(search_query.strip)}%"
         citizens = citizens.where("cpf ILIKE :q OR cns ILIKE :q OR full_name ILIKE :q", q: query)
       end
       @pagy, @citizens = pagy(citizens)
@@ -90,8 +91,8 @@ module Web
     end
 
     def citizen_params
-      permitted = params.require(:citizen).permit(
-        :cpf, :cns, :full_name, :birth_date, :sex, :health_facility_id, :care_team_id
+      permitted = params.expect(
+        citizen: %i[cpf cns full_name birth_date sex health_facility_id care_team_id]
       )
 
       if facility_scope?

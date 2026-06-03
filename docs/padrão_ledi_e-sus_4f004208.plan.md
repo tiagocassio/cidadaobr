@@ -458,6 +458,8 @@ INE/CNES    →  QUEM (equipe / UBS) recebe ou perde repasse
 
 **Regra para agentes:** não implementar feature de fase N+1 sem concluir dependências da fase N (ver coluna `depends_on` no roteiro). **Não** criar `apps/citizen_app` ou `apps/field_app` dentro do repo `cidadaobr` — apps Flutter vivem em repositórios irmãos (ver seção Repositórios Git).
 
+**Regra — dados reais (sem mock na aplicação):** **não** mockar nem injetar dados de negócio fictícios em controller, view, helper ou Stimulus. Toda informação exibida ou persistida deve vir do **banco de dados** (registro salvo, catálogo municipal, projeção CQRS) ou de **input explícito do usuário** no formulário/API. Proibido: lookup por nome de seed (`find_by(name: "Kit visita domiciliar")`), arrays/objetos hardcoded que simulam configuração (ex.: `supply_plan` silencioso no `new`), listas estáticas na tela que deveriam ser consulta. **Permitido:** defaults vazios ou neutros em formulário **novo** (campo em branco, `[]`, data de hoje) desde que o usuário veja e confirme antes de salvar; **`db/seeds`** e **factories de teste** só para ambiente dev/CI — nunca como fonte oculta de runtime web/API.
+
 ---
 
 ## Repositórios Git (decisão: Opção A)
@@ -2153,6 +2155,45 @@ Enquanto o produto estiver em **desenvolvimento local/piloto** (sem base de prod
 | Resetar ambiente com `bin/rails db:drop db:prepare db:seed` quando o schema ou catálogo mudar | Scripts one-off permanentes no repo só para consertar dev |
 
 **Regra:** se a correção é de conteúdo de referência (catálogo de indicadores, rótulos I18n, expressões DSL), **não** persistir via migration — recriar o banco. Migrations de backfill de dados entram **apenas** quando houver ambiente de produção/staging com dados a migrar (pós-MVP).
+
+**Regra — formulários web (FormBuilder) e strong parameters (obrigatório para agentes):**
+
+Documentação oficial a seguir:
+
+- [ActionView::Helpers::FormBuilder](https://api.rubyonrails.org/classes/ActionView/Helpers/FormBuilder.html) — views
+- [ActionView::Helpers::FormHelper#form_with](https://api.rubyonrails.org/classes/ActionView/Helpers/FormHelper.html#method-i-form_with) — `form_with` + bloco `|form|`
+- [ActiveRecord::NestedAttributes](https://api.rubyonrails.org/classes/ActiveRecord/NestedAttributes.html) — `accepts_nested_attributes_for` + `fields_for`
+- [ActionController::Parameters](https://api.rubyonrails.org/classes/ActionController/Parameters.html) — `require`, `permit`, `expect`
+- [Rails Guides — Strong Parameters](https://guides.rubyonrails.org/action_controller_overview.html#strong-parameters)
+
+**Views (`app/views/web`):**
+
+| Fazer | Não fazer |
+|-------|-----------|
+| `form_with model: [:web, @record]` (ou namespace: `[:web, :stock, @item]`, `[:web, :campaigns, @campaign]`) | `form_tag`, `<form>` cru, `text_field_tag`, `select_tag`, `hidden_field_tag`, `submit_tag` |
+| Bloco `do \|form\|`; campos com `form.label`, `form.text_field`, `form.collection_select`, `form.check_box`, `form.submit` | Tags soltas no mesmo formulário de modelo |
+| Nested AR: `form.fields_for :association` (+ `child_index: "NEW_RECORD"` no template Stimulus) | `name="model[attr][]"` montado à mão |
+| Associação em param separado (ex.: `user_municipality_membership`): `fields_for` **irmão** dentro do mesmo `<form>`, não `form.fields_for` | `form.fields_for` quando o param não é filho de `user[...]` |
+| Partials `_form.html.erb` com `@ivar` do controller; `render "form"` sem locals de modelo | `render "form", item: @item` quando `@item` já existe |
+| Filtros GET: `form_with url:, method: :get` + `form.text_field` / `form.select` / `form.date_field` | GET com `<input>` / `<select>` sem FormBuilder |
+| Formulário sem model (login): `form_with url:` + `form.email_field :email` | `params[:email]` sem `permit` no controller |
+
+**Controllers (`app/controllers/web`):**
+
+| Caso | Padrão Rails |
+|------|----------------|
+| Recurso com atributos escalares (citizen, care_team, health_facility, …) | `params.expect(modelo: [ :attr, ... ])` (Rails 8+) |
+| Recurso com `*_attributes` (nested attributes) em `create`/`update` | `params.require(:modelo).permit(..., children_attributes: [ :id, :_destroy, ... ])` — helper `require_permitted(:modelo, *FILTER)` em `Web::StrongParameters` |
+| Leitura opcional de params em GET (`new`/`edit`, combos dependentes) | `params.permit(modelo: FILTER)[:modelo]` — helper `permit_optional(:modelo, *FILTER)`; **nunca** `require` em GET |
+| Coleção indexada pelo `fields_for` (`"0" => { ... }`) | Após `permit`, usar `.values` no hash (ex.: `rows.values.filter_map { ... }`); **proibido** concern `NestedCollectionParams` / `nested_param_lines` |
+| Coleção não-AR (ex.: `totals` no provisionamento) | `params.permit(totals: [ :key, ... ])[:totals]`; normalizar com `rows = totals.is_a?(Array) ? totals : totals.values` |
+| Sessão / escopo sem model | `params.permit(:email, :password, :municipality_id)` |
+
+**Models:** `accepts_nested_attributes_for` nas associações; `assign_attributes` / `update` com hash `*_attributes` já permitido — o Rails aceita chaves indexadas (`"0"`, `"1"`) sem conversão manual.
+
+**Helpers permitidos em `app/controllers/concerns/web/strong_parameters.rb`:** apenas `require_permitted` e `permit_optional` (aliases documentados de `require` + `permit`). Não adicionar parsers paralelos de params.
+
+**Regra — schema em desenvolvimento (sem migration extra):** enquanto não houver produção/staging a preservar, **toda** mudança estrutural (criar/remover/renomear tabela, coluna, índice, FK, constraint, RLS) deve ser feita **editando a migration já existente** do épico/feature — **não** criar uma segunda migration de “rename”, “add column”, “fix typo” etc. Depois de editar: `bin/rails db:drop db:prepare` (ou rollback da migration alterada + `db:migrate`) e atualizar seeds/factories se necessário. Só adicionar migration nova quando o schema **já estiver aplicado em ambiente que não pode ser recriado** (produção/staging pós-go-live).
 
 ### Internacionalização (I18n) — padrão do projeto
 

@@ -208,7 +208,6 @@ FactoryBot.define do
     starts_on { Date.current }
     ends_on { Date.current + 30.days }
     target_audience_definition { {} }
-    supply_plan { [] }
     waste_factor { 0 }
 
     to_create { |instance| TenantFactoryHelpers.save_with_municipality_tenant!(instance) }

@@ -7,17 +7,17 @@
     <%= link_to t("cidadaobr.appointments.back_to_schedule"), web_appointments_path(facility_scope_params), class: "rounded border border-slate-300 px-4 py-2 text-sm" %>
   </div>
 
-  <%= form_with url: utilization_web_appointments_path, method: :get, class: "mb-6 flex flex-wrap items-end gap-3" do %>
-    <%= hidden_field_tag :health_facility_id, params[:health_facility_id] if params[:health_facility_id].present? %>
+  <%= form_with url: utilization_web_appointments_path, method: :get, class: "mb-6 flex flex-wrap items-end gap-3" do |form| %>
+    <%= form.hidden_field :health_facility_id, value: params[:health_facility_id] if params[:health_facility_id].present? %>
     <div>
-      <label class="mb-1 block text-sm text-slate-600" for="from_date"><%= t("cidadaobr.appointments.utilization_from") %></label>
-      <input id="from_date" name="from_date" type="date" value="<%= @from_date.iso8601 %>" class="rounded border border-slate-300 px-3 py-2 text-sm" />
+      <%= form.label :from_date, t("cidadaobr.appointments.utilization_from"), class: "mb-1 block text-sm text-slate-600" %>
+      <%= form.date_field :from_date, value: @from_date.iso8601, class: "rounded border border-slate-300 px-3 py-2 text-sm" %>
     </div>
     <div>
-      <label class="mb-1 block text-sm text-slate-600" for="to_date"><%= t("cidadaobr.appointments.utilization_to") %></label>
-      <input id="to_date" name="to_date" type="date" value="<%= @to_date.iso8601 %>" class="rounded border border-slate-300 px-3 py-2 text-sm" />
+      <%= form.label :to_date, t("cidadaobr.appointments.utilization_to"), class: "mb-1 block text-sm text-slate-600" %>
+      <%= form.date_field :to_date, value: @to_date.iso8601, class: "rounded border border-slate-300 px-3 py-2 text-sm" %>
     </div>
-    <button type="submit" class="rounded bg-slate-900 px-4 py-2 text-sm text-white"><%= t("cidadaobr.appointments.utilization_filter") %></button>
+    <%= form.submit t("cidadaobr.appointments.utilization_filter"), class: "rounded bg-slate-900 px-4 py-2 text-sm text-white" %>
   <% end %>
 
   <div class="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">

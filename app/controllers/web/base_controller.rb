@@ -3,6 +3,7 @@
 module Web
   class BaseController < ApplicationController
     include Authorizable
+    include StrongParameters
     include TenantRlsRequestScope
 
     helper Web::FcdFormHelper

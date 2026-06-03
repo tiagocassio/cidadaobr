@@ -8,7 +8,7 @@ module Web
       private
 
       def resolve_quadrimester_param
-        raw = params[:quadrimester].presence
+        raw = params.permit(:quadrimester)[:quadrimester].presence
         return ::Indicators::Quadrimester.current if raw.blank?
 
         ::Indicators::Quadrimester.parse!(raw)

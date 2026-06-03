@@ -58,7 +58,7 @@ module Web
     end
 
     def health_facility_params
-      params.require(:health_facility).permit(:name, :cnes, :facility_service_kind, :latitude, :longitude)
+      params.expect(health_facility: %i[name cnes facility_service_kind latitude longitude])
     end
   end
 end
