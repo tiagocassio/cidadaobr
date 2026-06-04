@@ -53,7 +53,16 @@ module Indicators
                   result.score.to_f != score.to_f ||
                   result.tier != tier ||
                   result.projected_transfer.to_f != projected_transfer.to_f
+        metadata = result.metadata_json || {}
+        pni_release_key = nil
+        if indicator_code == "C2"
+          pni_release_key = PniScheduleEntry.latest_release_key_for(reference_date: @reference_date)
+          metadata = metadata.merge("pni_calendar_release_key" => pni_release_key)
+        end
+        changed ||= indicator_code == "C2" &&
+                     result.metadata_json&.[]("pni_calendar_release_key") != pni_release_key
         result.assign_attributes(score: score, tier: tier, projected_transfer: projected_transfer)
+        result.metadata_json = metadata.compact
         result.save!
 
         emit_team_score_updated!(result) if changed
@@ -84,7 +93,7 @@ module Indicators
           tier: result.tier,
           projected_transfer: result.projected_transfer
         },
-          care_team_id: result.care_team_id
+        care_team_id: result.care_team_id
       )
     end
   end

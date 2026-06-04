@@ -11,6 +11,14 @@ module Indicators
           return empty_result if aggregate_only?(expression)
 
           in_denominator = denominator_match?(expression.fetch("denominator"), context)
+          if skip_vaccination_calendar?(expression, context, in_denominator)
+            return Result.new(
+              in_denominator: false,
+              meets_numerator: false,
+              good_practice_code: expression["good_practice_code"]
+            )
+          end
+
           meets_numerator = in_denominator && numerator_match?(expression.fetch("numerator"), context)
 
           Result.new(
@@ -111,6 +119,17 @@ module Indicators
 
         def numerator_match?(clause, context)
           ::Indicators::DslV1::Resolvers::ClinicalEvidence.matches?(clause, context)
+        end
+
+        def skip_vaccination_calendar?(expression, context, in_denominator)
+          return false unless in_denominator
+          return false unless expression.dig("numerator", "type") == "vaccination_calendar"
+
+          !PniScheduleEvaluator.calendar_loaded?(
+            reference_date: context.reference_date,
+            age_group: expression.dig("numerator", "age_group") || "child",
+            context: context
+          )
         end
 
         def standard_pct_score(expression:, citizens:, quadrimester:, reference_date:, care_team: nil)

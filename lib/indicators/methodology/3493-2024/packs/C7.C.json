@@ -28,12 +28,12 @@
       ]
     },
     "numerator": {
-      "type": "vaccination_immunobiologic",
+      "type": "vaccination_immunobiological",
       "record_types": [
         "FV"
       ],
       "within_months": 120,
-      "immunobiologic": "HPV"
+      "immunobiological": "HPV"
     }
   }
 }

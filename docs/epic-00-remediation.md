@@ -35,7 +35,7 @@ O backlog marca EPIC-00 `done` na **infra** (Fase 0); este documento é o **gate
 | **platform (users)** | `lib/platform/commands/*` | `UsersController` | — (auth local) | **OK** (Onda H) |
 | **inventory estoque** | lot, product, supply item + campaign provisioning commands | lots/products/supply_items + `HomeVisitCampaignsController` | lot.received | **OK** (Onda G) |
 | **routing helpers** | clear/update provisioning | `CommandBus` em `HomeVisitCampaignsController` | eventos via commands chamados | **OK** |
-| **reference (EPIC-12)** | `Reference::Commands::PublishRelease` | jobs | `reference-release-published` (platform outbox) | **OK** (S9) |
+| **reference (EPIC-12)** | `Reference::Commands::PublishRelease`, `SyncPniCalendar`, `ImportPniCalendar` | rake/jobs via `CommandBus` | `reference-release-published` (platform outbox) | **OK** (S9 + PNI) |
 
 ---
 

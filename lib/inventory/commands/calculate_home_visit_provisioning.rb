@@ -14,7 +14,7 @@ module Inventory
         record = nil
 
         write_transaction do
-          Inventory::PreviewCampaignProvisioning.refresh_route_provisionings!(
+          Inventory::PreviewCampaignProvisioning.refresh_route_provisioning!(
             campaign: @campaign,
             route_date: @route_date
           )

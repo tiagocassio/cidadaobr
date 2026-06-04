@@ -12,7 +12,6 @@
 
 ActiveRecord::Schema[8.1].define(version: 2026_06_02_150000) do
   # These are extensions that must be enabled in order to support this database
-  enable_extension "fuzzystrmatch"
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
   enable_extension "postgis"
@@ -260,7 +259,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_02_150000) do
     t.index ["municipality_id"], name: "index_health_facilities_on_municipality_id"
   end
 
-  create_table "home_visit_campaign_provisionings", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+  create_table "home_visit_campaign_provisioning", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.datetime "created_at", null: false
     t.uuid "health_facility_id", null: false
     t.uuid "home_visit_campaign_id", null: false
@@ -268,7 +267,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_02_150000) do
     t.string "status", default: "draft", null: false
     t.jsonb "totals_json", default: [], null: false
     t.datetime "updated_at", null: false
-    t.index ["home_visit_campaign_id"], name: "index_home_visit_campaign_provisionings_on_campaign", unique: true
+    t.index ["home_visit_campaign_id"], name: "index_home_visit_campaign_provisioning_on_campaign", unique: true
   end
 
   create_table "home_visit_campaign_supply_plans", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -541,6 +540,26 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_02_150000) do
     t.index ["status"], name: "index_platform_outbox_messages_on_status"
   end
 
+  create_table "pni_schedule_entries", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.boolean "active", default: true, null: false
+    t.jsonb "aliases", default: [], null: false
+    t.integer "calendar_year", null: false
+    t.datetime "created_at", null: false
+    t.string "dose_code", null: false
+    t.string "dose_label"
+    t.date "effective_from", null: false
+    t.date "effective_until"
+    t.string "age_group", null: false
+    t.string "immunobiological_code", null: false
+    t.string "immunobiological_name", null: false
+    t.integer "max_age_days", null: false
+    t.integer "min_age_days", default: 0, null: false
+    t.string "strategy"
+    t.datetime "updated_at", null: false
+    t.index ["calendar_year", "age_group", "immunobiological_code", "dose_code"], name: "index_pni_schedule_entries_on_year_age_group_code_dose", unique: true
+    t.index ["age_group", "active", "effective_from"], name: "index_pni_schedule_entries_on_age_group_active_effective_from"
+  end
+
   create_table "professional_availability_blocks", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.datetime "created_at", null: false
     t.datetime "ends_at", null: false
@@ -672,7 +691,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_02_150000) do
     t.index ["municipality_id", "sku"], name: "index_supply_items_on_municipality_sku", unique: true, where: "(sku IS NOT NULL)"
   end
 
-  create_table "supply_provisionings", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+  create_table "supply_provisioning", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.jsonb "available_items", default: [], null: false
     t.boolean "capacity_ok", default: true, null: false
     t.datetime "created_at", null: false
@@ -685,13 +704,14 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_02_150000) do
     t.jsonb "shortages", default: [], null: false
     t.string "status", default: "pending", null: false
     t.datetime "updated_at", null: false
-    t.index ["provisionable_type", "provisionable_id"], name: "index_supply_provisionings_on_provisionable", unique: true
+    t.index ["provisionable_type", "provisionable_id"], name: "index_supply_provisioning_on_provisionable", unique: true
   end
 
   create_table "team_indicator_results", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.uuid "care_team_id", null: false
     t.datetime "created_at", null: false
     t.string "indicator_code", null: false
+    t.jsonb "metadata_json", default: {}, null: false
     t.uuid "municipality_id", null: false
     t.decimal "projected_transfer", precision: 12, scale: 2
     t.string "quadrimester", null: false
@@ -812,7 +832,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_02_150000) do
     t.index ["municipality_id", "health_facility_id", "status"], name: "index_vaccination_campaigns_on_municipality_facility_status"
   end
 
-  create_table "visit_route_provisionings", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+  create_table "visit_route_provisioning", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.datetime "created_at", null: false
     t.uuid "health_facility_id", null: false
     t.jsonb "lines_json", default: [], null: false
@@ -820,7 +840,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_02_150000) do
     t.string "status", default: "draft", null: false
     t.datetime "updated_at", null: false
     t.uuid "visit_route_id", null: false
-    t.index ["visit_route_id"], name: "index_visit_route_provisionings_on_route", unique: true
+    t.index ["visit_route_id"], name: "index_visit_route_provisioning_on_route", unique: true
   end
 
   create_table "visit_route_stops", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -859,7 +879,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_02_150000) do
   add_foreign_key "facility_micro_area_coverages", "health_facilities"
   add_foreign_key "facility_micro_area_coverages", "micro_areas"
   add_foreign_key "health_facilities", "municipalities"
-  add_foreign_key "home_visit_campaign_provisionings", "home_visit_campaigns"
+  add_foreign_key "home_visit_campaign_provisioning", "home_visit_campaigns"
   add_foreign_key "home_visit_campaign_supply_plans", "home_visit_campaigns"
   add_foreign_key "home_visit_campaign_supply_plans", "municipalities"
   add_foreign_key "home_visit_campaign_supply_plans", "supply_items"
@@ -894,7 +914,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_02_150000) do
   add_foreign_key "vaccination_campaigns", "consultation_rooms"
   add_foreign_key "vaccination_campaigns", "health_facilities"
   add_foreign_key "vaccination_campaigns", "immunobiological_products"
-  add_foreign_key "visit_route_provisionings", "visit_routes"
+  add_foreign_key "visit_route_provisioning", "visit_routes"
   add_foreign_key "visit_route_stops", "visit_routes"
   add_foreign_key "visit_routes", "care_teams"
   add_foreign_key "visit_routes", "home_visit_campaigns"

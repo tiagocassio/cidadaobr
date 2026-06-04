@@ -215,7 +215,7 @@ module Inventory
 
         pending = @campaign.visit_routes
           .left_joins(:visit_route_provisioning)
-          .where("visit_route_provisionings.id IS NULL OR visit_route_provisionings.status != ?", "reserved")
+          .where("visit_route_provisioning.id IS NULL OR visit_route_provisioning.status != ?", "reserved")
           .exists?
 
         record.update!(status: "reserved") unless pending

@@ -31,8 +31,8 @@ module Indicators
           when "first_prenatal_consult" then first_prenatal_consult?(context, clause)
           when "vaccination_present" then vaccination_present?(context, clause)
           when "vaccination_calendar" then vaccination_calendar?(context, clause)
-          when "vaccination_immunobiologic" then vaccination_immunobiologic?(context, clause)
-          when "gestational_vaccination_immunobiologic" then gestational_vaccination_immunobiologic?(context, clause)
+          when "vaccination_immunobiological" then vaccination_immunobiological?(context, clause)
+          when "gestational_vaccination_immunobiological" then gestational_vaccination_immunobiological?(context, clause)
           when "gestational_clinical_predicate" then gestational_clinical_predicate?(context, clause)
           when "gestational_evidence_count_gte" then gestational_evidence_count_gte?(context, clause)
           when "puerperium_consult" then puerperium_consult?(context, clause)
@@ -291,34 +291,33 @@ module Indicators
         end
 
         def vaccination_present?(context, clause)
-          vaccination_immunobiologic?(context, clause.merge("immunobiologic" => nil))
+          vaccination_immunobiological?(context, clause.merge("immunobiological" => nil))
         end
 
         def vaccination_calendar?(context, clause)
           birth = context.citizen.birth_date
           return false unless birth
 
-          age_months = age_in_months(birth, context.reference_date)
-          return false if age_months.negative? || age_months > 24
-
-          required = VaccinationCalendar.required_immunobiologics(age_months)
-          return false if required.empty?
-
           within_months = clause.fetch("within_months", 24).to_i
-          record_types = Array(clause.fetch("record_types", %w[FV]))
+          scope_max_age_days = (within_months * 30.4375).floor
+          age_days = (context.reference_date - birth).to_i
+          return false if age_days.negative? || age_days > scope_max_age_days
 
-          required.all? do |immuno|
-            records_in_window(context, record_types, within_months).any? do |record|
-              payloads_for_record(record, context.citizen).any? do |payload|
-                vaccination_match?(payload, immuno.downcase)
-              end
-            end
-          end
+          result = Indicators::PniScheduleEvaluator.evaluate(
+            citizen: context.citizen,
+            reference_date: context.reference_date,
+            age_group: clause.fetch("age_group", "child"),
+            scope_max_age_days: scope_max_age_days,
+            context: context
+          )
+          return false unless result.evaluable
+
+          result.compliant
         end
 
-        def vaccination_immunobiologic?(context, clause)
+        def vaccination_immunobiological?(context, clause)
           within_months = clause.fetch("within_months", 24).to_i
-          target = clause["immunobiologic"]&.to_s&.downcase
+          target = clause["immunobiological"]&.to_s&.downcase
           record_types = Array(clause.fetch("record_types", %w[FV]))
 
           records_in_window(context, record_types, within_months).any? do |record|
@@ -328,12 +327,12 @@ module Indicators
           end
         end
 
-        def gestational_vaccination_immunobiologic?(context, clause)
+        def gestational_vaccination_immunobiological?(context, clause)
           min_weeks = clause.fetch("min_gestational_weeks", 20).to_i
           max_weeks = clause.fetch("max_gestational_weeks", 42).to_i
           lookback_months = clause.fetch("lookback_months", 15).to_i
           active_only = clause.fetch("active_only", GestationalAnchor::RETROSPECTIVE_ACTIVE_ONLY_DEFAULT)
-          target = clause["immunobiologic"]&.to_s&.downcase
+          target = clause["immunobiological"]&.to_s&.downcase
           record_types = Array(clause.fetch("record_types", %w[FV]))
 
           GestationalAnchor.records_in_gestational_window(
@@ -347,7 +346,11 @@ module Indicators
             exclude_after_delivery: true
           ).any? do |record|
             payloads_for_record(record, context.citizen).any? do |payload|
-              vaccination_match?(payload, target, immunobiologic_code: clause["immunobiologic_code"])
+              vaccination_match?(
+                payload,
+                target,
+                immunobiological_code: clause["immunobiological_code"]
+              )
             end
           end
         end
@@ -622,41 +625,108 @@ module Indicators
           end
         end
 
-        def vaccination_match?(payload, target, immunobiologic_code: nil)
-          vacinas = payload["vacinas"] || payload["vacina"] || payload["imunobiologicos"]
-          Array(vacinas).any? do |vac|
-            next false unless vac.is_a?(Hash) || vac.is_a?(String)
+        def vaccination_match?(payload, target, immunobiological_code: nil, dose_code: nil, aliases: nil)
+          vaccination_entries = extract_vaccination_entries(payload)
+          Array(vaccination_entries).any? do |vaccination_entry|
+            next false unless vaccination_entry.is_a?(Hash) || vaccination_entry.is_a?(String)
 
-            entry = vac.is_a?(Hash) ? vac : { "imunobiologico" => vac.to_s }
+            entry = vaccination_entry.is_a?(Hash) ? vaccination_entry : { "imunobiologico" => vaccination_entry.to_s }
             name = entry["imunobiologico"] || entry["nomeImunobiologico"] || entry["descricao"] || entry.to_s
             code = entry["codigoImunobiologico"] || entry["codigo_imunobiologico"] ||
-                   entry["codigoVacina"] || entry["codigo_vacina"] || entry["codigo"]
+                   entry["codigoVacina"] || entry["codigo_vacina"] || entry["codigo"] ||
+                   numeric_code(entry["imunobiologico"])
+
+            if immunobiological_code.present?
+              next true if vaccination_dose_match_entry?(
+                entry,
+                immunobiological_code: immunobiological_code,
+                dose_code: dose_code,
+                aliases: aliases
+              )
+
+              # C3.F/C7.C: name fallback when dose/code match fails but clause has no strict code target.
+              next true if target.blank?
+
+              next strict_immunobiological_match?(name, target, code: code, aliases: aliases)
+            end
 
             next true if target.blank?
 
-            if immunobiologic_code.present? && vaccine_code_matches?(code, immunobiologic_code)
-              next true
-            end
-
-            strict_immunobiologic_match?(name, target, code: code)
+            strict_immunobiological_match?(name, target, code: code, aliases: aliases)
           end
+        end
+
+        def vaccination_dose_match?(payload, immunobiological_code:, dose_code: nil, aliases: nil)
+          extract_vaccination_entries(payload).any? do |entry|
+            vaccination_dose_match_entry?(
+              entry,
+              immunobiological_code: immunobiological_code,
+              dose_code: dose_code,
+              aliases: aliases
+            )
+          end
+        end
+
+        def extract_vaccination_entries(payload)
+          nested = Array(payload["vacinacoes"]).flat_map do |section|
+            next [] unless section.is_a?(Hash)
+
+            Array(section["vacinas"])
+          end
+          flat = payload["vacinas"] || payload["vacina"] || payload["imunobiologicos"]
+          nested + Array(flat)
+        end
+
+        def vaccination_dose_match_entry?(entry, immunobiological_code:, dose_code: nil, aliases: nil)
+          return false unless entry.is_a?(Hash)
+
+          name = entry["imunobiologico"] || entry["nomeImunobiologico"] || entry["descricao"]
+          code = entry["codigoImunobiologico"] || entry["codigo_imunobiologico"] ||
+                 entry["codigoVacina"] || entry["codigo_vacina"] || entry["codigo"] ||
+                 numeric_code(entry["imunobiologico"])
+          dose = entry["dose"] || entry["dose_label"]
+
+          code_match = vaccine_code_matches?(code, immunobiological_code) ||
+                       alias_match?(name, aliases: aliases)
+          return false unless code_match
+          return true if dose_code.blank?
+
+          dose_codes_match?(dose, dose_code)
+        end
+
+        def numeric_code(value)
+          return nil unless value.is_a?(Numeric) || value.to_s.match?(/\A\d+\z/)
+
+          value.to_s
+        end
+
+        def alias_match?(name, aliases: nil)
+          return false if name.blank? && aliases.blank?
+
+          tokens = Array(aliases).map { |token| token.to_s.downcase }
+          normalized_name = name.to_s.downcase
+          tokens.any? { |token| normalized_name.include?(token) }
+        end
+
+        def dose_codes_match?(actual, expected)
+          PniCodeNormalizer.normalize_dose_code(actual) == PniCodeNormalizer.normalize_dose_code(expected)
         end
 
         def vaccine_code_matches?(code, expected)
           return false if code.blank? || expected.blank?
 
-          normalize_vaccine_code(code) == normalize_vaccine_code(expected)
+          PniCodeNormalizer.normalize_code(code) == PniCodeNormalizer.normalize_code(expected)
         end
 
-        def normalize_vaccine_code(code)
-          code.to_s.gsub(/\D/, "").sub(/\A0+/, "")
-        end
-
-        def strict_immunobiologic_match?(name, target, code: nil)
+        def strict_immunobiological_match?(name, target, code: nil, aliases: nil)
           normalized_name = name.to_s.downcase
+          if aliases.present? && alias_match?(name, aliases: aliases)
+            return true
+          end
+
           case target.to_s.downcase
           when "dtpa"
-            return true if code.present? && LediPayloadPaths::DTPA_VACCINE_CODES.include?(normalize_vaccine_code(code))
+            return true if code.present? && LediPayloadPaths::DTPA_VACCINE_CODES.include?(PniCodeNormalizer.normalize_code(code))
 
             normalized_name.match?(/\b(d[\s\-]?tpa|tr[ií]plice bacteriana acelular)\b/i)
           when "influenza"

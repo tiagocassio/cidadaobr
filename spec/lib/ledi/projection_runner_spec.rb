@@ -81,18 +81,58 @@ RSpec.describe Ledi::ProjectionRunner do
         validation_errors: [],
         payload_json: {
           "identificacao" => { "cpf" => citizen.cpf },
-          "vacina" => { "codigo" => "BCG", "nome" => "BCG" },
-          "dose" => { "rotulo" => "D1" },
+          "vacina" => { "codigo" => "15", "nome" => "BCG" },
+          "dose" => { "rotulo" => "1" },
           "data_aplicacao" => "2024-01-15"
         }
       )
 
       described_class.call(clinical_record: fv_record)
 
-      immunization = CitizenImmunizationRecord.find_by!(citizen: citizen, vaccine_code: "BCG", dose_label: "D1")
+      immunization = CitizenImmunizationRecord.find_by!(citizen: citizen, vaccine_code: "15", dose_label: "1")
       expect(immunization.vaccine_name).to eq("BCG")
       expect(immunization.applied_on).to eq(Date.new(2024, 1, 15))
       expect(immunization.source).to eq("fv_projection")
+    end
+  end
+
+  it "projects nested LEDI vacinacoes into multiple citizen_immunization_records" do
+    fci_record = import(:fci)
+
+    with_tenant(membership) do
+      described_class.call(clinical_record: fci_record)
+      citizen = Citizen.find_by!(municipality_id: municipality.id, cpf: "39053344705")
+
+      fv_record = ClinicalRecord.create!(
+        municipality: municipality,
+        health_facility: facility,
+        transport_record: fci_record.transport_record,
+        record_type: "FV",
+        record_uuid: SecureRandom.uuid,
+        payload_schema_version: Rails.application.config.ledi.fetch(:version),
+        validation_status: "valid",
+        validation_errors: [],
+        payload_json: {
+          "vacinacoes" => [
+            {
+              "cpfCidadao" => citizen.cpf,
+              "dataAtendimento" => "2024-02-10",
+              "vacinas" => [
+                { "imunobiologico" => 15, "dose" => "1" },
+                { "imunobiologico" => 45, "dose" => "1" }
+              ]
+            }
+          ]
+        },
+        encounter_at: Time.zone.parse("2024-02-10")
+      )
+
+      described_class.call(clinical_record: fv_record)
+
+      bcg = CitizenImmunizationRecord.find_by!(citizen: citizen, vaccine_code: "15", dose_label: "1")
+      hepb = CitizenImmunizationRecord.find_by!(citizen: citizen, vaccine_code: "45", dose_label: "1")
+      expect(bcg.applied_on).to eq(Date.new(2024, 2, 10))
+      expect(hepb.applied_on).to eq(Date.new(2024, 2, 10))
     end
   end
 end

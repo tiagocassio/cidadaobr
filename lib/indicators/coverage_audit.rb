@@ -12,8 +12,8 @@ module Indicators
       clinical_predicate appointment_in_quadrimester encounter_in_window emulti_encounter_count
       mici_micdt_complete fci_updated_within contact_and_attendance satisfaction_survey
       consult_count_gte anthropometry_count_gte visit_count_gte acs_two_visit_schedule blood_pressure_count_gte
-      first_consult_by_age first_prenatal_consult vaccination_present vaccination_calendar vaccination_immunobiologic
-      gestational_vaccination_immunobiologic gestational_clinical_predicate gestational_evidence_count_gte
+      first_consult_by_age first_prenatal_consult vaccination_present vaccination_calendar vaccination_immunobiological
+      gestational_vaccination_immunobiological gestational_clinical_predicate gestational_evidence_count_gte
       puerperium_consult puerperium_visit fci_flag_present microarea_linked
     ].freeze
 
@@ -88,6 +88,7 @@ module Indicators
         "bp_coverage" => bp_coverage_summary(pack_by_code, db_by_code),
         "resolver_types" => resolver_types,
         "missing_resolvers" => missing_resolvers_for(packs),
+        "pni_calendar" => pni_calendar_summary,
         "matrix_path" => Rails.root.join("docs/indicators/methodology-coverage-matrix.md").to_s,
         "matrix_status" => matrix_status_summary
       }
@@ -271,6 +272,14 @@ module Indicators
       end
 
       validate_gestational_evidence_clause!(missing, ref, clause) if type == "gestational_evidence_count_gte"
+    end
+
+    def pni_calendar_summary
+      return { "available" => false } unless PniScheduleEntry.table_exists?
+
+      Reference::PniCalendarLoader.audit_report.transform_keys(&:to_s).merge("available" => true)
+    rescue StandardError => error
+      { "available" => false, "error" => error.message }
     end
 
     def validate_gestational_evidence_clause!(missing, ref, clause)

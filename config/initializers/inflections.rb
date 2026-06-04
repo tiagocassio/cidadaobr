@@ -14,3 +14,10 @@
 # ActiveSupport::Inflector.inflections(:en) do |inflect|
 #   inflect.acronym "RESTful"
 # end
+
+ActiveSupport::Inflector.inflections(:en) do |inflect|
+  inflect.uncountable "provisioning"
+  inflect.irregular "supply_provisioning", "supply_provisioning"
+  inflect.irregular "home_visit_campaign_provisioning", "home_visit_campaign_provisioning"
+  inflect.irregular "visit_route_provisioning", "visit_route_provisioning"
+end

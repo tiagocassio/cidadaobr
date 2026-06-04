@@ -42,6 +42,6 @@ Medidas válidas: `consult`, `visit`, `blood_pressure`, `anthropometry`. `consul
 |----|----------|---------------|
 | A | `first_prenatal_consult` | false (via `first_prenatal_consult_date`) |
 | B–E | `gestational_evidence_count_gte` | false |
-| F | `gestational_vaccination_immunobiologic` | false |
+| F | `gestational_vaccination_immunobiological` | false |
 | G–H | `gestational_clinical_predicate` | false |
 | I–J | `puerperium_*` | N/A (janela pós-parto) |

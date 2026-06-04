@@ -14,7 +14,7 @@ module Routing
 
       def call
         routes = @campaign.visit_routes.where(route_date: @route_date)
-        if routes.joins(:visit_route_provisioning).where(visit_route_provisionings: { status: "dispatched" }).exists?
+        if routes.joins(:visit_route_provisioning).where(visit_route_provisioning: { status: "dispatched" }).exists?
           return Result.new(
             0,
             0,

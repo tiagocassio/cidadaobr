@@ -36,7 +36,7 @@ Pilot users need auditability: which BP is implemented, which LEDI field is miss
 - Seeds become a thin loader; diffs to methodology are reviewed in `methodology_pack_definitions.rb` + exported JSON + matrix, not 400-line seed files.
 - Specs and `rake indicators:audit_coverage` guard pack/DB/resolver alignment only; matrix `partial`/`todo` rows are progress tracking and do not fail the rake.
 - ADR-0003 MVP proxies are superseded for linkage and quality indicators; B/M indicators retain single-rule packs with room for LEDI field refinement.
-- TASK-05-08 is **Done**: matrix **52/53 `done`** (2026-05-31, onda 2); sole residual **`partial`**: C2.E PNI proxy — see [matriz](../indicators/methodology-coverage-matrix.md).
+- TASK-05-08 is **Done**: matrix **53/53 `done`** (2026-06-03, onda 2a PNI); C2.E calendário técnico MS via [ADR-0009](0009-pni-calendar-reference.md) — see [matriz](../indicators/methodology-coverage-matrix.md).
 - **`mici_complete?` (EPIC-05b):** no fallback to municipal `citizens` columns — tenants must have valid FCI `identificacaoUsuarioCidadao` before V_CAD_COM scores; re-import or backfill FCI on deploy.
 - **`latest_fcd_payload` (web FCD):** when no valid imported FCD `ClinicalRecord` exists, `RegistrationValidators` uses `household#to_fcd_payload` from the citizen’s `household_members`. This affects `micdt_complete?` and `microarea_linked?` for web-registered domiciles only; it does not relax `mici_complete?`.
 

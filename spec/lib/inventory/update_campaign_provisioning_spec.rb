@@ -27,7 +27,7 @@ RSpec.describe Inventory::Commands::UpdateCampaignProvisioning do
     end
   end
 
-  it "propagates campaign totals to editable route provisionings" do
+  it "propagates campaign totals to editable route provisioning" do
     with_tenant(membership) do
       campaign = create(:home_visit_campaign, municipality: municipality, health_facility: facility)
       route = create(

@@ -50,7 +50,7 @@ module Inventory
         RollupView.new(status: state[:status], totals_json: state[:totals_json])
       end
 
-      def refresh_route_provisionings!(campaign:, route_date: nil)
+      def refresh_route_provisioning!(campaign:, route_date: nil)
         campaign_routes_scope(campaign: campaign, route_date: route_date).find_each do |route|
           provisioning = route.visit_route_provisioning
           next if provisioning&.status.in?(%w[reserved dispatched])
@@ -268,7 +268,7 @@ module Inventory
       def routes_pending_reserve?(campaign:, route_date: nil)
         campaign_routes_scope(campaign: campaign, route_date: route_date, statuses: %w[draft published])
           .left_joins(:visit_route_provisioning)
-          .where("visit_route_provisionings.id IS NULL OR visit_route_provisionings.status NOT IN (?)", %w[reserved dispatched])
+          .where("visit_route_provisioning.id IS NULL OR visit_route_provisioning.status NOT IN (?)", %w[reserved dispatched])
           .exists?
       end
 

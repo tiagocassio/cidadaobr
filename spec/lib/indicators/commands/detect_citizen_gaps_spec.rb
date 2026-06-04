@@ -216,4 +216,43 @@ RSpec.describe Indicators::DetectCitizenGaps do
       ).not_to be_empty
     end
   end
+
+  it "includes missing_pni_doses in the gap detected event for C2-E" do
+    sync_pni_calendar!(export_json: false, publish_release: false)
+
+    citizen = with_tenant(membership) do
+      create(
+        :citizen,
+        municipality: municipality,
+        health_facility: facility,
+        care_team: team,
+        birth_date: Date.current - 18.months,
+        full_name: "Criança Gap PNI"
+      )
+    end
+
+    with_tenant(membership) do
+      seed_pni_compliant_immunizations!(citizen: citizen)
+      CitizenImmunizationRecord.where(citizen: citizen, vaccine_code: "15").delete_all
+    end
+
+    captured_events = []
+    allow(RecordPlatformEvent).to receive(:call) do |**kwargs|
+      next unless kwargs[:event_type] == Cidadaobr::KafkaTopics::INDICATOR_GAP_DETECTED
+
+      captured_events << kwargs
+    end
+
+    with_tenant(membership) do
+      described_class.call(citizen_id: citizen.id, indicator_codes: %w[C2])
+    end
+
+    gap_event = captured_events.find do |event|
+      payload = event.fetch(:payload)
+      payload[:indicator_code] == "C2" && payload[:good_practice_code] == "E"
+    end
+    expect(gap_event).to be_present
+    missing_codes = gap_event.fetch(:payload).fetch(:missing_pni_doses).map { |row| row[:immunobiological_code] }
+    expect(missing_codes).to include("15")
+  end
 end

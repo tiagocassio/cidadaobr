@@ -76,15 +76,38 @@ module Indicators
       if evaluation.meets_numerator
         results[:gaps_resolved] += resolve_gaps!(citizen: citizen, indicator_code: expression["indicator_code"], good_practice_code: good_practice_code)
       else
+        missing_doses = vaccination_calendar_missing_doses(context, expression)
         results[:gaps_opened] += open_gap!(
           citizen: citizen,
           indicator_code: expression["indicator_code"],
-          good_practice_code: good_practice_code
+          good_practice_code: good_practice_code,
+          missing_doses: missing_doses
         )
       end
     end
 
-    def open_gap!(citizen:, indicator_code:, good_practice_code:)
+    def vaccination_calendar_missing_doses(context, expression)
+      return [] unless expression.dig("numerator", "type") == "vaccination_calendar"
+
+      clause = expression.fetch("numerator")
+      within_months = clause.fetch("within_months", 24).to_i
+      age_group = clause.fetch("age_group", "child")
+      scope_max_age_days = (within_months * 30.4375).floor
+      cache_key = [ age_group, scope_max_age_days, context.reference_date ]
+      result = context.cache.dig(:pni_evaluate, cache_key)
+      result ||= Indicators::PniScheduleEvaluator.evaluate(
+        citizen: context.citizen,
+        reference_date: context.reference_date,
+        age_group: age_group,
+        scope_max_age_days: scope_max_age_days,
+        context: context
+      )
+      return [] unless result.evaluable
+
+      result.missing
+    end
+
+    def open_gap!(citizen:, indicator_code:, good_practice_code:, missing_doses: [])
       existing = CitizenIndicatorGap.find_by(
         citizen_id: citizen.id,
         indicator_code: indicator_code,
@@ -103,7 +126,7 @@ module Indicators
         due_on: @reference_date
       )
 
-      emit_gap_detected!(gap)
+      emit_gap_detected!(gap, missing_doses: missing_doses)
       1
     end
 
@@ -123,20 +146,23 @@ module Indicators
       resolved
     end
 
-    def emit_gap_detected!(gap)
+    def emit_gap_detected!(gap, missing_doses: [])
+      payload = {
+        gap_id: gap.id,
+        citizen_id: gap.citizen_id,
+        care_team_id: gap.care_team_id,
+        indicator_code: gap.indicator_code,
+        good_practice_code: gap.good_practice_code,
+        status: gap.status
+      }
+      payload[:missing_pni_doses] = missing_doses if missing_doses.present?
+
       RecordPlatformEvent.call(
         event_type: Cidadaobr::KafkaTopics::INDICATOR_GAP_DETECTED,
         aggregate_type: "CitizenIndicatorGap",
         aggregate_id: gap.id,
-        payload: {
-          gap_id: gap.id,
-          citizen_id: gap.citizen_id,
-          care_team_id: gap.care_team_id,
-          indicator_code: gap.indicator_code,
-          good_practice_code: gap.good_practice_code,
-          status: gap.status
-        },
-          care_team_id: gap.care_team_id
+        payload: payload,
+        care_team_id: gap.care_team_id
       )
     end
   end

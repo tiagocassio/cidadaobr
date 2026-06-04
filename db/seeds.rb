@@ -127,6 +127,7 @@ ActiveRecord::Base.transaction do
   Cidadaobr::TenantContext.with(municipality_tenant) do
     load Rails.root.join("db/seeds/ledi_catalog.rb")
     load Rails.root.join("db/seeds/indicator_catalog.rb")
+    load Rails.root.join("db/seeds/reference/pni_calendar.rb")
     load Rails.root.join("db/seeds/inventory_and_campaigns.rb")
   end
 end

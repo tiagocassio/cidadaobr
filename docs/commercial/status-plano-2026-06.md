@@ -15,7 +15,7 @@
 | **0–2** | Concluída | RLS, CQRS, Kafka, LEDI core, ops web |
 | **3** | **Concluída** | EPIC-03 `done`; EPIC-04 API TASK-04-01..05 + OpenAPI alinhado — **Flutter = Fase 8** |
 | **4** | Concluída | 17 indicadores, painel, gaps; repasse **ilustrativo** ([ADR-0003](../adr/0003-epic05-mvp-scope.md)) |
-| **4b** | **Concluída (gate)** | 52/53 BPs `done`; 1 `partial` (C2.E) — **não bloqueia** roadmap ([ADR-0005](../adr/0005-methodology-coverage.md)) |
+| **4b** | **Concluída (gate)** | 53/53 BPs `done` — C2.E PNI 2026 via `PniScheduleEvaluator` ([ADR-0009](../adr/0009-pni-calendar-reference.md)) |
 | **5** | **Concluída (gate técnico)** | EPIC-06/07; suite RSpec verde; E2E HTTP campanhas; **UI gestor** = aceite visual checklist prefeitura |
 | **12** | ~40% (paralelo) | Release referência; **bloqueia Fase 6** clínica |
 | **6–8** | Pendente | Flutter só Fase 8 |
@@ -45,11 +45,11 @@ flowchart LR
 
 | Item | Status | Bloqueia fase? |
 |------|--------|----------------|
-| 52 BPs na [matriz](../indicators/methodology-coverage-matrix.md) | `done` | — |
-| **C2.E** vacinação calendário | `partial` — proxy PNI em código | **Não** |
+| 53 BPs na [matriz](../indicators/methodology-coverage-matrix.md) | `done` | — |
+| **C2.E** vacinação calendário | **`done`** — Onda 2a PNI 2026 (`PniCalendarDefinitions` + evaluator) | — |
 | `mici_complete?` | Exige FCI LEDI válido no tenant | Operacional no piloto (dados), não código 4b |
 
-**C2.E hoje:** `lib/indicators/dsl_v1/vaccination_calendar.rb` — lista fixa BCG/HEPB/PENTA/MMR por idade; match por nome no FV. **Não** é calendário MS integral.
+**C2.E hoje:** `lib/indicators/pni_schedule_evaluator.rb` + `pni_schedule_entries` (calendário técnico MS 2026, criança 0–24m). Export auditável em `lib/reference/pni/2026/child.0_2.json`. Sincronização: `bin/rails reference:pni:sync`.
 
 **Caveat deploy:** scores de vínculo dependem de import FCI; FCD web ajuda MICDT/microárea, não substitui MICI.
 
@@ -71,7 +71,7 @@ O MS publica calendários **por faixa etária**, cada um com **Normal** (UI/cida
 
 | Onda | Escopo | Quando |
 |------|--------|--------|
-| **2a** | Criança 0–2a (C2.E) | Pós-gate F5; com EPIC-12 |
+| **2a** | Criança 0–2a (C2.E) | **Concluída (jun/2026)** — ver [ADR-0009](../adr/0009-pni-calendar-reference.md) |
 | **2b** | Criança 2–9a | Portal / campanhas |
 | **2c** | Gestante | C3 + agendamento |
 | **2d** | Adolescente → idoso | Cobertura municipal, EPIC-10 |
@@ -131,14 +131,12 @@ O MS publica calendários **por faixa etária**, cada um com **Normal** (UI/cida
 ### Prioridade 3 — EPIC-12 (paralelo; bloqueia Fase 6)
 
 - Fixtures CI + catálogo LEDI em release  
-- `reference_data_releases` + manifest completo  
-- Base para **Onda 2a PNI** (import anual versionado)
+- `reference_data_releases` + manifest completo (incl. `pni_calendars` — [ADR-0009](../adr/0009-pni-calendar-reference.md))
 
-### Prioridade 4 — Onda 2 PNI (pós-gate F5 + EPIC-12)
+### Prioridade 4 — Onda 2 PNI 2b–2d (pós-gate F5 + EPIC-12)
 
-- Schema + import calendário técnico criança 0–2a  
-- Substituir proxy `VaccinationCalendar`  
-- C2.E → `done` na matriz  
+- Faixas etárias restantes (2–9a, gestante, adolescente → idoso)  
+- API/UI gestão calendário (opcional pós-gate)  
 
 ### Depois
 

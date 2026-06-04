@@ -1173,6 +1173,8 @@ RSpec.describe Indicators::DslV1::Evaluator do
   end
 
   it "scores C2-E when FV vaccination record exists" do
+    sync_pni_calendar!(export_json: false, publish_release: false)
+
     citizen = with_tenant(membership) do
       create(
         :citizen,
@@ -1185,19 +1187,7 @@ RSpec.describe Indicators::DslV1::Evaluator do
     end
 
     with_tenant(membership) do
-      persist_clinical_record!(
-        citizen: citizen,
-        record_type: "FV",
-        payload_json: {
-          "vacinas" => [
-            { "imunobiologico" => "BCG" },
-            { "imunobiologico" => "HEPB" },
-            { "imunobiologico" => "PENTA" },
-            { "imunobiologico" => "VIP" }
-          ]
-        },
-        encounter_at: 1.month.ago
-      )
+      seed_pni_compliant_immunizations!(citizen: citizen)
     end
 
     result = with_tenant(membership) do
@@ -1211,7 +1201,35 @@ RSpec.describe Indicators::DslV1::Evaluator do
     expect(result.meets_numerator).to be(true)
   end
 
+  it "excludes C2-E citizens from denominator when PNI calendar is not loaded" do
+    sync_pni_calendar!(export_json: false, publish_release: false)
+    PniScheduleEntry.update_all(active: false)
+
+    citizen = with_tenant(membership) do
+      create(
+        :citizen,
+        municipality: municipality,
+        health_facility: facility,
+        care_team: team,
+        birth_date: Date.current - 18.months,
+        full_name: "Criança Sem Calendário"
+      )
+    end
+
+    result = with_tenant(membership) do
+      described_class.evaluate(
+        expression: expression_for("C2", rule_code: "E"),
+        context: Indicators::DslV1::Context.new(citizen: citizen, reference_date: Date.current)
+      )
+    end
+
+    expect(result.in_denominator).to be(false)
+    expect(result.meets_numerator).to be(false)
+  end
+
   it "scores C2-E when clinical_record.encounter_at is nil but linked encounter has date" do
+    sync_pni_calendar!(export_json: false, publish_release: false)
+
     citizen = with_tenant(membership) do
       create(
         :citizen,
@@ -1224,20 +1242,7 @@ RSpec.describe Indicators::DslV1::Evaluator do
     end
 
     with_tenant(membership) do
-      record = persist_clinical_record!(
-        citizen: citizen,
-        record_type: "FV",
-        payload_json: {
-          "vacinas" => [
-            { "imunobiologico" => "BCG" },
-            { "imunobiologico" => "HEPB" },
-            { "imunobiologico" => "PENTA" },
-            { "imunobiologico" => "VIP" }
-          ]
-        },
-        encounter_at: 1.month.ago
-      )
-      record.update_column(:encounter_at, nil)
+      seed_pni_compliant_immunizations!(citizen: citizen)
     end
 
     result = with_tenant(membership) do
@@ -1252,6 +1257,8 @@ RSpec.describe Indicators::DslV1::Evaluator do
   end
 
   it "does not score C2-E when no effective encounter date exists" do
+    sync_pni_calendar!(export_json: false, publish_release: false)
+
     citizen = with_tenant(membership) do
       create(
         :citizen,
@@ -1283,6 +1290,59 @@ RSpec.describe Indicators::DslV1::Evaluator do
 
     expect(result.in_denominator).to be(true)
     expect(result.meets_numerator).to be(false)
+  end
+
+  it "scores C2-E from nested LEDI FV vacinacoes when doses are applied on time" do
+    sync_pni_calendar!(export_json: false, publish_release: false)
+
+    citizen = with_tenant(membership) do
+      create(
+        :citizen,
+        municipality: municipality,
+        health_facility: facility,
+        care_team: team,
+        birth_date: Date.current - 18.months,
+        full_name: "Criança FV LEDI",
+        cpf: "52998224725"
+      )
+    end
+
+    with_tenant(membership) do
+      PniScheduleEntry.effective_on(Date.current).for_age_group("child").find_each do |entry|
+        next unless entry.min_age_days <= ((Date.current - citizen.birth_date).to_i)
+
+        applied_on = citizen.birth_date + [ entry.min_age_days + 1, entry.max_age_days ].min.days
+        persist_clinical_record!(
+          citizen: citizen,
+          record_type: "FV",
+          payload_json: {
+            "vacinacoes" => [
+              {
+                "cpfCidadao" => citizen.cpf,
+                "dataAtendimento" => applied_on.iso8601,
+                "vacinas" => [
+                  {
+                    "imunobiologico" => entry.immunobiological_code.to_i,
+                    "dose" => entry.dose_code
+                  }
+                ]
+              }
+            ]
+          },
+          encounter_at: applied_on
+        )
+      end
+    end
+
+    result = with_tenant(membership) do
+      described_class.evaluate(
+        expression: expression_for("C2", rule_code: "E"),
+        context: Indicators::DslV1::Context.new(citizen: citizen, reference_date: Date.current)
+      )
+    end
+
+    expect(result.in_denominator).to be(true)
+    expect(result.meets_numerator).to be(true)
   end
 
   it "uses newer linked encounter when clinical_record.encounter_at is stale" do
@@ -2370,7 +2430,7 @@ RSpec.describe Indicators::DslV1::Evaluator do
     ).to be(false)
   end
 
-  it "matches dTpa by immunobiologic code 57" do
+  it "matches dTpa by immunobiological code 57" do
     payload = { "vacinas" => [ { "codigoImunobiologico" => "57", "imunobiologico" => "Outro rótulo" } ] }
 
     expect(
@@ -2378,7 +2438,7 @@ RSpec.describe Indicators::DslV1::Evaluator do
         :vaccination_match?,
         payload,
         "dTpa",
-        immunobiologic_code: "57"
+        immunobiological_code: "57"
       )
     ).to be(true)
   end

@@ -57,9 +57,35 @@ module Reference
           domains: ReferenceDomain.order(:domain_key).pluck(:domain_key, :source).map do |key, source|
             { key: key, source: source, entries_count: ReferenceDomainEntry.where(domain_key: key).count }
           end,
+          pni_calendars: pni_calendar_manifest,
           ledi_catalog_fields: catalog_field_count,
           published_at: Time.current.iso8601
         }
+      end
+
+      def pni_calendar_manifest
+        return [] unless PniScheduleEntry.table_exists?
+
+        PniScheduleEntry
+          .active
+          .select(
+            :calendar_year,
+            :age_group,
+            :effective_from,
+            :effective_until,
+            "COUNT(*) AS entries_count"
+          )
+          .group(:calendar_year, :age_group, :effective_from, :effective_until)
+          .order(:calendar_year, :age_group, :effective_from)
+          .map do |row|
+            {
+              year: row.calendar_year,
+              age_group: row.age_group,
+              effective_from: row.effective_from.iso8601,
+              effective_until: row.effective_until&.iso8601,
+              entries_count: row.entries_count
+            }
+          end
       end
 
       def catalog_field_count

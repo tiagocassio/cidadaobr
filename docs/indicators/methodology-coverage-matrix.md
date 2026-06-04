@@ -3,7 +3,7 @@
 Documento vivo: compara requisitos oficiais com implementação no motor `dsl_v1`.
 Atualizado conforme definições em [`lib/indicators/methodology_pack_definitions.rb`](../../lib/indicators/methodology_pack_definitions.rb) (SOT), export em [`lib/indicators/methodology/3493-2024/packs/`](../../lib/indicators/methodology/3493-2024/packs/) e resolvers em [`lib/indicators/dsl_v1/resolvers/`](../../lib/indicators/dsl_v1/resolvers/).
 
-**Snapshot (2026-05-31, onda 2 ADR-0005):** **52 / 53 `done`** · **1 `partial`** (C2.E PNI proxy) · 0 `external` · 0 `todo`
+**Snapshot (2026-06-03, onda 2a PNI):** **53 / 53 `done`** · 0 `partial` · 0 `external` · 0 `todo`
 
 ## Fontes normativas
 
@@ -53,13 +53,13 @@ Atualizado conforme definições em [`lib/indicators/methodology_pack_definition
 | C2 | B | ≥9 consultas até 2 anos | 24m | FAI | done |
 | C2 | C | ≥9 registros peso+altura | 24m | FAI, FVD, FAC | done |
 | C2 | D | 2 visitas ACS (1ª ≤30d, 2ª ≤6m) | 6m | FVD | done — `acs_two_visit_schedule` |
-| C2 | E | Vacinação calendário | 24m | FV | `vaccination_calendar` (PNI proxy 0–24m) | partial |
+| C2 | E | Vacinação calendário | 24m | FV | `vaccination_calendar` + `PniScheduleEvaluator` (PNI 2026 0–24m) | done |
 | C3 | A | 1ª consulta pré-natal ≤12 sem | gestação | FAI | done — `first_prenatal_consult` (`active_only: false`; `atendimentos_individuais`) |
 | C3 | B | ≥7 consultas gestação | gestação | FAI | done — `gestational_evidence_count_gte` (`measure: consult`; 0–42 sem; exclui pós-parto) |
 | C3 | C | ≥7 aferições PA | gestação | FAI, FP, FVD | done — `gestational_evidence_count_gte` (`measure: blood_pressure`; 0–42 sem) |
 | C3 | D | ≥7 peso+altura | gestação | FAI, FVD, FP | done — `gestational_evidence_count_gte` (`measure: anthropometry`; 0–42 sem) |
 | C3 | E | ≥3 visitas ACS pós 1ª consulta | gestação | FVD | done — `gestational_evidence_count_gte` (`after_first_prenatal`; 1ª FAI sem teto 12 sem; `motivosVisita`) |
-| C3 | F | dTpa ≥20ª semana | gestação | FV | done — `gestational_vaccination_immunobiologic` (≥20ª sem; `active_only: false`) |
+| C3 | F | dTpa ≥20ª semana | gestação | FV | done — `gestational_vaccination_immunobiological` (≥20ª sem; `active_only: false`) |
 | C3 | G | Testes 1º trimestre | gestação | FAI | done — `gestational_clinical_predicate` (0–13 sem; `active_only: false`) |
 | C3 | H | Testes 3º trimestre | gestação | FAI | done — `gestational_clinical_predicate` (28–42 sem; `active_only: false`) |
 | C3 | I | ≥1 consulta puerpério | 42d pós-parto | FAI | done — `puerperium_consult` + `atendimentos_individuais` |
@@ -78,10 +78,10 @@ Atualizado conforme definições em [`lib/indicators/methodology_pack_definition
 | C6 | A | ≥1 consulta | 12m | FAI, FAD | done |
 | C6 | B | ≥2 registros peso+altura | 12m | FAI, FP, FVD | done |
 | C6 | C | ≥2 visitas domiciliares | 12m | FVD | done |
-| C6 | D | ≥1 dose influenza | 12m | FV | done — `vaccination_immunobiologic` |
+| C6 | D | ≥1 dose influenza | 12m | FV | done — `vaccination_immunobiological` |
 | C7 | A | Rastreamento colo do útero | 36m | FAI, FP | done |
 | C7 | B | Rastreamento mama | 50–69a | FAI, FP | `citizens_age_between` + procedimento mama | done |
-| C7 | C | Vacinação HPV | 9–14a | FV | `citizens_age_between` + `vaccination_immunobiologic` HPV | done |
+| C7 | C | Vacinação HPV | 9–14a | FV | `citizens_age_between` + `vaccination_immunobiological` HPV | done |
 
 Score C1–C7: `team_score_mode: good_practices_pct` quando há múltiplas BPs por indicador.
 

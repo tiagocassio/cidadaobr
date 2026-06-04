@@ -317,12 +317,12 @@ module Cidadaobr
         stock_balances
         stock_movements
         vaccination_campaigns
-        supply_provisionings
+        supply_provisioning
         campaign_targets
         home_visit_campaigns
-        home_visit_campaign_provisionings
+        home_visit_campaign_provisioning
         visit_routes
-        visit_route_provisionings
+        visit_route_provisioning
         team_supply_dispatches
       ].each do |table_name|
         next unless connection.table_exists?(table_name)

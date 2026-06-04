@@ -195,10 +195,10 @@ module Indicators
           "predicate" => DslV1::LediPayloadPaths::PRENATAL_VISIT_REASONS_PREDICATE
         },
         "F" => {
-          "type" => "gestational_vaccination_immunobiologic",
+          "type" => "gestational_vaccination_immunobiological",
           "record_types" => %w[FV],
-          "immunobiologic" => "dTpa",
-          "immunobiologic_code" => "57",
+          "immunobiological" => "dTpa",
+          "immunobiological_code" => "57",
           "min_gestational_weeks" => 20,
           "max_gestational_weeks" => 42,
           "lookback_months" => 15,
@@ -300,7 +300,7 @@ module Indicators
         bp("C6", "C", 15, "≥2 visitas domiciliares 12m", denom,
            { "type" => "visit_count_gte", "record_types" => %w[FVD], "within_months" => 12, "minimum_count" => 2, "minimum_interval_days" => 30 }),
         bp("C6", "D", 15, "≥1 dose influenza 12m", denom,
-           { "type" => "vaccination_immunobiologic", "record_types" => %w[FV], "within_months" => 12, "immunobiologic" => "influenza" })
+           { "type" => "vaccination_immunobiological", "record_types" => %w[FV], "within_months" => 12, "immunobiological" => "influenza" })
       ]
     end
 
@@ -321,7 +321,7 @@ module Indicators
              { "type" => "citizens_sex_female" },
              { "type" => "citizens_age_between", "min_age" => 9, "max_age" => 14 }
            ] },
-           { "type" => "vaccination_immunobiologic", "record_types" => %w[FV], "within_months" => 120, "immunobiologic" => "HPV" })
+           { "type" => "vaccination_immunobiological", "record_types" => %w[FV], "within_months" => 120, "immunobiological" => "HPV" })
       ]
     end
 
