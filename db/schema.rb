@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_06_02_150000) do
+ActiveRecord::Schema[8.1].define(version: 2026_05_27_120093) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
@@ -542,6 +542,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_02_150000) do
 
   create_table "pni_schedule_entries", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.boolean "active", default: true, null: false
+    t.string "age_group", null: false
     t.jsonb "aliases", default: [], null: false
     t.integer "calendar_year", null: false
     t.datetime "created_at", null: false
@@ -549,15 +550,14 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_02_150000) do
     t.string "dose_label"
     t.date "effective_from", null: false
     t.date "effective_until"
-    t.string "age_group", null: false
     t.string "immunobiological_code", null: false
     t.string "immunobiological_name", null: false
     t.integer "max_age_days", null: false
     t.integer "min_age_days", default: 0, null: false
     t.string "strategy"
     t.datetime "updated_at", null: false
+    t.index ["age_group", "active", "effective_from"], name: "idx_on_age_group_active_effective_from_5d72881f7e"
     t.index ["calendar_year", "age_group", "immunobiological_code", "dose_code"], name: "index_pni_schedule_entries_on_year_age_group_code_dose", unique: true
-    t.index ["age_group", "active", "effective_from"], name: "index_pni_schedule_entries_on_age_group_active_effective_from"
   end
 
   create_table "professional_availability_blocks", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -815,7 +815,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_02_150000) do
 
   create_table "vaccination_campaigns", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.string "campaign_kind", default: "human_immunization", null: false
-    t.uuid "consultation_room_id"
     t.datetime "created_at", null: false
     t.date "ends_on", null: false
     t.uuid "health_facility_id", null: false
@@ -828,7 +827,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_02_150000) do
     t.jsonb "target_audience_definition", default: {}, null: false
     t.integer "target_doses", default: 0, null: false
     t.datetime "updated_at", null: false
-    t.index ["consultation_room_id"], name: "index_vaccination_campaigns_on_consultation_room_id"
     t.index ["municipality_id", "health_facility_id", "status"], name: "index_vaccination_campaigns_on_municipality_facility_status"
   end
 
@@ -911,7 +909,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_02_150000) do
   add_foreign_key "user_roles", "users"
   add_foreign_key "user_team_assignments", "care_teams"
   add_foreign_key "user_team_assignments", "users"
-  add_foreign_key "vaccination_campaigns", "consultation_rooms"
   add_foreign_key "vaccination_campaigns", "health_facilities"
   add_foreign_key "vaccination_campaigns", "immunobiological_products"
   add_foreign_key "visit_route_provisioning", "visit_routes"
