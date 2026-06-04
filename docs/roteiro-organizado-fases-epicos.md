@@ -25,7 +25,7 @@
 | **2** | Ops + Web base | `done` | EPIC-02 | UBS, equipes, mapa, LEDI status |
 | **3** | Scheduling + Citizen **API** | `done` | EPIC-03, EPIC-04 (API) | Agenda web + `/api/v1/citizen` MVP — **não inclui Flutter** |
 | **4** | Indicators MVP | `done` | EPIC-05 | Painel X/17, gaps, repasse ilustrativo |
-| **4b** | Methodology | `done` | EPIC-05b | Matriz 52/53 BPs; C2.E `partial` não bloqueia |
+| **4b** | Methodology | `done` | EPIC-05b | Matriz 53/53 BPs; C2.E PNI 2026 (`done`) |
 | **5** | Campaigns (web) | `done` | EPIC-06, EPIC-07 | Gate técnico (suite RSpec verde); UI gestor = checklist prefeitura |
 | **T** | Referência MS | `partial` | **EPIC-12** | Release versionada + fixtures CI |
 | **6** | LEDI/PEC + Plus API | `pending` | EPIC-09, EPIC-10 (API) | Walk-in web, PEC; **requer EPIC-12** |
@@ -161,7 +161,7 @@ flowchart TB
 
 | Story | Task | Status |
 |-------|------|--------|
-| STORY-05-03 Cobertura 3493 | TASK-05-08 Packs + matriz 52/53 | `done` (C2.E `partial`) |
+| STORY-05-03 Cobertura 3493 | TASK-05-08 Packs + matriz 53/53 | `done` (C2.E PNI 2026 — [ADR-0009](adr/0009-pni-calendar-reference.md)) |
 
 ### Fase 5 — EPIC-06 + EPIC-07 Campanhas web `done`
 
@@ -265,10 +265,12 @@ flowchart TB
 
 1. **EPIC-12** — release versionada + fixtures CI (desbloqueia Fase 6).
 2. **Fase 6** — EPIC-09 + EPIC-10 API.
-3. **Onda 2a PNI** — pós EPIC-12 (C2.E).
-4. **Piloto prefeitura** — checklist UI F5 opcional antes de go-live.
+3. **Piloto prefeitura** — checklist UI F5 opcional antes de go-live.
+4. **PNI Ondas 2b–2d** — faixas etárias restantes (pós EPIC-12).
 5. **Fase 7** — EPIC-11.
 6. **Fase 8** — mobile-shared → Citizen → Field.
+
+**Concluído (jun/2026):** Onda 2a PNI — criança 0–24m (C2.E); ver [ADR-0009](adr/0009-pni-calendar-reference.md).
 
 ---
 

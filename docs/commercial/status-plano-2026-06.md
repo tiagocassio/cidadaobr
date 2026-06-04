@@ -4,7 +4,7 @@
 **Roteiro organizado (fases × épicos × tasks):** [roteiro-organizado-fases-epicos.md](../roteiro-organizado-fases-epicos.md)  
 **EPIC-00 — volta aos trilhos:** [epic-00-remediation.md](../epic-00-remediation.md) + [ADR-0006](../adr/0006-platform-write-contract.md)
 **Decisão PO:** [roadmap-decision-fase5.md](roadmap-decision-fase5.md) — Opção A (Fase 5 antes de mobile/Fase 6)  
-**Última revisão:** jun/2026 — HEAD `58915e5` (Fases 3/5 gate técnico; OpenAPI citizen).
+**Última revisão:** jun/2026 — HEAD `7f85332` (Onda 2a PNI/C2.E; Fases 0–5 gate técnico fechado).
 
 ---
 
@@ -22,19 +22,16 @@
 
 ```mermaid
 flowchart LR
-  done[Fases0_a_4b]
-  f5[Fase5]
-  ui[Gate_UI]
+  done[Fases0_a_5_gate]
+  pni2a[Onda2a_done]
+  epic12[EPIC12_partial]
   f6[Fase6]
-  pni[Onda2_PNI]
-  epic12[EPIC12]
+  pni2b[PNI_2b_2d]
 
-  done --> f5
+  done --> epic12
   epic12 --> f6
-  f5 -.-> epic12
-  f5 -.-> ui
-  done -.-> pni
-  epic12 --> pni
+  done --> pni2a
+  epic12 --> pni2b
 ```
 
 ---
@@ -49,7 +46,7 @@ flowchart LR
 | **C2.E** vacinação calendário | **`done`** — Onda 2a PNI 2026 (`PniCalendarDefinitions` + evaluator) | — |
 | `mici_complete?` | Exige FCI LEDI válido no tenant | Operacional no piloto (dados), não código 4b |
 
-**C2.E hoje:** `lib/indicators/pni_schedule_evaluator.rb` + `pni_schedule_entries` (calendário técnico MS 2026, criança 0–24m). Export auditável em `lib/reference/pni/2026/child.0_2.json`. Sincronização: `bin/rails reference:pni:sync`.
+**C2.E hoje:** `lib/indicators/pni_schedule_evaluator.rb` + `pni_schedule_entries` (calendário técnico MS 2026, criança 0–24m). Export auditável: `bin/rails reference:pni:sync` gera JSON em `lib/reference/pni/2026/` — **não versionado** (`.gitignore`); SOT Ruby em `lib/reference/pni_calendar_definitions.rb`.
 
 **Caveat deploy:** scores de vínculo dependem de import FCI; FCD web ajuda MICDT/microárea, não substitui MICI.
 
@@ -150,5 +147,5 @@ O MS publica calendários **por faixa etária**, cada um com **Normal** (UI/cida
 | Documento | Uso |
 |-----------|-----|
 | [piloto-execucao-dev-2026-05-28.md](piloto-execucao-dev-2026-05-28.md) | Comandos specs + gate F5 |
-| [methodology-coverage-matrix.md](../indicators/methodology-coverage-matrix.md) | BPs 52/53 + C2.E |
+| [methodology-coverage-matrix.md](../indicators/methodology-coverage-matrix.md) | BPs 53/53 + C2.E |
 | [cidadaobr-field-mvp-api.md](cidadaobr-field-mvp-api.md) | API Field (Fase 8 prep) |

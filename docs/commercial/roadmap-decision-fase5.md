@@ -1,8 +1,8 @@
 # Decisão de roadmap — pós-piloto Fase 4
 
 **Status:** Opção A — Fase 5 (EPIC-06/07) **gate técnico concluído** (jun/2026); UI gestor = checklist prefeitura  
-**Status consolidado:** [status-plano-2026-06.md](status-plano-2026-06.md)  
-**Plano mestre:** [padrão_ledi_e-sus_4f004208.plan.md](../padrão_ledi_e-sus_4f004208.plan.md) — ver `git log -1` para SHA  
+**Estado atual (jun/2026):** [status-plano-2026-06.md](status-plano-2026-06.md) — entrada única PO/comercial  
+**Plano mestre:** [padrão_ledi_e-sus_4f004208.plan.md](../padrão_ledi_e-sus_4f004208.plan.md) — HEAD `7f85332`  
 **Gate técnico Fase 4/4b:** concluído — [ADR-0003](../adr/0003-epic05-mvp-scope.md), [ADR-0005](../adr/0005-methodology-coverage.md)
 
 ---
@@ -13,7 +13,7 @@
 |-------|--------|
 | Motor 17 indicadores (B1–M2) | Entregue (MVP + packs EPIC-05b) |
 | Painel gestor + gaps + ranking | Entregue |
-| Cobertura normativa BPs | **52/53 `done`** — [matriz](../indicators/methodology-coverage-matrix.md); 1 `partial` (C2.E) |
+| Cobertura normativa BPs | **53/53 `done`** — [matriz](../indicators/methodology-coverage-matrix.md); C2.E PNI Onda 2a — [ADR-0009](../adr/0009-pni-calendar-reference.md) |
 | V_SAT (satisfação) | Entregue — `TeamSatisfactionSurveyScore` + `ImportSatisfactionSurvey` |
 | Repasse em R$ | **Ilustrativo** (TASK-05-07) |
 | `phase-4-indicators` | completed |

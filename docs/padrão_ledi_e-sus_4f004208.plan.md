@@ -1,6 +1,6 @@
 ---
 name: Padrão LEDI e-SUS
-overview: "CidadãoBR Saúde — APS municipal LEDI + 17 indicadores. Fases 0–5 gate técnico concluídas (matriz 52/53 BPs); foco EPIC-12 → Fase 6. Flutter só Fase 8. RLS + Kafka + ES/CQRS. Código en-US; UI pt-BR."
+overview: "CidadãoBR Saúde — APS municipal LEDI + 17 indicadores. Fases 0–5 + 4b gate concluídas (53/53 BPs; Onda 2a PNI/C2.E em 7f85332). Foco EPIC-12 → Fase 6. Flutter só Fase 8. RLS + Kafka + ES/CQRS. Código en-US; UI pt-BR."
 todos:
   - id: fix-ledi-version
     content: Definir versão LEDI alvo e obter Thrift/XSD oficiais
@@ -105,7 +105,7 @@ todos:
     content: "Fase 4: EPIC-05 MVP (TASK-05-01..07) — painel, gaps, DSL piloto; repasse ilustrativo (ADR-0003)"
     status: completed
   - id: phase-4b-methodology
-    content: "Fase 4b: EPIC-05b (TASK-05-08) — packs Portaria 3493, DSL v1, matriz 52/53 done (ADR-0005); 1 partial C2.E"
+    content: "Fase 4b: EPIC-05b (TASK-05-08) — packs Portaria 3493, DSL v1, matriz 53/53; C2.E PNI evaluator (ADR-0009)"
     status: completed
   - id: phase-5-field-campaigns
     content: "Fase 5: EPIC-06 + EPIC-07 — gate técnico done; F5-1..F6 UI = checklist prefeitura (não bloqueia completed)"
@@ -534,11 +534,11 @@ Ponto de partida para o time. Detalhe tarefa a tarefa no plano de execução do 
 
 ---
 
-## Status do repositório (2026-06-01)
+## Status do repositório (2026-06-03)
 
 Atualizar ao fechar cada sprint do [roteiro imediato](#roteiro-de-execução-imediato-sprints-17) ou ao marcar o [gate Fase 5](#gate-fase-5-checklist).
 
-**Commit de referência:** `main` @ `25bd047` — Fase 5: wizard vacina, mapa rotas, import V_SAT, romaneio web.
+**Commit de referência:** `main` @ `7f85332` — Onda 2a PNI (C2.E): `PniScheduleEvaluator`, `reference:pni:*`, split migrations; Fases 0–5 gate técnico fechado.
 
 **Decisão PO:** [Opção A — Fase 5](docs/commercial/roadmap-decision-fase5.md) (EPIC-06/07).
 
@@ -561,9 +561,9 @@ Sprint 5 (bootstrap repos Flutter) **adiado para Fase 8**. “Celular” em EPIC
 | S7b–S7c | Concluído | EPIC-05b — packs 3493, gate ADR-0005 |
 | S8 | **Parcial** | EPIC-12 — schema grupo M, `UfscReferenceImportJob`, `LediCatalogSyncJob`, fixtures CI pendentes |
 | S9 | **Parcial** | EPIC-12 — `SigtapImportJob`, `recurring.yml`, API `/api/v1/reference/*`; gate release versionada pendente |
-| **S10+** | **Em curso** | Gate Fase 5 (E2E campanhas web) — ver [roteiro S10+](#roteiro-de-continuação-s10) |
+| **S10+** | **Gate técnico feito** | Fase 5 E2E/specs ok; próximo EPIC-12 → Fase 6 — ver [roteiro S10+](#roteiro-de-continuação-s10) |
 
-**Pré-requisitos Fase 5 (metodologia):** Fases 4/4b concluídas; repasse ilustrativo — [ADR-0003](docs/adr/0003-epic05-mvp-scope.md). Matriz **52/53 `done`** — [ADR-0005](docs/adr/0005-methodology-coverage.md) + [matriz](docs/indicators/methodology-coverage-matrix.md).
+**Pré-requisitos Fase 5 (metodologia):** Fases 4/4b concluídas; repasse ilustrativo — [ADR-0003](docs/adr/0003-epic05-mvp-scope.md). Matriz **53/53 `done`** — [ADR-0005](docs/adr/0005-methodology-coverage.md) + C2.E PNI — [ADR-0009](docs/adr/0009-pni-calendar-reference.md) + [matriz](docs/indicators/methodology-coverage-matrix.md).
 
 **Kafka dev:** `bin/kafka_create_topics` (agenda, campanhas/rotas `campaign.targets.built`, `home_visit.route.*`, `visit_route.supplies.*`, etc.).
 
@@ -581,9 +581,9 @@ Sprint 5 (bootstrap repos Flutter) **adiado para Fase 8**. “Celular” em EPIC
 | EPIC-03 | 3 | Concluído | Agenda web + no-show |
 | EPIC-04 | **3** API / **8** App | Parcial (API) | F3: TASK-04-01..05; F8: TASK-04-06/07 Flutter |
 | EPIC-05 | 4 | Concluído (MVP) | Painel, gaps, DSL; repasse ilustrativo |
-| EPIC-05b | 4b | Concluído | Matriz **52/53 `done`**; C2.E `partial` |
-| EPIC-06 | 5 | **~95%** | Wizard vacina; **piloto UI** pendente |
-| EPIC-07 | 5 | **~90%** | E2E ok; piloto UI + polish TASK-07-03/06/09 |
+| EPIC-05b | 4b | Concluído | Matriz **53/53 `done`**; C2.E PNI 2026 (`done`, Onda 2a) |
+| EPIC-06 | 5 | Concluído (gate) | Wizard vacina; piloto UI = checklist prefeitura |
+| EPIC-07 | 5 | Concluído (gate) | E2E ok; polish TASK-07-03/06/09 opcional |
 | EPIC-12 | T | **~40%** | Jobs + `/reference/*`; release versionada pendente; **bloqueia F6** |
 | EPIC-09 | 6 / 8 UI | Pendente | PEC, walk-in; Field UI na F8 |
 | EPIC-10 | 6 API / 8 UI | Pendente | panic/tele/meds API; telas Flutter F8 |
@@ -596,7 +596,7 @@ Sprint 5 (bootstrap repos Flutter) **adiado para Fase 8**. “Celular” em EPIC
 |------|--------|
 | TASK-05-01..06 | Done (MVP) |
 | TASK-05-07 Projeção repasse | Partial — ilustrativo + disclaimer |
-| TASK-05-08 Cobertura BPs | **Done** — 52/53 `done`; onda 2 residual: C2.E PNI proxy |
+| TASK-05-08 Cobertura BPs | **Done** — 53/53 `done`; C2.E via [ADR-0009](docs/adr/0009-pni-calendar-reference.md) + `reference:pni:*` |
 | TASK-06-01..02 | Done (MVP) |
 | TASK-06-03 WEB-STOCK-01 | Partial — CRUD lotes/produtos |
 | TASK-06-04 WEB-CAMP-01 wizard | Partial — wizard 4 passos; validação E2E pendente |
@@ -613,30 +613,32 @@ Sprint 5 (bootstrap repos Flutter) **adiado para Fase 8**. “Celular” em EPIC
 
 ## Roteiro de continuação (S10+)
 
-**Onde estamos (2026-06-02):** Fases **0–4b** concluídas (C2.E `partial` — proxy PNI; **não bloqueia**). **Fase 5** — EPIC-06/07 no código; specs E2E ok; **EPIC-00 Onda B** (eventos campanha/rota + `CommandBus` gestão domiciliar) **concluída**; **gate UI piloto pendente**. **EPIC-12** ~40%; bloqueia Fase 6.
+**Onde estamos (2026-06-03):** Fases **0–5** + **4b** gate fechados (`7f85332` — Onda 2a PNI/C2.E `done`). **EPIC-00** ondas A–J concluídas. **EPIC-12** ~40% (release versionada + fixtures CI) — **bloqueia Fase 6**. Piloto UI F5 = checklist prefeitura (opcional).
 
-**Objetivo imediato:** fechar **Gate Fase 5 (UI)**; paralelo **EPIC-12** e **Onda C** (cadastro web → commands); onda 2 PNI após gate F5.
+**Objetivo imediato:** **EPIC-12** gate → **Fase 6** (EPIC-09/10 API); PNI Ondas 2b–2d pós EPIC-12; piloto UI F5 opcional.
 
 ### Visão por fases
 
 ```mermaid
 flowchart LR
-  now[Fase5_gate_E2E]
+  done[Fases0_a_5_gate]
   ref[EPIC12_parcial]
   f6[Fase6_EPIC09_10]
+  pni[PNI_2b_2d]
   ai[Fase7_EPIC11]
   mob[Fase8_Flutter]
 
-  now --> f6
+  done --> ref
   ref --> f6
+  done --> pni
+  ref --> pni
   f6 --> ai
   ai --> mob
-  now -.->|paralelo| ref
 ```
 
 | Fase | Épicos | Gate de saída |
 |------|--------|---------------|
-| **5 (atual)** | EPIC-06, EPIC-07 | Gestor publica campanha domiciliar → rotas → reserva kit → romaneio; piloto web checklist |
+| **5** | EPIC-06, EPIC-07 | Gate técnico **feito**; piloto web checklist (opcional) |
 | **1.5 transversal** | EPIC-12 | Release `reference_data_releases` + API `/reference/*` + jobs mensais |
 | **6** | EPIC-09, EPIC-10 (API) | Walk-in web, PEC produção, adapters restantes; **requer EPIC-12** |
 | **7** | EPIC-11 | IA + conciliação MS |
@@ -644,7 +646,7 @@ flowchart LR
 
 ### Trilha principal — fechar Fase 5 (prioridade)
 
-**Já no código (`25bd047`):** TASK-06-04 wizard vacina; TASK-07-05/07 commands; TASK-07-07 romaneio; TASK-07-08 mapa; TASK-07-06 revisão provisionamento (MVP).
+**Já no código (`7f85332`):** Fase 5 campanhas/rotas; Onda 2a PNI (`PniScheduleEvaluator`, `pni_schedule_entries`, `reference:pni:sync`).
 
 | Ordem | Sprint | Task | Status | Entrega restante |
 |-------|--------|------|--------|------------------|
@@ -695,7 +697,8 @@ flowchart LR
 
 | Item | Épico | Nota |
 |------|-------|------|
-| C2.E PNI completo + release anual | EPIC-05b + EPIC-12 | Único BP `partial`; import versionado MS — [status-plano-2026-06.md](docs/commercial/status-plano-2026-06.md) §3 |
+| C2.E PNI 0–24m (Onda 2a) | EPIC-05b | **`done`** — [ADR-0009](docs/adr/0009-pni-calendar-reference.md); faixas 2b–2d pós EPIC-12 |
+| PNI release anual + fixtures CI | EPIC-12 | Gate release versionada — [status-plano-2026-06.md](docs/commercial/status-plano-2026-06.md) §3 |
 | TASK-05-07 repasse | EPIC-05 | Coeficientes oficiais quando Portaria fechar |
 | TASK-07-04 TSP | EPIC-07 | Substituir nearest-neighbor — não bloqueia gate se piloto aceitar rota MVP |
 | ADR-0004 | EPIC-12 | Fontes UFSC + DATASUS |
@@ -713,10 +716,10 @@ flowchart LR
 
 Ver **[status-plano-2026-06.md](docs/commercial/status-plano-2026-06.md)** (documento único jun/2026).
 
-1. Revalidar specs gate pós-`6949e68`
-2. **Piloto UI** Fase 5 (4 fluxos no checklist prefeitura)
-3. Marcar EPIC-06/07 + `phase-5` completed
-4. Paralelo EPIC-12; depois **Onda 2a PNI** (calendário versionado, C2.E `done`)
+1. **EPIC-12** — release versionada + fixtures CI (desbloqueia Fase 6)
+2. **Fase 6** — EPIC-09 + EPIC-10 API
+3. **Piloto UI** Fase 5 (opcional) — checklist prefeitura
+4. **PNI Ondas 2b–2d** — faixas etárias restantes (pós EPIC-12)
 
 ---
 
@@ -3222,7 +3225,7 @@ APIs Field (`TASK-08-01`, `TASK-08-02`, `TASK-08-07`) podem ser entregues **ante
 - [x] **EPIC-03** CidadãoBR Saúde Gestão — Agendamentos UBS  
 - [~] **EPIC-04** CidadãoBR Saúde — Portal cidadão (**Fase 3:** API TASK-04-01..05 ok; **Fase 8:** app Flutter TASK-04-06/07)
 - [x] **EPIC-05** CidadãoBR Saúde Gestão — Indicadores 3.493 MVP (Fase 4; repasse ilustrativo)
-- [x] **EPIC-05b** Cobertura Notas Metodológicas 3493 (52/53 BPs `done`; [matriz](docs/indicators/methodology-coverage-matrix.md))
+- [x] **EPIC-05b** Cobertura Notas Metodológicas 3493 (53/53 BPs `done`; C2.E PNI — [ADR-0009](docs/adr/0009-pni-calendar-reference.md); [matriz](docs/indicators/methodology-coverage-matrix.md))
 - [~] **EPIC-06** CidadãoBR Saúde Gestão — Estoque e Campanhas (~95% — specs gate ok; **piloto UI** pendente)
 - [~] **EPIC-07** CidadãoBR Saúde Gestão — Rotas e Provisionamento (~90% — specs gate ok; piloto UI + TASK-07-09 polish pendente)
 - [ ] **EPIC-08** CidadãoBR Saúde Campo — App Profissional (**Fase 8**; APIs Field no monólito)  
