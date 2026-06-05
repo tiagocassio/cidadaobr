@@ -13,6 +13,14 @@ RSpec.describe Reference::PublishRelease do
     expect(release).to be_persisted
     expect(release.manifest_json["domains"]).not_to be_empty
     expect(release.checksum).to be_present
+    expect(release.manifest_json["published_at"]).to be_present
+  end
+
+  it "checksum excludes published_at from manifest_json" do
+    release = described_class.call(ledi_version: "6.3.5", sigtap_competence: "202610")
+    body_without_published_at = release.manifest_json.except("published_at")
+
+    expect(release.checksum).to eq(Digest::SHA256.hexdigest(body_without_published_at.to_json))
   end
 
   it "returns the existing release when checksum is unchanged" do

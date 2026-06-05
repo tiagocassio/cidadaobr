@@ -1,0 +1,17 @@
+<section>
+  <h2 class="mb-2 text-2xl font-bold"><%= @case.citizen.full_name %></h2>
+  <p class="text-sm text-slate-600"><%= @case.status %> — CIAP <%= @case.ciap2_code %> / CID <%= @case.cid10_code %></p>
+  <p class="mt-4 whitespace-pre-wrap text-sm"><%= @case.clinical_summary %></p>
+
+  <h3 class="mt-8 font-semibold"><%= t("cidadaobr.shared_care.evolutions") %></h3>
+  <ul class="mt-2 space-y-2 text-sm">
+    <% @evolutions.each do |evolution| %>
+      <li class="rounded border border-slate-200 p-3"><%= evolution.evolution_note %></li>
+    <% end %>
+  </ul>
+
+  <%= form_with url: record_evolution_web_shared_care_case_path(@case), method: :post, class: "mt-6 space-y-3" do |form| %>
+    <%= form.text_area :evolution_note, rows: 3, required: true, class: "w-full rounded border border-slate-300 px-3 py-2" %>
+    <%= form.submit t("cidadaobr.shared_care.record_evolution"), class: "rounded bg-slate-800 px-4 py-2 text-sm font-semibold text-white" %>
+  <% end %>
+</section>

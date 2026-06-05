@@ -50,4 +50,11 @@ RSpec.describe "Reference API", type: :request do
     expect(response).to have_http_status(:ok)
     expect(response.parsed_body).to include("ledi_version", "fields")
   end
+
+  it "searches domain entries" do
+    get "/api/v1/reference/domains/ciap2/search", params: { q: "Diabetes" }, headers: headers
+
+    expect(response).to have_http_status(:ok)
+    expect(response.parsed_body["entries"].map { |e| e["code"] }).to include("T90")
+  end
 end

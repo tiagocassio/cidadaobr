@@ -1,0 +1,22 @@
+<section>
+  <h2 class="mb-6 text-2xl font-bold"><%= t("cidadaobr.shared_care.index_title") %></h2>
+  <%= link_to t("cidadaobr.shared_care.new_link"), new_web_shared_care_case_path, class: "mb-4 inline-block rounded bg-slate-800 px-4 py-2 text-sm font-semibold text-white" %>
+  <table class="mt-4 w-full text-sm">
+    <thead>
+      <tr class="text-left">
+        <th class="py-2"><%= t("cidadaobr.shared_care.citizen") %></th>
+        <th><%= t("cidadaobr.shared_care.status") %></th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @cases.each do |care_case| %>
+        <tr class="border-t">
+          <td class="py-2"><%= care_case.citizen.full_name %></td>
+          <td><%= care_case.status %></td>
+          <td><%= link_to t("cidadaobr.shared_care.show"), web_shared_care_case_path(care_case) %></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+</section>

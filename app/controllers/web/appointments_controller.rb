@@ -4,8 +4,8 @@ module Web
   class AppointmentsController < BaseController
     before_action :require_facility_or_municipality!
     before_action :require_facility_or_municipality_write!, only: %i[new create reschedule walk_in]
-    before_action :require_reception_operations!, only: %i[check_in complete cancel no_show reschedule walk_in]
-    before_action :ensure_health_facility_selected!, only: %i[index reception utilization new create walk_in]
+    before_action :require_reception_operations!, only: %i[check_in complete cancel no_show reschedule walk_in walk_in_report]
+    before_action :ensure_health_facility_selected!, only: %i[index reception utilization new create walk_in walk_in_report]
     before_action :set_appointment, only: %i[show check_in complete cancel no_show reschedule]
     before_action :set_form_collections, only: %i[new create walk_in]
 
@@ -89,7 +89,14 @@ module Web
 
     def walk_in
       @appointment = Appointment.new
+      @reference_release = Reference::ActiveRelease.current
       return if request.get?
+
+      unless Reference::ActiveRelease.loaded?
+        flash.now[:alert] = t("cidadaobr.appointments.flash.reference_release_missing")
+        render :walk_in, status: :unprocessable_entity
+        return
+      end
 
       attrs = walk_in_params
       room = scoped_consultation_rooms.find(attrs.fetch(:consultation_room_id))
@@ -112,6 +119,16 @@ module Web
       flash.now[:alert] = t("cidadaobr.appointments.flash.invalid_booking_data")
       @appointment = Appointment.new(walk_in_params)
       render :walk_in, status: :unprocessable_entity
+    end
+
+    def walk_in_report
+      @date = params[:date].present? ? Date.parse(params[:date]) : Date.current
+      @report = Scheduling::WalkInDailyReport.new(
+        health_facility_id: selected_facility_id,
+        date: @date
+      ).call
+    rescue Date::Error
+      redirect_to walk_in_report_web_appointments_path(facility_scope_params), alert: t("cidadaobr.appointments.flash.invalid_date")
     end
 
     def check_in

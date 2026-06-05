@@ -1,4 +1,4 @@
-# EPIC-12 vendor fixtures — mirror UFSC reference domains for CI and offline import.
+# Vendor fixtures — mirror UFSC reference domains for CI and offline import.
 # Production feeds replace this path when wired; DomainSeedImporter prefers vendor over db/seeds.
 # Set REFERENCE_USE_DB_SEED=1 to force db/seeds/reference/domains.yml during local development.
 entries:
@@ -11,6 +11,16 @@ entries:
     domain_label: CIAP-2
     code: T90
     label: Diabetes insulino-dependente
+    active: true
+  - domain_key: ciap2
+    domain_label: CIAP-2
+    code: K86
+    label: Hipertensão não complicada
+    active: true
+  - domain_key: ciap2
+    domain_label: CIAP-2
+    code: P03
+    label: Sensação de ansiedade/nervosismo/tensão
     active: true
   - domain_key: cid10
     domain_label: CID-10

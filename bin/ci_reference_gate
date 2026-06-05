@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+cd "$(dirname "$0")/.."
+
+echo "== Reference data gate =="
+bundle exec rspec spec/lib/reference/gate_spec.rb spec/requests/api/v1/reference_spec.rb spec/lib/reference/publish_release_spec.rb
+
+echo "OK: reference gate passed"

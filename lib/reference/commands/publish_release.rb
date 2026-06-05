@@ -3,27 +3,28 @@
 module Reference
   module Commands
     class PublishRelease < ApplicationCommand
-      def initialize(ledi_version: ENV.fetch("LEDI_VERSION", "6.3.5"), sigtap_competence: nil)
+      def initialize(ledi_version: ENV.fetch("LEDI_VERSION", Rails.application.config.ledi.fetch(:version)), sigtap_competence: nil)
         @ledi_version = ledi_version
         @sigtap_competence = sigtap_competence
       end
 
       def call
         write_transaction do
-          manifest = build_manifest
-          checksum = Digest::SHA256.hexdigest(manifest.to_json)
+          manifest_body = build_manifest_body
+          checksum = Digest::SHA256.hexdigest(manifest_body.to_json)
           release_key = [ @ledi_version, @sigtap_competence, checksum.first(12) ].compact.join(":")
 
           existing = ReferenceDataRelease.find_by(checksum: checksum)
           return existing if existing
 
+          published_at = Time.current
           release = ReferenceDataRelease.create!(
             release_key: release_key,
             ledi_version: @ledi_version,
             sigtap_competence: @sigtap_competence,
             checksum: checksum,
-            published_at: Time.current,
-            manifest_json: manifest
+            published_at: published_at,
+            manifest_json: manifest_body.merge(published_at: published_at.iso8601)
           )
 
           emit_release_published!(release)
@@ -50,7 +51,7 @@ module Reference
         )
       end
 
-      def build_manifest
+      def build_manifest_body
         {
           ledi_version: @ledi_version,
           sigtap_competence: @sigtap_competence,
@@ -58,8 +59,7 @@ module Reference
             { key: key, source: source, entries_count: ReferenceDomainEntry.where(domain_key: key).count }
           end,
           pni_calendars: pni_calendar_manifest,
-          ledi_catalog_fields: catalog_field_count,
-          published_at: Time.current.iso8601
+          ledi_catalog_fields: catalog_field_count
         }
       end
 

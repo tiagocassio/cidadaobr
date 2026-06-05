@@ -22,7 +22,7 @@ class CitizenIndicatorGap < ApplicationRecord
     errors.add(:indicator_code, :invalid)
   end
 
-  # Whitelist only — cross-check that good_practice_code belongs to indicator_code waits for multi-BP seed (EPIC-05).
+  # Whitelist only — cross-check that good_practice_code belongs to indicator_code waits for multi-BP seed.
   def good_practice_code_must_be_portaria
     return if good_practice_code.blank?
     return if Indicators::Portaria3493.known_good_practice_code?(good_practice_code)

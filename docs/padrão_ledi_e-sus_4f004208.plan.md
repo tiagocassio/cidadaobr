@@ -1,16 +1,16 @@
 ---
 name: Padrão LEDI e-SUS
-overview: "CidadãoBR Saúde — APS municipal LEDI + 17 indicadores. Fases 0–5 + 4b gate concluídas (53/53 BPs; Onda 2a PNI/C2.E em 7f85332). Foco EPIC-12 → Fase 6. Flutter só Fase 8. RLS + Kafka + ES/CQRS. Código en-US; UI pt-BR."
+overview: "CidadãoBR Saúde — APS municipal LEDI + 17 indicadores. Fases 0–5 + 4b + EPIC-12 gate concluídos; Fase 6 MVP em curso. Flutter Fase 8. RLS + Kafka + ES/CQRS."
 todos:
   - id: fix-ledi-version
     content: Definir versão LEDI alvo e obter Thrift/XSD oficiais
     status: completed
   - id: catalog-fields
-    content: "Catálogo LEDI: parser HTML/XSD 13 fichas → ledi_field_catalog + ledi_validation_rules (MVP seed manual; conclusão via EPIC-12 TASK-12-03)"
-    status: partial
+    content: "Catálogo LEDI: seed estável + gate EPIC-12; stretch parser UFSC HTML/XSD"
+    status: completed
   - id: reference-data-sync
-    content: "EPIC-12: sync UFSC + SIGTAP → grupo M + jobs recurring + API /reference/* (schema/jobs/API em main; gate release + fixtures CI pendente)"
-    status: partial
+    content: "EPIC-12 done: CommandBus imports, Reference::Gate, CI bin/ci_reference_gate, API/OpenAPI /reference/*"
+    status: completed
   - id: schema-transport-ficha
     content: "Migrations en-US: ledi_batches, transport_records, clinical_records, clinical_record_items"
     status: completed
@@ -584,9 +584,9 @@ Sprint 5 (bootstrap repos Flutter) **adiado para Fase 8**. “Celular” em EPIC
 | EPIC-05b | 4b | Concluído | Matriz **53/53 `done`**; C2.E PNI 2026 (`done`, Onda 2a) |
 | EPIC-06 | 5 | Concluído (gate) | Wizard vacina; piloto UI = checklist prefeitura |
 | EPIC-07 | 5 | Concluído (gate) | E2E ok; polish TASK-07-03/06/09 opcional |
-| EPIC-12 | T | **~40%** | Jobs + `/reference/*`; release versionada pendente; **bloqueia F6** |
-| EPIC-09 | 6 / 8 UI | Pendente | PEC, walk-in; Field UI na F8 |
-| EPIC-10 | 6 API / 8 UI | Pendente | panic/tele/meds API; telas Flutter F8 |
+| EPIC-12 | T | **Concluído (gate)** | `Reference::Gate`, ADR-0004, `/reference/*`, autocompletes; stretch UFSC/DATASUS live |
+| EPIC-09 | 6 / 8 UI | Parcial | PEC command, shared care, walk-in; Field UI F8 |
+| EPIC-10 | 6 API / 8 UI | Parcial | panic/tele/meds API MVP |
 | EPIC-11 | 7 | Pendente | IA + SIAPS |
 | EPIC-08 | 8 | Pendente | App Campo Flutter |
 
@@ -613,9 +613,9 @@ Sprint 5 (bootstrap repos Flutter) **adiado para Fase 8**. “Celular” em EPIC
 
 ## Roteiro de continuação (S10+)
 
-**Onde estamos (2026-06-03):** Fases **0–5** + **4b** gate fechados (`7f85332` — Onda 2a PNI/C2.E `done`). **EPIC-00** ondas A–J concluídas. **EPIC-12** ~40% (release versionada + fixtures CI) — **bloqueia Fase 6**. Piloto UI F5 = checklist prefeitura (opcional).
+**Onde estamos (2026-06-03):** Fases **0–5** + **4b** + **EPIC-12 gate** fechados. **Fase 6** MVP em curso (PEC, FCC, walk-in, APIs Plus). Piloto UI F5 = checklist prefeitura (opcional).
 
-**Objetivo imediato:** **EPIC-12** gate → **Fase 6** (EPIC-09/10 API); PNI Ondas 2b–2d pós EPIC-12; piloto UI F5 opcional.
+**Objetivo imediato:** fechar **Fase 6** (PEC produção, eSB); polish piloto F5 opcional; PNI live MS stretch.
 
 ### Visão por fases
 
@@ -1453,7 +1453,7 @@ flowchart LR
 | `UfscReferenceImportJob` | Mensal | `at 3am on day 1` | `dicionario.html` + páginas Referências |
 | `LediCatalogSyncJob` | Mensal + on deploy | `at 4am on day 1` | 13 HTML de ficha + XSD; **extra** quando `LEDI_VERSION` muda no deploy |
 | `SigtapImportJob` | Mensal pós-competência | `at 5am on day 5` | ZIP DATASUS (~5º dia útil após fechamento MS) |
-| `PublishReferenceReleaseJob` | Após imports | `at 6am on day 1` e `at 6am on day 5` | Só publica se checksum mudou; emite Kafka |
+| `PublishReferenceReleaseJob` | Após SIGTAP mensal | `at 6am on day 5` (após `SigtapImportJob`) | `publish_release!` sem re-import; bootstrap via `db:seed` / `reference:gate` |
 
 **Distribuição aos clientes:**
 
@@ -3220,7 +3220,7 @@ APIs Field (`TASK-08-01`, `TASK-08-02`, `TASK-08-07`) podem ser entregues **ante
 
 - [x] **EPIC-00** CidadãoBR Saúde — Core Plataforma  
 - [x] **EPIC-01** CidadãoBR Saúde — Core LEDI (PEC produção = Fase 6; catálogo automático = **EPIC-12**)  
-- [~] **EPIC-12** Dados de Referência MS/LEDI — jobs + API `/reference/*` em `main`; gate release + fixtures (S8–S9)  
+- [x] **EPIC-12** Dados de Referência MS/LEDI — gate CI + API `/reference/*` ([ADR-0004](docs/adr/0004-reference-data-sources.md))  
 - [x] **EPIC-02** CidadãoBR Saúde Gestão — Admin Municipal  
 - [x] **EPIC-03** CidadãoBR Saúde Gestão — Agendamentos UBS  
 - [~] **EPIC-04** CidadãoBR Saúde — Portal cidadão (**Fase 3:** API TASK-04-01..05 ok; **Fase 8:** app Flutter TASK-04-06/07)

@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-# Placeholder until EPIC-03/09 business handlers exist. PRODUCTION: do not route real
+# Placeholder until scheduling and clinical-record business handlers exist. PRODUCTION: do not route real
 # appointment/ledi side effects here — offsets advance after log-only ack. Wire handlers
 # before enabling dependent workflows (notifications, analytics, external sync).
 class PlatformEventConsumer < ApplicationConsumer

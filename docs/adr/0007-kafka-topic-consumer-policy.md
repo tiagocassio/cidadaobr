@@ -40,6 +40,10 @@ Publicados em `bin/kafka_create_topics` e `OutboxPublisher::TOPIC_MAPPING`, **se
 | `care-team-created` / `care-team-updated` | Sync externo futuro |
 | `vaccination-campaign-*` | Gestão web já consistente via AR |
 | `immunobiological-lot-received` | Estoque local |
+| `panic-alert-triggered` | Integração emergência / Fase 8 |
+| `teleconsultation-session-created` | Integração teleconsulta futura |
+| `continuous-medication-registered` | Projeções clínicas futuras |
+| `shared-care-case-created` / `shared-care-evolution-recorded` | FCC / integração externa futura |
 
 ### Placeholder
 

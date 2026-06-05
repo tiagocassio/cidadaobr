@@ -18,3 +18,6 @@ application.register("supply-item-form", SupplyItemFormController)
 
 import HomeVisitCampaignFormController from "./home_visit_campaign_form_controller"
 application.register("home-visit-campaign-form", HomeVisitCampaignFormController)
+
+import ReferenceDomainAutocompleteController from "./reference_domain_autocomplete_controller"
+application.register("reference-domain-autocomplete", ReferenceDomainAutocompleteController)

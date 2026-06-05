@@ -38,9 +38,17 @@ Rails.application.routes.draw do
         get :select_facility
         get :walk_in
         post :walk_in
+        get :walk_in_report
       end
     end
     resources :ledi_batches, only: %i[index show]
+    resources :shared_care_cases, only: %i[index new create show] do
+      member do
+        post :record_evolution
+      end
+    end
+
+    get "reference/domains/:domain_key/search", to: "reference_domains#search", as: :reference_domain_search
 
     namespace :indicators do
       root "dashboard#show"
@@ -111,10 +119,14 @@ Rails.application.routes.draw do
           end
         end
         resources :immunization_records, only: :index
+        resources :panic_alerts, only: :create
+        resources :teleconsultation_sessions, only: %i[index create]
+        resources :continuous_medications, only: %i[index create]
       end
 
       get "reference/manifest", to: "reference#manifest"
       get "reference/domains/:key", to: "reference#domain"
+      get "reference/domains/:key/search", to: "reference#search"
       get "reference/ledi/catalog", to: "reference#ledi_catalog"
     end
   end

@@ -15,6 +15,8 @@ tags:
   - name: citizen-auth
   - name: citizen-appointments
   - name: citizen-immunization
+  - name: citizen-plus
+  - name: reference
   - name: field-health
   - name: field-auth
 paths:
@@ -77,7 +79,7 @@ paths:
       description: |
         Usa o mesmo fluxo para consulta e vacinação: informe `appointment_service_type_id`
         (UUID do tipo de serviço na UBS, ex. consulta ou sala vacinal) e uma vaga em `slots`.
-        Não há endpoint separado de "agendar vacina" (TASK-04-05).
+        Não há endpoint separado de "agendar vacina".
       requestBody:
         required: true
         content:
@@ -182,7 +184,7 @@ paths:
       tags: [citizen-immunization]
       security:
         - citizenBearer: []
-      summary: Carteira vacinal e cobertura (TASK-04-04/05)
+      summary: Carteira vacinal e cobertura
       description: Projeção da carteira do cidadão; agendamento de nova dose usa POST `/appointments` com tipo de serviço vacinal.
       responses:
         "200":
@@ -191,6 +193,205 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ImmunizationWallet"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /api/v1/citizen/panic_alerts:
+    post:
+      tags: [citizen-plus]
+      security:
+        - citizenBearer: []
+      summary: Disparar alerta de pânico
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                latitude:
+                  type: number
+                longitude:
+                  type: number
+      responses:
+        "200":
+          description: Alerta registrado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  panic_alert:
+                    $ref: "#/components/schemas/PanicAlert"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+  /api/v1/citizen/teleconsultation_sessions:
+    get:
+      tags: [citizen-plus]
+      security:
+        - citizenBearer: []
+      summary: Listar teleconsultas
+      responses:
+        "200":
+          description: Sessões do cidadão
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TeleconsultationSession"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    post:
+      tags: [citizen-plus]
+      security:
+        - citizenBearer: []
+      summary: Agendar teleconsulta
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [scheduled_at]
+              properties:
+                scheduled_at:
+                  type: string
+                  format: date-time
+                appointment_id:
+                  type: string
+                  format: uuid
+      responses:
+        "200":
+          description: Sessão criada
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  session:
+                    $ref: "#/components/schemas/TeleconsultationSession"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+  /api/v1/citizen/continuous_medications:
+    get:
+      tags: [citizen-plus]
+      security:
+        - citizenBearer: []
+      summary: Medicamentos contínuos
+      responses:
+        "200":
+          description: Lista ativa
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ContinuousMedication"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    post:
+      tags: [citizen-plus]
+      security:
+        - citizenBearer: []
+      summary: Registrar medicamento contínuo
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [medication_name]
+              properties:
+                medication_name:
+                  type: string
+                dosage:
+                  type: string
+                frequency:
+                  type: string
+                started_on:
+                  type: string
+                  format: date
+      responses:
+        "200":
+          description: Medicamento registrado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  medication:
+                    $ref: "#/components/schemas/ContinuousMedication"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+  /api/v1/reference/manifest:
+    get:
+      tags: [reference]
+      security:
+        - staffBearer: []
+      summary: Manifest da release MS/LEDI
+      responses:
+        "200":
+          description: Manifest versionado com checksum e ETag
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /api/v1/reference/domains/{key}:
+    get:
+      tags: [reference]
+      security:
+        - staffBearer: []
+      summary: Entradas de domínio de referência
+      parameters:
+        - name: key
+          in: path
+          required: true
+          schema:
+            type: string
+            example: ciap2
+      responses:
+        "200":
+          description: Lista de códigos
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /api/v1/reference/domains/{key}/search:
+    get:
+      tags: [reference]
+      security:
+        - staffBearer: []
+      summary: Busca autocompletes CIAP/CID/SIGTAP
+      parameters:
+        - name: key
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: q
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Resultados filtrados
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /api/v1/reference/ledi/catalog:
+    get:
+      tags: [reference]
+      security:
+        - staffBearer: []
+      summary: Catálogo LEDI versionado
+      parameters:
+        - name: ledi_version
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Campos por ficha
         "401":
           $ref: "#/components/responses/Unauthorized"
   /api/v1/field/health:
@@ -230,6 +431,10 @@ paths:
 components:
   securitySchemes:
     citizenBearer:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+    staffBearer:
       type: http
       scheme: bearer
       bearerFormat: JWT
@@ -391,3 +596,49 @@ components:
         lot_number:
           type: string
           nullable: true
+    PanicAlert:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [triggered, acknowledged, resolved]
+        triggered_at:
+          type: string
+          format: date-time
+    TeleconsultationSession:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [scheduled, active, completed, cancelled]
+        scheduled_at:
+          type: string
+          format: date-time
+        room_token:
+          type: string
+    ContinuousMedication:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        medication_name:
+          type: string
+        dosage:
+          type: string
+          nullable: true
+        frequency:
+          type: string
+          nullable: true
+        started_on:
+          type: string
+          format: date
+          nullable: true
+        active:
+          type: boolean

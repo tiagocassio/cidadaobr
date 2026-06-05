@@ -32,6 +32,11 @@ TOPICS=(
   ledi-batch-submitted
   ledi-batch-statuschanged
   reference-release-published
+  panic-alert-triggered
+  teleconsultation-session-created
+  continuous-medication-registered
+  shared-care-case-created
+  shared-care-evolution-recorded
   supply-provisioning-rejected
   vaccination-campaign-draft-invalidated
   vaccination-campaign-published

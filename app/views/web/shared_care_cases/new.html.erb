@@ -1,0 +1,16 @@
+<section>
+  <h2 class="mb-6 text-2xl font-bold"><%= t("cidadaobr.shared_care.new_title") %></h2>
+  <%= form_with model: [:web, @case], class: "space-y-4" do |form| %>
+    <div>
+      <%= form.label :citizen_id, class: "block text-sm font-medium" %>
+      <%= form.collection_select :citizen_id, @citizens, :id, :full_name, { prompt: true }, class: "mt-1 w-full rounded border border-slate-300 px-3 py-2" %>
+    </div>
+    <%= render "web/reference/domain_autocomplete_field", form: form, domain_key: "ciap2", label: "CIAP-2", hidden_field: :ciap2_code %>
+    <%= render "web/reference/domain_autocomplete_field", form: form, domain_key: "cid10", label: "CID-10", hidden_field: :cid10_code %>
+    <div>
+      <%= form.label :clinical_summary, class: "block text-sm font-medium" %>
+      <%= form.text_area :clinical_summary, rows: 4, class: "mt-1 w-full rounded border border-slate-300 px-3 py-2" %>
+    </div>
+    <%= form.submit t("cidadaobr.shared_care.create"), class: "rounded bg-slate-800 px-4 py-2 text-sm font-semibold text-white" %>
+  <% end %>
+</section>

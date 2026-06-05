@@ -121,7 +121,7 @@ module Ledi
       end
 
       def normalize_code(code)
-        PniCodeNormalizer.normalize_code(code)
+        Indicators::PniCodeNormalizer.normalize_code(code)
       end
 
       def parse_date(value)

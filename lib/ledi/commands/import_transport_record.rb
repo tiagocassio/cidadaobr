@@ -125,7 +125,7 @@ module Ledi
     end
 
     def ensure_refreshable!(existing)
-      # Pre-batch refresh: draft/validated without batch assignment may be corrected in place; batched/submitted records require EPIC-09 flows.
+      # Pre-batch refresh: draft/validated without batch assignment may be corrected in place; batched/submitted records require clinical correction flows.
       return if existing.ledi_batch_id.blank? && existing.status.in?(%w[draft validated])
 
       raise Errors::ImmutableTransportRecordError,

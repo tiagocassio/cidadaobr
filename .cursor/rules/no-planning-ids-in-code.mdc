@@ -1,0 +1,16 @@
+---
+description: Do not embed EPIC/STORY/TASK backlog IDs in executable code
+alwaysApply: true
+---
+
+# Planning IDs — not in code
+
+Backlog identifiers (`EPIC-*`, `STORY-*`, `TASK-*`, e.g. `EPIC-05b`) belong in **documentation only**, not in source the app runs.
+
+**Forbidden in:** `.rb`, `.js`, `.erb`, `.rake`, `.sh`, `config/locales`, `vendor/**`, `doc/api/openapi*.yaml`, `.github/workflows`, comments and user-facing strings.
+
+**Allowed in:** `docs/**/*.md`, `README.md`, `AGENTS.md`, `.cursor/plans/*.md`, `docs/backlog/*.csv`.
+
+Prefer descriptive text (“reference data gate”, “scheduling command”) or link to `docs/roteiro-organizado-fases-epicos.md` from a doc comment — never paste task IDs into code.
+
+Full rule and verification command: [AGENTS.md](../../AGENTS.md) (section *Planning IDs*).

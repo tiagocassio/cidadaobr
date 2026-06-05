@@ -5,6 +5,10 @@ require "rails_helper"
 RSpec.describe Reference::Commands::SyncPniCalendar do
   include ActiveSupport::Testing::TimeHelpers
 
+  def expected_entry_count
+    Reference::PniCalendarDefinitions.all.sum { |calendar| calendar.fetch("entries").size }
+  end
+
   before do
     Reference::DomainSeedImporter.call
   end
@@ -16,7 +20,7 @@ RSpec.describe Reference::Commands::SyncPniCalendar do
 
       expect(first.fetch(:entries)).to be_positive
       expect(second.fetch(:entries)).to eq(first.fetch(:entries))
-      expect(PniScheduleEntry.active.count).to eq(Reference::PniCalendarDefinitions.child_0_2_entries.size)
+      expect(PniScheduleEntry.active.count).to eq(expected_entry_count)
     end
 
     it "exports JSON audit trail when requested" do

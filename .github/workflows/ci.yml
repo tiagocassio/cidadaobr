@@ -110,3 +110,6 @@ jobs:
       - name: Run tests
         run: bundle exec rspec
 
+      - name: Reference data gate
+        run: bin/ci_reference_gate
+

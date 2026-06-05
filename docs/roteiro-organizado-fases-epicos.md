@@ -11,6 +11,7 @@
 | **EPIC-12** | Transversal (paralelo); **bloqueia Fase 6** clínica |
 | **Fase 3** | EPIC-03 + EPIC-04 **API** (TASK-04-01..05) — **sem app Flutter** |
 | **EPIC-04 app** | TASK-04-06/07 = **Fase 8** apenas |
+| **IDs no código** | `EPIC-*` / `STORY-*` / `TASK-*` **somente** em `.md` e `docs/backlog/*.csv`; **proibido** em Ruby, YAML de app, OpenAPI, locales, rake, CI, comentários de código — ver [AGENTS.md](../AGENTS.md) |
 
 **Legenda de status:** `done` · `partial` · `in_progress` · `pending`
 
@@ -27,8 +28,8 @@
 | **4** | Indicators MVP | `done` | EPIC-05 | Painel X/17, gaps, repasse ilustrativo |
 | **4b** | Methodology | `done` | EPIC-05b | Matriz 53/53 BPs; C2.E PNI 2026 (`done`) |
 | **5** | Campaigns (web) | `done` | EPIC-06, EPIC-07 | Gate técnico (suite RSpec verde); UI gestor = checklist prefeitura |
-| **T** | Referência MS | `partial` | **EPIC-12** | Release versionada + fixtures CI |
-| **6** | LEDI/PEC + Plus API | `pending` | EPIC-09, EPIC-10 (API) | Walk-in web, PEC; **requer EPIC-12** |
+| **T** | Referência MS | `done` | **EPIC-12** | Release versionada + fixtures CI (`bin/ci_reference_gate`) |
+| **6** | LEDI/PEC + Plus API | `partial` | EPIC-09, EPIC-10 (API) | Walk-in web, PEC, shared care; APIs Plus MVP |
 | **7** | IA + SIAPS | `pending` | EPIC-11 | Perfis, conciliação MS |
 | **8** | Mobile apps | `pending` | EPIC-04 (app), EPIC-08, EPIC-10 (UI) | `mobile-shared` + Citizen + Field |
 
@@ -190,33 +191,33 @@ flowchart TB
 
 **Gate Fase 5:** concluído (suite RSpec verde; E2E HTTP campanhas). UI gestor: checklist prefeitura.
 
-### Transversal — EPIC-12 Referência MS `partial`
+### Transversal — EPIC-12 Referência MS `done`
 
 | Story | Task | Status |
 |-------|------|--------|
-| STORY-12-01 Schema/ADR | TASK-12-01 | `done` |
-| STORY-12-02 UFSC | TASK-12-02..03 Import + catálogo LEDI | `partial` |
-| STORY-12-03 SIGTAP/release | TASK-12-04..05 | `partial` |
-| STORY-12-04 API | TASK-12-06..07 `/reference/*` + autocompletes | `partial` |
+| STORY-12-01 Schema/ADR | TASK-12-01 + [ADR-0004](adr/0004-reference-data-sources.md) | `done` |
+| STORY-12-02 UFSC | TASK-12-02..03 Import + catálogo LEDI | `done` (fixture-first; stretch UFSC live) |
+| STORY-12-03 SIGTAP/release | TASK-12-04..05 | `done` (fixture CI; stretch DATASUS) |
+| STORY-12-04 API | TASK-12-06..07 `/reference/*` + autocompletes | `done` |
 
-### Fase 6 — EPIC-09 + EPIC-10 (API) `pending`
+### Fase 6 — EPIC-09 + EPIC-10 (API) `partial`
 
 #### EPIC-09 LEDI/PEC
 
-| Story | Task | Fase entrega |
-|-------|------|--------------|
-| STORY-09-01 LEDI 13 fichas | TASK-09-01, 09-04, 09-05 | 6 core / 8 Field UI |
-| STORY-09-02 PEC/FCC | TASK-09-02, 09-03 | 6 |
-| STORY-09-03 Walk-in/zoonoses | TASK-09-06..08 | 6 |
-| STORY-09-04 Indicadores eSB | TASK-09-09 | 6 |
+| Story | Task | Status |
+|-------|------|--------|
+| STORY-09-01 LEDI 13 fichas | TASK-09-01, 09-04, 09-05 | `partial` — adapters registry; Field UI F8 |
+| STORY-09-02 PEC/FCC | TASK-09-02, 09-03 | `partial` — `SubmitPecBatch` + shared care web |
+| STORY-09-03 Walk-in/zoonoses | TASK-09-06..08 | `partial` — walk-in + relatório + gate release |
+| STORY-09-04 Indicadores eSB | TASK-09-09 | `pending` |
 
 #### EPIC-10 Cidadão Plus (backend)
 
-| Story | Task | Fase entrega |
-|-------|------|--------------|
-| STORY-10-01 Meds | TASK-10-03 | 6 API / 8 UI |
-| STORY-10-02 Pânico | TASK-10-01, 10-04 | 6 API / 8 UI |
-| STORY-10-03 Tele | TASK-10-02, 10-05 | 6 API / 8 UI |
+| Story | Task | Status |
+|-------|------|--------|
+| STORY-10-01 Meds | TASK-10-03 | `partial` — API CRUD |
+| STORY-10-02 Pânico | TASK-10-01, 10-04 | `partial` — API create |
+| STORY-10-03 Tele | TASK-10-02, 10-05 | `partial` — API index/create |
 
 ### Fase 7 — EPIC-11 IA e Produção `pending`
 
@@ -263,14 +264,13 @@ flowchart TB
 
 ## 5. Próximos passos (ordem)
 
-1. **EPIC-12** — release versionada + fixtures CI (desbloqueia Fase 6).
-2. **Fase 6** — EPIC-09 + EPIC-10 API.
-3. **Piloto prefeitura** — checklist UI F5 opcional antes de go-live.
-4. **PNI Ondas 2b–2d** — faixas etárias restantes (pós EPIC-12).
-5. **Fase 7** — EPIC-11.
-6. **Fase 8** — mobile-shared → Citizen → Field.
+1. **Fase 6** — fechar EPIC-09/10 (PEC produção, eSB, polish walk-in/FCC).
+2. **Piloto prefeitura** — checklist UI F5 opcional antes de go-live.
+3. **PNI stretch** — calendários live MS + polish ondas 2b–2d.
+4. **Fase 7** — EPIC-11.
+5. **Fase 8** — mobile-shared → Citizen → Field.
 
-**Concluído (jun/2026):** Onda 2a PNI — criança 0–24m (C2.E); ver [ADR-0009](adr/0009-pni-calendar-reference.md).
+**Concluído (jun/2026):** EPIC-12 gate (`Reference::Gate`, `bin/ci_reference_gate`, [ADR-0004](adr/0004-reference-data-sources.md)); Onda 2a PNI + definições 2b–2d em Ruby.
 
 ---
 

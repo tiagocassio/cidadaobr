@@ -131,3 +131,10 @@ ActiveRecord::Base.transaction do
     load Rails.root.join("db/seeds/inventory_and_campaigns.rb")
   end
 end
+
+if ReferenceDataRelease.exists?
+  puts "  Reference release present (refresh after vendor/reference changes: bin/rails reference:gate)"
+else
+  release = Reference::Gate.run!(sigtap_competence: Reference::Gate::DEFAULT_SIGTAP_COMPETENCE)
+  puts "  Reference release bootstrapped: #{release.release_key}"
+end

@@ -29,3 +29,27 @@ Rails 8, PostgreSQL (RLS), Karafka, multi-tenant municipalities. Mobile apps are
 ## Conventions
 
 English code identifiers; Portuguese UI copy via I18n (`config/locales/`).
+
+## Planning IDs (EPIC / STORY / TASK) — code vs docs
+
+**Do not** embed backlog identifiers (`EPIC-*`, `STORY-*`, `TASK-*`, including variants like `EPIC-05b`) in **executable code or config consumed by the app**:
+
+- Ruby (`.rb`), Stimulus/JS, ERB, Rake tasks, `bin/*`, CI workflows
+- `config/locales/*.yml`, `vendor/**` fixtures, `doc/api/openapi*.yaml`
+- Comments, `desc` strings, OpenAPI summaries, user-facing I18n messages, shell echoes
+
+Use **descriptive names** instead (e.g. “reference data gate”, “scheduling flows”, “citizen immunization wallet API”).
+
+**Allowed** in documentation and planning artifacts only:
+
+- `docs/**/*.md`, root `README.md`, `AGENTS.md`, `.cursor/plans/*.md`, `.github/ISSUES/*.md`
+- `docs/backlog/*.csv` (IDs are the data model of the export)
+
+Roadmap detail lives in [docs/roteiro-organizado-fases-epicos.md](docs/roteiro-organizado-fases-epicos.md) — link from code comments to that doc if context is needed; do not paste task IDs into source.
+
+**Verify after edits** (should return no matches outside `docs/` and `*.md`):
+
+```bash
+rg 'EPIC-[0-9]|TASK-[0-9]|STORY-[0-9]' app lib spec config bin vendor doc/api .github \
+  --glob '*.rb' --glob '*.yml' --glob '*.yaml' --glob '*.rake' --glob '*.sh' --glob '*.js' --glob '*.erb'
+```

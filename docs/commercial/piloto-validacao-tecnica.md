@@ -7,11 +7,8 @@ Checklist manual (~30 min) após `bin/rails db:seed` em ambiente de desenvolvime
 ```bash
 docker compose up -d postgres
 bin/setup --skip-server
-# ou, se o banco já existir mas cidadaobr_app falhar:
-# POSTGRES_APP_USER=postgres POSTGRES_APP_PASSWORD=postgres \
-# POSTGRES_SCHEMA_USER=postgres POSTGRES_SCHEMA_PASSWORD=postgres \
-# CIDADAOBR_APP_ROLE_PASSWORD=cidadaobr_app bin/rails db:prepare
 bin/rails db:seed
+bin/ci_reference_gate   # EPIC-12 — valida release MS/LEDI antes de walk-in clínico
 ```
 
 Credenciais demo:

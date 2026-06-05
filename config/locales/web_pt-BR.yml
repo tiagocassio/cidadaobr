@@ -271,6 +271,13 @@ pt-BR:
       reception_title: "Fila — recepção"
       walk_in_title: "Encaixe / walk-in"
       walk_in_submit: "Registrar acolhimento"
+      walk_in_report_title: "Relatório walk-in do dia"
+      walk_in_report_link: "Ver relatório walk-in"
+      walk_in_report_total:
+        one: "1 encaixe"
+        other: "%{count} encaixes"
+      walk_in_report_by_service: "Por tipo de serviço"
+      walk_in_report_by_room: "Por sala"
       utilization_title: "Ocupação e absenteísmo"
       utilization_subtitle: "Consultas e vagas no período selecionado"
       utilization_report: "Relatório ocupação"
@@ -323,6 +330,25 @@ pt-BR:
         reschedule_failed: "Não foi possível reagendar."
         invalid_booking_data: "Dados inválidos para agendamento."
         invalid_reschedule_data: "Dados inválidos para reagendamento."
+        reference_release_missing: "Release de referência MS não publicada. Execute o gate de referência."
+        invalid_date: "Data inválida."
+    reference:
+      search_placeholder: "Buscar código ou descrição..."
+      active_release: "Referência MS ativa: %{key}"
+    shared_care:
+      index_title: "Cuidado compartilhado"
+      new_title: "Novo caso FCC"
+      new_link: "Abrir caso"
+      create: "Salvar caso"
+      show: "Ver"
+      citizen: "Cidadão"
+      status: "Status"
+      evolutions: "Evoluções"
+      record_evolution: "Registrar evolução"
+      flash:
+        created: "Caso de cuidado compartilhado aberto."
+        invalid: "Não foi possível abrir o caso."
+        evolution_recorded: "Evolução registrada."
     scheduling:
       slot_unavailable:
         generic: "Vaga indisponível para agendamento."

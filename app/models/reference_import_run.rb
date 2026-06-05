@@ -6,6 +6,12 @@ class ReferenceImportRun < ApplicationRecord
   validates :job_name, :status, :started_at, presence: true
   validates :status, inclusion: { in: STATUSES }
 
+  def self.succeeded_today?(job_name)
+    where(job_name: job_name, status: "succeeded")
+      .where(started_at: Time.current.beginning_of_day..)
+      .exists?
+  end
+
   def finish!(status:, records_imported: nil, error_message: nil)
     update!(
       status: status,

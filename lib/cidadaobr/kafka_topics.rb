@@ -45,6 +45,11 @@ module Cidadaobr
     VISIT_ROUTE_SUPPLIES_DISPATCHED = "visit-route-supplies-dispatched"
 
     REFERENCE_RELEASE_PUBLISHED = "reference-release-published"
+    PANIC_ALERT_TRIGGERED = "panic-alert-triggered"
+    TELECONSULTATION_SESSION_CREATED = "teleconsultation-session-created"
+    CONTINUOUS_MEDICATION_REGISTERED = "continuous-medication-registered"
+    SHARED_CARE_CASE_CREATED = "shared-care-case-created"
+    SHARED_CARE_EVOLUTION_RECORDED = "shared-care-evolution-recorded"
 
     ALL = [
       DOMAIN_OUTBOX,
@@ -77,7 +82,12 @@ module Cidadaobr
       HOME_VISIT_ROUTE_PUBLISHED,
       VISIT_ROUTE_SUPPLIES_RESERVED,
       VISIT_ROUTE_SUPPLIES_DISPATCHED,
-      REFERENCE_RELEASE_PUBLISHED
+      REFERENCE_RELEASE_PUBLISHED,
+      PANIC_ALERT_TRIGGERED,
+      TELECONSULTATION_SESSION_CREATED,
+      CONTINUOUS_MEDICATION_REGISTERED,
+      SHARED_CARE_CASE_CREATED,
+      SHARED_CARE_EVOLUTION_RECORDED
     ].freeze
 
     EVENT_TO_TOPIC = ALL.index_by { |name| name }.freeze

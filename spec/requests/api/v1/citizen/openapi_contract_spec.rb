@@ -16,9 +16,35 @@ RSpec.describe "Citizen API OpenAPI contract (Fase 3)" do
       /api/v1/citizen/appointments/{id}/cancel
       /api/v1/citizen/appointments/{id}/reschedule
       /api/v1/citizen/immunization_records
+      /api/v1/citizen/panic_alerts
+      /api/v1/citizen/teleconsultation_sessions
+      /api/v1/citizen/continuous_medications
     ]
 
     expect(documented_paths).to include(*expected)
+  end
+
+  def rails_api_paths(prefix)
+    Rails.application.routes.routes.filter_map do |route|
+      next unless route.verb.match?(/GET|POST|PUT|PATCH|DELETE/)
+
+      path = route.path.spec.to_s.delete_suffix("(.:format)")
+      next unless path.start_with?(prefix)
+
+      path.gsub(/:([\w]+)/, '{\1}')
+    end.uniq.sort
+  end
+
+  it "documents every implemented citizen API route (bidirectional parity)" do
+    documented_citizen_paths = documented_paths.select { |path| path.start_with?("/api/v1/citizen") }.sort
+
+    expect(documented_citizen_paths).to match_array(rails_api_paths("/api/v1/citizen"))
+  end
+
+  it "documents every implemented reference API route (bidirectional parity)" do
+    documented_reference_paths = documented_paths.select { |path| path.start_with?("/api/v1/reference") }.sort
+
+    expect(documented_reference_paths).to match_array(rails_api_paths("/api/v1/reference"))
   end
 
   it "documents immunization wallet shape (not a bare array)" do
@@ -72,5 +98,35 @@ RSpec.describe "Citizen API OpenAPI contract (Fase 3)" do
     expect(post_op.fetch("summary")).to include("vacina")
     schema_ref = post_op.dig("requestBody", "content", "application/json", "schema", "$ref")
     expect(schema_ref).to eq("#/components/schemas/BookAppointmentRequest")
+  end
+
+  it "PanicAlert properties match create.json.jbuilder" do
+    props = schemas.fetch("PanicAlert").fetch("properties").keys
+    expect(props).to match_array(%w[id status triggered_at])
+  end
+
+  it "documents panic POST 422 for validation errors" do
+    responses = openapi.dig("paths", "/api/v1/citizen/panic_alerts", "post", "responses").keys
+    expect(responses).to include("422")
+  end
+
+  it "TeleconsultationSession properties match teleconsultation jbuilders" do
+    props = schemas.fetch("TeleconsultationSession").fetch("properties").keys
+    expect(props).to match_array(%w[id status scheduled_at room_token])
+  end
+
+  it "documents teleconsultation POST 422" do
+    responses = openapi.dig("paths", "/api/v1/citizen/teleconsultation_sessions", "post", "responses").keys
+    expect(responses).to include("422")
+  end
+
+  it "ContinuousMedication properties match create.json.jbuilder" do
+    props = schemas.fetch("ContinuousMedication").fetch("properties").keys
+    expect(props).to match_array(%w[id medication_name dosage frequency started_on active])
+  end
+
+  it "documents continuous medications POST 422" do
+    responses = openapi.dig("paths", "/api/v1/citizen/continuous_medications", "post", "responses").keys
+    expect(responses).to include("422")
   end
 end

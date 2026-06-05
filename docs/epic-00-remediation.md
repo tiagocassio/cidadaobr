@@ -111,7 +111,7 @@ Política publish-only documentada em [ADR-0007](adr/0007-kafka-topic-consumer-p
 - [x] Onda C (cadastro web)
 - [x] Onda H (UBS, equipe, microárea, usuários)
 - [x] EPIC-12 S9 — platform outbox + `reference-release-published` ([ADR-0008](adr/0008-platform-scoped-outbox.md))
-- [ ] EPIC-12 gate completo (fixtures CI PNI / competência SIGTAP em prod)
+- [x] EPIC-12 gate completo (fixtures CI — `bin/ci_reference_gate`, [ADR-0004](adr/0004-reference-data-sources.md))
 - [ ] ADR-0006 aceito formalmente pelo time
 
 ---
@@ -128,8 +128,8 @@ bundle exec rspec spec/lib/territory/ spec/requests/web/citizens_spec.rb
 
 ## Próximo passo de engenharia
 
-1. Piloto UI Fase 5 — checklist prefeitura.  
-2. EPIC-12 — fixtures CI / import SIGTAP real (gate Fase 6).  
-3. Fase 6 clínica.
+1. Fechar **Fase 6** — PEC produção, eSB, polish walk-in/FCC.  
+2. Piloto UI Fase 5 — checklist prefeitura (opcional).  
+3. PNI live MS + recálculo pós-release.
 
 Roteiro produto: [roteiro-organizado-fases-epicos.md](roteiro-organizado-fases-epicos.md).

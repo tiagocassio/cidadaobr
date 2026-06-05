@@ -2,6 +2,12 @@
   <%= link_to t("cidadaobr.appointments.back"), reception_web_appointments_path(facility_scope_params), class: "text-sm text-slate-600 underline" %>
   <h2 class="mt-2 mb-6 text-2xl font-bold"><%= t("cidadaobr.appointments.walk_in_title") %></h2>
 
+  <% if @reference_release %>
+    <p class="mb-4 text-sm text-slate-600">
+      <%= t("cidadaobr.reference.active_release", key: @reference_release.release_key) %>
+    </p>
+  <% end %>
+
   <%= form_with model: [:web, @appointment], url: walk_in_web_appointments_path(facility_scope_params), method: :post, class: "space-y-4" do |form| %>
     <div>
       <%= form.label :citizen_id, class: "block text-sm font-medium" %>
@@ -17,4 +23,8 @@
     </div>
     <%= form.submit t("cidadaobr.appointments.walk_in_submit"), class: "rounded bg-slate-800 px-4 py-2 text-sm font-semibold text-white" %>
   <% end %>
+
+  <p class="mt-6">
+    <%= link_to t("cidadaobr.appointments.walk_in_report_link"), walk_in_report_web_appointments_path(facility_scope_params), class: "text-sm text-slate-700 underline" %>
+  </p>
 </section>

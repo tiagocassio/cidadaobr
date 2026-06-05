@@ -259,8 +259,17 @@ module Cidadaobr
       if connection.table_exists?(:appointments)
         connection.execute tenant_table_policies_for(:appointments)
         connection.execute tenant_table_citizen_access_policy_for(:appointments)
-        connection.execute citizen_domain_event_access_policies_sql(include_appointments: true)
-        connection.execute citizen_outbox_message_access_policies_sql(include_appointments: true)
+        include_panic_alerts = connection.table_exists?(:panic_alerts)
+        include_teleconsultation_sessions = connection.table_exists?(:teleconsultation_sessions)
+        include_continuous_medications = connection.table_exists?(:citizen_continuous_medications)
+        citizen_event_options = {
+          include_appointments: true,
+          include_panic_alerts: include_panic_alerts,
+          include_teleconsultation_sessions: include_teleconsultation_sessions,
+          include_continuous_medications: include_continuous_medications
+        }
+        connection.execute citizen_domain_event_access_policies_sql(**citizen_event_options)
+        connection.execute citizen_outbox_message_access_policies_sql(**citizen_event_options)
         connection.execute citizen_scheduling_catalog_policies_sql(connection)
       end
 
@@ -290,6 +299,29 @@ module Cidadaobr
       if connection.table_exists?(:citizen_immunization_records)
         connection.execute municipality_only_table_policies_for(:citizen_immunization_records)
         connection.execute tenant_table_citizen_access_policy_for(:citizen_immunization_records)
+      end
+
+      if connection.table_exists?(:panic_alerts)
+        connection.execute panic_alerts_table_policies
+        connection.execute tenant_table_citizen_access_policy_for(:panic_alerts)
+      end
+
+      if connection.table_exists?(:shared_care_cases)
+        connection.execute shared_care_case_policies
+      end
+
+      if connection.table_exists?(:shared_care_evolutions)
+        connection.execute shared_care_evolution_policies
+      end
+
+      if connection.table_exists?(:teleconsultation_sessions)
+        connection.execute citizen_scoped_table_policies_for(:teleconsultation_sessions)
+        connection.execute tenant_table_citizen_access_policy_for(:teleconsultation_sessions)
+      end
+
+      if connection.table_exists?(:citizen_continuous_medications)
+        connection.execute citizen_scoped_table_policies_for(:citizen_continuous_medications)
+        connection.execute tenant_table_citizen_access_policy_for(:citizen_continuous_medications)
       end
 
       if connection.table_exists?(:citizen_indicator_gaps)
@@ -427,8 +459,13 @@ module Cidadaobr
       SQL
     end
 
-    def citizen_domain_event_access_policies_sql(include_appointments: false)
-      aggregate_condition = citizen_domain_event_aggregate_condition(include_appointments)
+    def citizen_domain_event_access_policies_sql(include_appointments: false, include_panic_alerts: false, include_teleconsultation_sessions: false, include_continuous_medications: false)
+      aggregate_condition = citizen_domain_event_aggregate_condition(
+        include_appointments,
+        include_panic_alerts: include_panic_alerts,
+        include_teleconsultation_sessions: include_teleconsultation_sessions,
+        include_continuous_medications: include_continuous_medications
+      )
 
       <<~SQL
         DROP POLICY IF EXISTS domain_events_citizen_access ON domain_events;
@@ -447,8 +484,14 @@ module Cidadaobr
       SQL
     end
 
-    def citizen_outbox_message_access_policies_sql(include_appointments: false)
-      aggregate_condition = citizen_domain_event_aggregate_condition(include_appointments, table_alias: "de")
+    def citizen_outbox_message_access_policies_sql(include_appointments: false, include_panic_alerts: false, include_teleconsultation_sessions: false, include_continuous_medications: false)
+      aggregate_condition = citizen_domain_event_aggregate_condition(
+        include_appointments,
+        include_panic_alerts: include_panic_alerts,
+        include_teleconsultation_sessions: include_teleconsultation_sessions,
+        include_continuous_medications: include_continuous_medications,
+        table_alias: "de"
+      )
 
       <<~SQL
         DROP POLICY IF EXISTS outbox_messages_citizen_access ON outbox_messages;
@@ -477,15 +520,15 @@ module Cidadaobr
       SQL
     end
 
-    def citizen_domain_event_aggregate_condition(include_appointments, table_alias: "domain_events")
+    def citizen_domain_event_aggregate_condition(include_appointments, include_panic_alerts: false, include_teleconsultation_sessions: false, include_continuous_medications: false, table_alias: "domain_events")
       citizen_id_expr = "NULLIF(current_setting('app.current_citizen_id', true), '')::uuid"
       aggregate_ref = "#{table_alias}.aggregate_id"
 
       if include_appointments
-        <<~SQL.squish
-          (
-            #{aggregate_ref} = #{citizen_id_expr}
-            OR (
+        clauses = [
+          "#{aggregate_ref} = #{citizen_id_expr}",
+          <<~SQL.squish,
+            (
               #{table_alias}.aggregate_type = 'Appointment'
               AND EXISTS (
                 SELECT 1
@@ -494,8 +537,48 @@ module Cidadaobr
                   AND a.citizen_id = #{citizen_id_expr}
               )
             )
-          )
-        SQL
+          SQL
+        ]
+        if include_panic_alerts
+          clauses << <<~SQL.squish
+            (
+              #{table_alias}.aggregate_type = 'PanicAlert'
+              AND EXISTS (
+                SELECT 1
+                FROM panic_alerts pa
+                WHERE pa.id = #{aggregate_ref}
+                  AND pa.citizen_id = #{citizen_id_expr}
+              )
+            )
+          SQL
+        end
+        if include_teleconsultation_sessions
+          clauses << <<~SQL.squish
+            (
+              #{table_alias}.aggregate_type = 'TeleconsultationSession'
+              AND EXISTS (
+                SELECT 1
+                FROM teleconsultation_sessions ts
+                WHERE ts.id = #{aggregate_ref}
+                  AND ts.citizen_id = #{citizen_id_expr}
+              )
+            )
+          SQL
+        end
+        if include_continuous_medications
+          clauses << <<~SQL.squish
+            (
+              #{table_alias}.aggregate_type = 'CitizenContinuousMedication'
+              AND EXISTS (
+                SELECT 1
+                FROM citizen_continuous_medications cm
+                WHERE cm.id = #{aggregate_ref}
+                  AND cm.citizen_id = #{citizen_id_expr}
+              )
+            )
+          SQL
+        end
+        "(#{clauses.join(' OR ')})"
       else
         "#{aggregate_ref} = #{citizen_id_expr}"
       end
@@ -914,6 +997,339 @@ module Cidadaobr
                 WHERE ct.id = #{table_name}.care_team_id
                   AND ct.health_facility_id = NULLIF(current_setting('app.current_health_facility_id', true), '')::uuid
               )
+            )
+          );
+      SQL
+    end
+
+    def panic_alerts_table_policies
+      citizen_scoped_table_policies_for(:panic_alerts)
+    end
+
+    def citizen_scoped_table_policies_for(table_name)
+      team_ids_array = "string_to_array(NULLIF(current_setting('app.current_team_ids', true), ''), ',')"
+      facility_id = "NULLIF(current_setting('app.current_health_facility_id', true), '')::uuid"
+      municipality_id = "NULLIF(current_setting('app.current_municipality_id', true), '')::uuid"
+
+      citizen_facility_match = <<~SQL.squish
+        EXISTS (
+          SELECT 1
+          FROM citizens c
+          WHERE c.id = #{table_name}.citizen_id
+            AND c.municipality_id = #{table_name}.municipality_id
+            AND (
+              c.health_facility_id = #{facility_id}
+              OR EXISTS (
+                SELECT 1
+                FROM care_teams ct
+                WHERE ct.id = c.care_team_id
+                  AND ct.health_facility_id = #{facility_id}
+              )
+            )
+        )
+      SQL
+
+      team_scope_match = <<~SQL.squish
+        EXISTS (
+          SELECT 1
+          FROM citizens c
+          WHERE c.id = #{table_name}.citizen_id
+            AND (
+              c.care_team_id::text = ANY(#{team_ids_array})
+              OR (
+                c.health_facility_id IS NOT NULL
+                AND EXISTS (
+                  SELECT 1
+                  FROM care_teams ct
+                  WHERE ct.id::text = ANY(#{team_ids_array})
+                    AND ct.health_facility_id = c.health_facility_id
+                )
+              )
+            )
+        )
+      SQL
+
+      <<~SQL
+        ALTER TABLE #{table_name} ENABLE ROW LEVEL SECURITY;
+        ALTER TABLE #{table_name} FORCE ROW LEVEL SECURITY;
+
+        DROP POLICY IF EXISTS #{table_name}_municipal_access ON #{table_name};
+        CREATE POLICY #{table_name}_municipal_access ON #{table_name}
+          FOR ALL
+          USING (
+            municipality_id = #{municipality_id}
+            AND current_setting('app.current_scope', true) = 'municipality'
+          )
+          WITH CHECK (
+            municipality_id = #{municipality_id}
+            AND current_setting('app.current_scope', true) = 'municipality'
+          );
+
+        DROP POLICY IF EXISTS #{table_name}_team_access ON #{table_name};
+        CREATE POLICY #{table_name}_team_access ON #{table_name}
+          FOR ALL
+          USING (
+            municipality_id = #{municipality_id}
+            AND current_setting('app.current_scope', true) = 'team'
+            AND #{team_scope_match}
+          )
+          WITH CHECK (
+            municipality_id = #{municipality_id}
+            AND current_setting('app.current_scope', true) = 'team'
+            AND #{team_scope_match}
+          );
+
+        DROP POLICY IF EXISTS #{table_name}_facility_access ON #{table_name};
+        CREATE POLICY #{table_name}_facility_access ON #{table_name}
+          FOR ALL
+          USING (
+            municipality_id = #{municipality_id}
+            AND current_setting('app.current_scope', true) = 'facility'
+            AND #{citizen_facility_match}
+          )
+          WITH CHECK (
+            municipality_id = #{municipality_id}
+            AND current_setting('app.current_scope', true) = 'facility'
+            AND #{citizen_facility_match}
+          );
+      SQL
+    end
+
+    def shared_care_case_policies
+      team_ids_array = "string_to_array(NULLIF(current_setting('app.current_team_ids', true), ''), ',')"
+      facility_id = "NULLIF(current_setting('app.current_health_facility_id', true), '')::uuid"
+      municipality_id = "NULLIF(current_setting('app.current_municipality_id', true), '')::uuid"
+
+      shared_care_team_match = <<~SQL.squish
+        (
+          (shared_care_cases.origin_care_team_id IS NOT NULL AND shared_care_cases.origin_care_team_id::text = ANY(#{team_ids_array}))
+          OR EXISTS (
+            SELECT 1
+            FROM citizens c
+            WHERE c.id = shared_care_cases.citizen_id
+              AND (
+                c.care_team_id::text = ANY(#{team_ids_array})
+                OR (
+                  c.health_facility_id IS NOT NULL
+                  AND EXISTS (
+                    SELECT 1
+                    FROM care_teams ct
+                    WHERE ct.id::text = ANY(#{team_ids_array})
+                      AND ct.health_facility_id = c.health_facility_id
+                  )
+                )
+              )
+          )
+        )
+      SQL
+
+      shared_care_facility_match = <<~SQL.squish
+        (
+          (
+            shared_care_cases.origin_care_team_id IS NOT NULL
+            AND EXISTS (
+              SELECT 1
+              FROM care_teams ct
+              WHERE ct.id = shared_care_cases.origin_care_team_id
+                AND ct.health_facility_id = #{facility_id}
+            )
+          )
+          OR (
+            shared_care_cases.origin_care_team_id IS NULL
+            AND EXISTS (
+              SELECT 1
+              FROM citizens c
+              WHERE c.id = shared_care_cases.citizen_id
+                AND (
+                  c.health_facility_id = #{facility_id}
+                  OR EXISTS (
+                    SELECT 1
+                    FROM care_teams ct
+                    WHERE ct.id = c.care_team_id
+                      AND ct.health_facility_id = #{facility_id}
+                  )
+                )
+            )
+          )
+        )
+      SQL
+
+      <<~SQL
+        ALTER TABLE shared_care_cases ENABLE ROW LEVEL SECURITY;
+        ALTER TABLE shared_care_cases FORCE ROW LEVEL SECURITY;
+
+        DROP POLICY IF EXISTS shared_care_cases_municipal_access ON shared_care_cases;
+        CREATE POLICY shared_care_cases_municipal_access ON shared_care_cases
+          FOR ALL
+          USING (
+            municipality_id = #{municipality_id}
+            AND current_setting('app.current_scope', true) = 'municipality'
+          )
+          WITH CHECK (
+            municipality_id = #{municipality_id}
+            AND current_setting('app.current_scope', true) = 'municipality'
+          );
+
+        DROP POLICY IF EXISTS shared_care_cases_team_access ON shared_care_cases;
+        CREATE POLICY shared_care_cases_team_access ON shared_care_cases
+          FOR ALL
+          USING (
+            municipality_id = #{municipality_id}
+            AND current_setting('app.current_scope', true) = 'team'
+            AND #{shared_care_team_match}
+          )
+          WITH CHECK (
+            municipality_id = #{municipality_id}
+            AND current_setting('app.current_scope', true) = 'team'
+            AND #{shared_care_team_match}
+          );
+
+        DROP POLICY IF EXISTS shared_care_cases_facility_access ON shared_care_cases;
+        CREATE POLICY shared_care_cases_facility_access ON shared_care_cases
+          FOR ALL
+          USING (
+            municipality_id = #{municipality_id}
+            AND current_setting('app.current_scope', true) = 'facility'
+            AND #{shared_care_facility_match}
+          )
+          WITH CHECK (
+            municipality_id = #{municipality_id}
+            AND current_setting('app.current_scope', true) = 'facility'
+            AND #{shared_care_facility_match}
+          );
+      SQL
+    end
+
+    def shared_care_evolution_policies
+      team_ids_array = "string_to_array(NULLIF(current_setting('app.current_team_ids', true), ''), ',')"
+      facility_id = "NULLIF(current_setting('app.current_health_facility_id', true), '')::uuid"
+      municipality_id = "NULLIF(current_setting('app.current_municipality_id', true), '')::uuid"
+
+      scc_team_match = <<~SQL.squish
+        (
+          (scc.origin_care_team_id IS NOT NULL AND scc.origin_care_team_id::text = ANY(#{team_ids_array}))
+          OR EXISTS (
+            SELECT 1
+            FROM citizens c
+            WHERE c.id = scc.citizen_id
+              AND (
+                c.care_team_id::text = ANY(#{team_ids_array})
+                OR (
+                  c.health_facility_id IS NOT NULL
+                  AND EXISTS (
+                    SELECT 1
+                    FROM care_teams ct
+                    WHERE ct.id::text = ANY(#{team_ids_array})
+                      AND ct.health_facility_id = c.health_facility_id
+                  )
+                )
+              )
+          )
+        )
+      SQL
+
+      scc_facility_match = <<~SQL.squish
+        (
+          (
+            scc.origin_care_team_id IS NOT NULL
+            AND EXISTS (
+              SELECT 1
+              FROM care_teams ct
+              WHERE ct.id = scc.origin_care_team_id
+                AND ct.health_facility_id = #{facility_id}
+            )
+          )
+          OR (
+            scc.origin_care_team_id IS NULL
+            AND EXISTS (
+              SELECT 1
+              FROM citizens c
+              WHERE c.id = scc.citizen_id
+                AND (
+                  c.health_facility_id = #{facility_id}
+                  OR EXISTS (
+                    SELECT 1
+                    FROM care_teams ct
+                    WHERE ct.id = c.care_team_id
+                      AND ct.health_facility_id = #{facility_id}
+                  )
+                )
+            )
+          )
+        )
+      SQL
+
+      <<~SQL
+        ALTER TABLE shared_care_evolutions ENABLE ROW LEVEL SECURITY;
+        ALTER TABLE shared_care_evolutions FORCE ROW LEVEL SECURITY;
+
+        DROP POLICY IF EXISTS shared_care_evolutions_municipal_access ON shared_care_evolutions;
+        CREATE POLICY shared_care_evolutions_municipal_access ON shared_care_evolutions
+          FOR ALL
+          USING (
+            EXISTS (
+              SELECT 1
+              FROM shared_care_cases scc
+              WHERE scc.id = shared_care_evolutions.shared_care_case_id
+                AND scc.municipality_id = NULLIF(current_setting('app.current_municipality_id', true), '')::uuid
+                AND current_setting('app.current_scope', true) = 'municipality'
+            )
+          )
+          WITH CHECK (
+            EXISTS (
+              SELECT 1
+              FROM shared_care_cases scc
+              WHERE scc.id = shared_care_evolutions.shared_care_case_id
+                AND scc.municipality_id = NULLIF(current_setting('app.current_municipality_id', true), '')::uuid
+                AND current_setting('app.current_scope', true) = 'municipality'
+            )
+          );
+
+        DROP POLICY IF EXISTS shared_care_evolutions_team_access ON shared_care_evolutions;
+        CREATE POLICY shared_care_evolutions_team_access ON shared_care_evolutions
+          FOR ALL
+          USING (
+            EXISTS (
+              SELECT 1
+              FROM shared_care_cases scc
+              WHERE scc.id = shared_care_evolutions.shared_care_case_id
+                AND scc.municipality_id = #{municipality_id}
+                AND current_setting('app.current_scope', true) = 'team'
+                AND #{scc_team_match}
+            )
+          )
+          WITH CHECK (
+            EXISTS (
+              SELECT 1
+              FROM shared_care_cases scc
+              WHERE scc.id = shared_care_evolutions.shared_care_case_id
+                AND scc.municipality_id = #{municipality_id}
+                AND current_setting('app.current_scope', true) = 'team'
+                AND #{scc_team_match}
+            )
+          );
+
+        DROP POLICY IF EXISTS shared_care_evolutions_facility_access ON shared_care_evolutions;
+        CREATE POLICY shared_care_evolutions_facility_access ON shared_care_evolutions
+          FOR ALL
+          USING (
+            EXISTS (
+              SELECT 1
+              FROM shared_care_cases scc
+              WHERE scc.id = shared_care_evolutions.shared_care_case_id
+                AND scc.municipality_id = #{municipality_id}
+                AND current_setting('app.current_scope', true) = 'facility'
+                AND #{scc_facility_match}
+            )
+          )
+          WITH CHECK (
+            EXISTS (
+              SELECT 1
+              FROM shared_care_cases scc
+              WHERE scc.id = shared_care_evolutions.shared_care_case_id
+                AND scc.municipality_id = #{municipality_id}
+                AND current_setting('app.current_scope', true) = 'facility'
+                AND #{scc_facility_match}
             )
           );
       SQL

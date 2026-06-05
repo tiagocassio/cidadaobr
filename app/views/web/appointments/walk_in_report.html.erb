@@ -1,0 +1,24 @@
+<section>
+  <%= link_to t("cidadaobr.appointments.back"), reception_web_appointments_path(facility_scope_params), class: "text-sm text-slate-600 underline" %>
+  <h2 class="mt-2 mb-6 text-2xl font-bold"><%= t("cidadaobr.appointments.walk_in_report_title") %></h2>
+  <p class="text-sm text-slate-600"><%= l(@report.date) %> — <%= t("cidadaobr.appointments.walk_in_report_total", count: @report.total) %></p>
+
+  <div class="mt-6 grid gap-6 md:grid-cols-2">
+    <div>
+      <h3 class="font-semibold"><%= t("cidadaobr.appointments.walk_in_report_by_service") %></h3>
+      <ul class="mt-2 list-disc pl-5 text-sm">
+        <% @report.by_service_type.each do |name, count| %>
+          <li><%= name %>: <%= count %></li>
+        <% end %>
+      </ul>
+    </div>
+    <div>
+      <h3 class="font-semibold"><%= t("cidadaobr.appointments.walk_in_report_by_room") %></h3>
+      <ul class="mt-2 list-disc pl-5 text-sm">
+        <% @report.by_room.each do |name, count| %>
+          <li><%= name %>: <%= count %></li>
+        <% end %>
+      </ul>
+    </div>
+  </div>
+</section>

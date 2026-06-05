@@ -1,0 +1,20 @@
+<div
+  data-controller="reference-domain-autocomplete"
+  data-reference-domain-autocomplete-domain-key-value="<%= domain_key %>"
+  data-reference-domain-autocomplete-search-url-value="<%= reference_domain_search_path(domain_key: domain_key) %>"
+  class="relative"
+>
+  <%= form.label hidden_field, label, class: "block text-sm font-medium" %>
+  <input
+    type="text"
+    autocomplete="off"
+    class="mt-1 w-full rounded border border-slate-300 px-3 py-2"
+    data-reference-domain-autocomplete-target="input"
+    data-action="input->reference-domain-autocomplete#query"
+    placeholder="<%= t('cidadaobr.reference.search_placeholder') %>"
+  />
+  <%= form.hidden_field hidden_field, data: { reference_domain_autocomplete_target: "hiddenCode" } %>
+  <div data-reference-domain-autocomplete-target="results" class="absolute z-10 mt-1 hidden w-full rounded border border-slate-200 bg-white shadow">
+    <div data-reference-domain-autocomplete-target="list"></div>
+  </div>
+</div>

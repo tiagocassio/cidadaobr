@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 class PniScheduleEntry < ApplicationRecord
-  AGE_GROUPS = %w[child pregnant adolescent adult elderly].freeze
+  AGE_GROUPS = %w[child child_2_9 pregnant adolescent adult elderly].freeze
   STRATEGIES = %w[routine campaign].freeze
 
   validates :calendar_year, :age_group, :effective_from, :immunobiological_code,

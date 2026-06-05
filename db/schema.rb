@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_05_27_120093) do
+ActiveRecord::Schema[8.1].define(version: 2026_06_03_120006) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
@@ -109,6 +109,22 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_27_120093) do
     t.datetime "updated_at", null: false
     t.index ["citizen_id"], name: "index_citizen_accounts_on_citizen_id", unique: true
     t.index ["municipality_id", "cpf"], name: "index_citizen_accounts_on_municipality_id_and_cpf", unique: true
+  end
+
+  create_table "citizen_continuous_medications", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.boolean "active", default: true, null: false
+    t.uuid "citizen_id", null: false
+    t.datetime "created_at", null: false
+    t.string "dosage"
+    t.date "ended_on"
+    t.string "frequency"
+    t.string "medication_name", null: false
+    t.uuid "municipality_id", null: false
+    t.date "started_on"
+    t.datetime "updated_at", null: false
+    t.index ["citizen_id", "active"], name: "index_citizen_continuous_medications_on_citizen_id_and_active"
+    t.index ["citizen_id"], name: "index_citizen_continuous_medications_on_citizen_id"
+    t.index ["municipality_id"], name: "index_citizen_continuous_medications_on_municipality_id"
   end
 
   create_table "citizen_immunization_records", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -505,6 +521,22 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_27_120093) do
     t.index ["status"], name: "index_outbox_messages_on_status"
   end
 
+  create_table "panic_alerts", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "citizen_account_id"
+    t.uuid "citizen_id", null: false
+    t.datetime "created_at", null: false
+    t.decimal "latitude", precision: 10, scale: 6
+    t.decimal "longitude", precision: 10, scale: 6
+    t.uuid "municipality_id", null: false
+    t.string "status", default: "triggered", null: false
+    t.datetime "triggered_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["citizen_account_id"], name: "index_panic_alerts_on_citizen_account_id"
+    t.index ["citizen_id"], name: "index_panic_alerts_on_citizen_id"
+    t.index ["municipality_id", "status", "triggered_at"], name: "idx_on_municipality_id_status_triggered_at_c74e9250c6"
+    t.index ["municipality_id"], name: "index_panic_alerts_on_municipality_id"
+  end
+
   create_table "platform_events", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.uuid "aggregate_id", null: false
     t.string "aggregate_type", null: false
@@ -640,6 +672,33 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_27_120093) do
     t.index ["consultation_room_id", "slot_date", "starts_at"], name: "index_room_capacity_slots_on_room_date_start", unique: true
   end
 
+  create_table "shared_care_cases", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.string "ciap2_code"
+    t.string "cid10_code"
+    t.uuid "citizen_id", null: false
+    t.text "clinical_summary"
+    t.datetime "created_at", null: false
+    t.uuid "municipality_id", null: false
+    t.uuid "origin_care_team_id"
+    t.string "status", default: "open", null: false
+    t.datetime "updated_at", null: false
+    t.index ["citizen_id"], name: "index_shared_care_cases_on_citizen_id"
+    t.index ["municipality_id", "citizen_id", "status"], name: "idx_on_municipality_id_citizen_id_status_32ce94a9ce"
+    t.index ["municipality_id"], name: "index_shared_care_cases_on_municipality_id"
+    t.index ["origin_care_team_id"], name: "index_shared_care_cases_on_origin_care_team_id"
+  end
+
+  create_table "shared_care_evolutions", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "author_user_id"
+    t.datetime "created_at", null: false
+    t.text "evolution_note", null: false
+    t.uuid "shared_care_case_id", null: false
+    t.string "status", default: "documented", null: false
+    t.datetime "updated_at", null: false
+    t.index ["author_user_id"], name: "index_shared_care_evolutions_on_author_user_id"
+    t.index ["shared_care_case_id"], name: "index_shared_care_evolutions_on_shared_care_case_id"
+  end
+
   create_table "stock_balances", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.datetime "created_at", null: false
     t.uuid "health_facility_id", null: false
@@ -745,6 +804,21 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_27_120093) do
     t.index ["care_team_id", "dispatch_date"], name: "index_team_supply_dispatches_on_team_date", unique: true
   end
 
+  create_table "teleconsultation_sessions", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "appointment_id"
+    t.uuid "citizen_id", null: false
+    t.datetime "created_at", null: false
+    t.uuid "municipality_id", null: false
+    t.string "room_token"
+    t.datetime "scheduled_at"
+    t.string "status", default: "scheduled", null: false
+    t.datetime "updated_at", null: false
+    t.index ["appointment_id"], name: "index_teleconsultation_sessions_on_appointment_id"
+    t.index ["citizen_id"], name: "index_teleconsultation_sessions_on_citizen_id"
+    t.index ["municipality_id", "citizen_id", "status"], name: "idx_on_municipality_id_citizen_id_status_6472026afc"
+    t.index ["municipality_id"], name: "index_teleconsultation_sessions_on_municipality_id"
+  end
+
   create_table "transport_records", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.bigint "batch_number"
     t.uuid "care_team_id"
@@ -815,6 +889,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_27_120093) do
 
   create_table "vaccination_campaigns", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.string "campaign_kind", default: "human_immunization", null: false
+    t.uuid "consultation_room_id"
     t.datetime "created_at", null: false
     t.date "ends_on", null: false
     t.uuid "health_facility_id", null: false
@@ -827,6 +902,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_27_120093) do
     t.jsonb "target_audience_definition", default: {}, null: false
     t.integer "target_doses", default: 0, null: false
     t.datetime "updated_at", null: false
+    t.index ["consultation_room_id"], name: "index_vaccination_campaigns_on_consultation_room_id"
     t.index ["municipality_id", "health_facility_id", "status"], name: "index_vaccination_campaigns_on_municipality_facility_status"
   end
 
@@ -870,6 +946,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_27_120093) do
 
   add_foreign_key "care_teams", "health_facilities"
   add_foreign_key "care_teams", "municipalities"
+  add_foreign_key "citizen_continuous_medications", "citizens"
+  add_foreign_key "citizen_continuous_medications", "municipalities"
   add_foreign_key "citizen_indicator_gaps", "care_teams"
   add_foreign_key "citizen_indicator_gaps", "citizens"
   add_foreign_key "citizen_indicator_gaps", "municipalities"
@@ -888,6 +966,14 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_27_120093) do
   add_foreign_key "indicator_rules", "indicator_catalogs"
   add_foreign_key "micro_areas", "care_teams"
   add_foreign_key "micro_areas", "municipalities"
+  add_foreign_key "panic_alerts", "citizen_accounts"
+  add_foreign_key "panic_alerts", "citizens"
+  add_foreign_key "panic_alerts", "municipalities"
+  add_foreign_key "shared_care_cases", "care_teams", column: "origin_care_team_id"
+  add_foreign_key "shared_care_cases", "citizens"
+  add_foreign_key "shared_care_cases", "municipalities"
+  add_foreign_key "shared_care_evolutions", "shared_care_cases"
+  add_foreign_key "shared_care_evolutions", "users", column: "author_user_id"
   add_foreign_key "stock_balances", "health_facilities"
   add_foreign_key "stock_balances", "immunobiological_lots"
   add_foreign_key "stock_balances", "supply_items"
@@ -902,6 +988,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_27_120093) do
   add_foreign_key "team_satisfaction_survey_scores", "care_teams"
   add_foreign_key "team_satisfaction_survey_scores", "municipalities"
   add_foreign_key "team_supply_dispatches", "care_teams"
+  add_foreign_key "teleconsultation_sessions", "appointments"
+  add_foreign_key "teleconsultation_sessions", "citizens"
+  add_foreign_key "teleconsultation_sessions", "municipalities"
   add_foreign_key "user_municipality_memberships", "health_facilities"
   add_foreign_key "user_municipality_memberships", "municipalities"
   add_foreign_key "user_municipality_memberships", "users"
@@ -909,6 +998,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_27_120093) do
   add_foreign_key "user_roles", "users"
   add_foreign_key "user_team_assignments", "care_teams"
   add_foreign_key "user_team_assignments", "users"
+  add_foreign_key "vaccination_campaigns", "consultation_rooms"
   add_foreign_key "vaccination_campaigns", "health_facilities"
   add_foreign_key "vaccination_campaigns", "immunobiological_products"
   add_foreign_key "visit_route_provisioning", "visit_routes"

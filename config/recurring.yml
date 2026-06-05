@@ -29,10 +29,6 @@ production:
     class: SigtapImportJob
     queue: default
     schedule: at 5am on day 5
-  publish_reference_release:
-    class: PublishReferenceReleaseJob
-    queue: default
-    schedule: at 6am on day 1
   publish_reference_release_sigtap:
     class: PublishReferenceReleaseJob
     queue: default

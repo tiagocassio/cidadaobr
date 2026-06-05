@@ -8,7 +8,7 @@ module IndicatorsHelper
     code
   end
 
-  # Letter keys (B–K) are generic MVP labels until multi-BP seed adds per-indicator SAPS text (EPIC-05).
+  # Letter keys (B–K) are generic MVP labels until multi-BP seed adds per-indicator SAPS text.
   def good_practice_label(code)
     return t("cidadaobr.common.empty") if code.blank?
 

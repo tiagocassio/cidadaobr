@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-# Command for EPIC-03 scheduling flows (web reception and citizen API).
+# Command for scheduling flows (web reception and citizen API).
 module Scheduling
   class RescheduleAppointment < ApplicationCommand
     def initialize(appointment:, scheduled_at:, room_capacity_slot_id:)
