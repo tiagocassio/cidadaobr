@@ -37,7 +37,7 @@ paths:
           in: query
           schema:
             type: string
-            example: "6.3.5"
+            example: "7.4.1"
       responses:
         "200":
           description: Campos LEDI indexados

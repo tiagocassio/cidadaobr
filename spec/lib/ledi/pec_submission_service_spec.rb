@@ -16,7 +16,7 @@ RSpec.describe Ledi::PecSubmissionService do
         cnes: "1234567",
         serialized_uuid: SecureRandom.uuid,
         serialized_type: "FCI",
-        ledi_version: "6.3.5",
+        ledi_version: Rails.application.config.ledi.fetch(:version),
         status: "validated",
         payload_binary: "\x00"
       )

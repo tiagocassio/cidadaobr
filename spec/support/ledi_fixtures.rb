@@ -13,6 +13,12 @@ module LediFixtures
 
   def build_transport(serialized_type:, inner_binary:, cnes:, ibge:, ine: nil, serialized_uuid: nil)
     remetente = installation
+    transport_version = Rails.application.config.ledi.fetch(:transport_version)
+    versao = Br::Gov::Saude::Esusab::Dadotransp::VersaoThrift.new(
+      major: transport_version.fetch(:major),
+      minor: transport_version.fetch(:minor),
+      revision: transport_version.fetch(:revision)
+    )
     transport = Br::Gov::Saude::Esusab::Dadotransp::DadoTransporteThrift.new(
       uuidDadoSerializado: serialized_uuid || SecureRandom.uuid,
       tipoDadoSerializado: serialized_type,
@@ -21,7 +27,8 @@ module LediFixtures
       ineDadoSerializado: ine,
       dadoSerializado: inner_binary,
       remetente: remetente,
-      originadora: remetente
+      originadora: remetente,
+      versao: versao
     )
     transport.codIbge = nil if ibge.nil?
     Ledi::ThriftReader.write(transport)

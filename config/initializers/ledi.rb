@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
-ledi_gen_rb = Rails.root.join("vendor/ledi/7.4.0/gen-rb")
+ledi_config = Rails.application.config_for(:ledi)
+ledi_gen_rb = Rails.root.join("vendor/ledi/#{ledi_config.fetch(:version)}/gen-rb")
 $LOAD_PATH.unshift(ledi_gen_rb.to_s) unless $LOAD_PATH.include?(ledi_gen_rb.to_s)
 
 require "dado_transporte_constants"
@@ -19,7 +20,7 @@ require "ficha_consumo_alimentar_constants"
 require "ficha_complementar_zika_microcefalia_constants"
 require "cuidado_compartilhado_constants"
 
-Rails.application.config.ledi = Rails.application.config_for(:ledi)
+Rails.application.config.ledi = ledi_config
 
 Rails.application.config.after_initialize do
   Cidadaobr::VendorFingerprint.verify_ledi!(Rails.application.config.ledi)

@@ -576,7 +576,7 @@ Sprint 5 (bootstrap repos Flutter) **adiado para Fase 8**. “Celular” em EPIC
 | Épico | Fase | Status | Nota |
 |-------|------|--------|------|
 | EPIC-00 | 0 | Concluído | RLS, CQRS, Kafka, auth; **Onda B** conformidade writes (jun/2026) |
-| EPIC-01 | 1 | Concluído (MVP) | LEDI 7.4.0; catálogo seed manual; sync automático = **EPIC-12** |
+| EPIC-01 | 1 | Concluído (MVP) | LEDI 7.4.1; catálogo seed manual; sync automático = **EPIC-12** |
 | EPIC-02 | 2 | Concluído | Ops web |
 | EPIC-03 | 3 | Concluído | Agenda web + no-show |
 | EPIC-04 | **3** API / **8** App | Parcial (API) | F3: TASK-04-01..05; F8: TASK-04-06/07 Flutter |

@@ -1,8 +1,8 @@
-# LEDI APS 7.4.0 vendor artifacts
+# LEDI APS 7.4.1 vendor artifacts
 
 Source: [laboratoriobridge/esusaps-integracao](https://github.com/laboratoriobridge/esusaps-integracao)
 
-- Pinned ref: tag `vendor-sync-7.4.0-20260527` (see `SYNC.sha` and `source_content_sha256` in `config/ledi.yml`)
+- Pinned ref: see `SYNC.sha` and `source_content_sha256` in `config/ledi.yml`
 - `SOURCE_CONTENT_SHA256` fingerprints vendored files; `SOURCE_COMMIT` is the upstream git SHA when known
 - Thrift compiler: 0.9.2–0.9.3 (generated Ruby under `gen-rb/`)
 - Layouts vendored:

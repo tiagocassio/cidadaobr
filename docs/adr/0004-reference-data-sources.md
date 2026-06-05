@@ -8,7 +8,7 @@ Accepted — EPIC-12 (S8–S9), extends [ADR-0009](0009-pni-calendar-reference.m
 
 Formulários clínicos, walk-in web e indicadores dependem de domínios versionados (CIAP-2, CID-10, SIGTAP, catálogo LEDI, calendário PNI). O MVP usou seeds manuais e HTML ao vivo da UFSC. EPIC-12 centraliza ingestão em Postgres global (`reference_*`) com releases auditáveis (`reference_data_releases`).
 
-Produção municipal exige atualização periódica (SIGTAP mensal, PNI anual, LEDI por versão) sem acoplar runtime a scraping ao vivo.
+Produção municipal exige atualização periódica (SIGTAP mensal, PNI anual, LEDI por versão) sem acoplar runtime a scraping ao vivo. **Versão LEDI alvo:** 7.4.1 (`config/ledi.yml`, `vendor/ledi/7.4.1/`); competência SIGTAP default **202602** (alinhada à release 7.4.1).
 
 ## Decision
 

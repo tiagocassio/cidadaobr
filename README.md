@@ -107,11 +107,11 @@ Logins demo:
 
 Checklist de validação manual: [`docs/commercial/piloto-validacao-tecnica.md`](docs/commercial/piloto-validacao-tecnica.md).
 
-## LEDI (e-SUS APS 7.4.0)
+## LEDI (e-SUS APS 7.4.1)
 
-Integração com o padrão **LEDI APS 7.4.0** (compatível PEC ≥ 5.4.34):
+Integração com o padrão **LEDI APS 7.4.1** (compatível PEC ≥ 5.4.34):
 
-- Artefatos vendor em `vendor/ledi/7.4.0/` (Thrift + XSD de referência)
+- Artefatos vendor em `vendor/ledi/7.4.1/` (Thrift + XSD de referência)
 - Configuração em `config/ledi.yml` (versão, `tp_cds_origem`, mapa de tipos serializados)
 - Domínio em `lib/ledi/` (deserialização, validação, importação, lotes, projeções)
 

@@ -31,7 +31,7 @@ Use isto como **escopo mínimo de piloto ou contrato inicial**.
 
 1. **Plataforma web municipal** (multi-UBS, perfis de acesso)
 2. **Cadastro operacional:** UBS, equipes, microáreas, cidadãos, domicílios, mapa territorial
-3. **Integração LEDI 7.4.0:** recebimento e validação de fichas clínicas (base e-SUS APS)
+3. **Integração LEDI 7.4.1:** recebimento e validação de fichas clínicas (base e-SUS APS)
 4. **Agenda UBS:** marcação, recepção, check-in, falta (no-show), relatório de ocupação
 5. **Motor dos 17 indicadores** (Portaria 3.493 / notas SAPS):
    - Vínculo: CVAT, V_CAD, V_ACOMP, V_SAT

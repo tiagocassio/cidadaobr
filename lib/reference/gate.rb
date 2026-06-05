@@ -6,7 +6,7 @@ module Reference
     class ValidationError < StandardError; end
 
     DEFAULT_LED_VERSION = Rails.application.config.ledi.fetch(:version).freeze
-    DEFAULT_SIGTAP_COMPETENCE = "202605"
+    DEFAULT_SIGTAP_COMPETENCE = "202602"
 
     class << self
       def run!(ledi_version: ENV.fetch("LEDI_VERSION", DEFAULT_LED_VERSION), sigtap_competence: DEFAULT_SIGTAP_COMPETENCE)

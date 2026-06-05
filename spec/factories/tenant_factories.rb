@@ -116,7 +116,7 @@ FactoryBot.define do
   factory :ledi_batch do
     municipality
     sequence(:batch_number) { |n| n + 1 }
-    ledi_version { "6.3.5" }
+    ledi_version { Rails.application.config.ledi.fetch(:version) }
     status { "ready" }
 
     to_create { |instance| TenantFactoryHelpers.save_with_municipality_tenant!(instance) }

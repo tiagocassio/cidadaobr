@@ -1,9 +1,13 @@
 default: &default
-  version: "7.4.0"
+  version: "7.4.1"
   source_repo: "https://github.com/laboratoriobridge/esusaps-integracao"
-  source_sync_tag: "vendor-sync-7.4.0-20260527"
-  # SHA256 fingerprint of vendor/ledi/7.4.0 artifacts (not an upstream git commit).
-  source_content_sha256: "1eb11d5d1306073157891023dc8505a974fcc4d2237fb12d97602a5e82be16a7"
+  source_sync_tag: "vendor-sync-7.4.1-20260605"
+  # SHA256 fingerprint of vendor/ledi/7.4.1 gen-rb + thrift (concat sorted files).
+  source_content_sha256: "f83de71bb78d6f417a91d3e83124f4ff4bb464ff57d6fe32f20115df44a4ce46"
+  transport_version:
+    major: 7
+    minor: 4
+    revision: 1
   tp_cds_origem: 3
   dev_installation_uuid: "00000000-0000-4000-8000-000000000001"
   serialized_types:

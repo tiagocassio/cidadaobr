@@ -33,18 +33,18 @@ entries:
     label: Consulta médica em atenção básica
     active: true
     payload:
-      competence: "202605"
+      competence: "202602"
   - domain_key: sigtap_procedure
     domain_label: Procedimentos SIGTAP
     code: "0201020074"
     label: Exame citopatológico cervico-vaginal
     active: true
     payload:
-      competence: "202605"
+      competence: "202602"
   - domain_key: sigtap_procedure
     domain_label: Procedimentos SIGTAP
     code: "0204030188"
     label: Mamografia bilateral
     active: true
     payload:
-      competence: "202605"
+      competence: "202602"
