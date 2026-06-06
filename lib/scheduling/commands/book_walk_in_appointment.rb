@@ -7,6 +7,9 @@ module Scheduling
       appointment_service_type_id:,
       consultation_room_id:,
       care_team_id: nil,
+      ciap2_code: nil,
+      cid10_code: nil,
+      sigtap_procedure_code: nil,
       channel: "walk_in",
       kind: "walk_in",
       modality: "in_person"
@@ -15,6 +18,9 @@ module Scheduling
       @appointment_service_type_id = appointment_service_type_id
       @consultation_room_id = consultation_room_id
       @care_team_id = care_team_id
+      @ciap2_code = ciap2_code
+      @cid10_code = cid10_code
+      @sigtap_procedure_code = sigtap_procedure_code
       @channel = channel
       @kind = kind
       @modality = modality
@@ -36,6 +42,7 @@ module Scheduling
         end
 
         care_team_id = resolve_care_team_id!(tenant, citizen, room)
+        validate_reference_codes!
 
         Appointment.create!(
           municipality_id: tenant.municipality_id,
@@ -49,7 +56,10 @@ module Scheduling
           status: "checked_in",
           kind: @kind,
           channel: @channel,
-          modality: @modality
+          modality: @modality,
+          ciap2_code: @ciap2_code.presence,
+          cid10_code: @cid10_code.presence,
+          sigtap_procedure_code: @sigtap_procedure_code.presence
         ).tap do |appointment|
           RecordPlatformEvent.call(
             event_type: Cidadaobr::KafkaTopics::APPOINTMENT_WALK_IN_BOOKED,
@@ -59,8 +69,11 @@ module Scheduling
               appointment_id: appointment.id,
               citizen_id: appointment.citizen_id,
               channel: appointment.channel,
-              scheduled_at: appointment.scheduled_at.iso8601
-            },
+              scheduled_at: appointment.scheduled_at.iso8601,
+              ciap2_code: appointment.ciap2_code,
+              cid10_code: appointment.cid10_code,
+              sigtap_procedure_code: appointment.sigtap_procedure_code
+            }.compact,
           care_team_id: appointment.care_team_id
           )
         end
@@ -79,6 +92,20 @@ module Scheduling
       end
 
       team.id
+    end
+
+    def validate_reference_codes!
+      {
+        "ciap2" => @ciap2_code,
+        "cid10" => @cid10_code,
+        "sigtap_procedure" => @sigtap_procedure_code
+      }.each do |domain_key, code|
+        next if code.blank?
+
+        unless Reference::ActiveRelease.valid_code?(domain_key: domain_key, code: code)
+          raise ArgumentError, "invalid reference code for #{domain_key}"
+        end
+      end
     end
   end
 end

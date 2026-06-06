@@ -29,7 +29,7 @@
 | **4b** | Methodology | `done` | EPIC-05b | Matriz 53/53 BPs; C2.E PNI 2026 (`done`) |
 | **5** | Campaigns (web) | `done` | EPIC-06, EPIC-07 | Gate técnico (suite RSpec verde); UI gestor = checklist prefeitura |
 | **T** | Referência MS | `done` | **EPIC-12** | Release versionada + fixtures CI (`bin/ci_reference_gate`) |
-| **6** | LEDI/PEC + Plus API | `partial` | EPIC-09, EPIC-10 (API) | Walk-in web, PEC, shared care; APIs Plus MVP |
+| **6** | LEDI/PEC + Plus API | `done` | EPIC-09, EPIC-10 (API) | PEC HTTP, walk-in, FCC, Plus API; Field/pânico UI = F8 |
 | **7** | IA + SIAPS | `pending` | EPIC-11 | Perfis, conciliação MS |
 | **8** | Mobile apps | `pending` | EPIC-04 (app), EPIC-08, EPIC-10 (UI) | `mobile-shared` + Citizen + Field |
 
@@ -43,12 +43,12 @@ flowchart TB
     F4[Fase 4]
     F4b[Fase 4b]
     F5[Fase 5]
+    E12[EPIC-12]
+    F6[Fase 6]
   end
   subgraph wip [Em curso]
-    E12[EPIC-12]
   end
   subgraph next [Proximo]
-    F6[Fase 6]
     F7[Fase 7]
     F8[Fase 8 Flutter]
   end
@@ -76,9 +76,9 @@ flowchart TB
 | EPIC-05b | 4b | `done` | Cobertura Notas Metodológicas 3493 |
 | EPIC-06 | 5 | `done` | Gestão — Estoque e Campanhas |
 | EPIC-07 | 5 | `done` | Gestão — Rotas e Provisionamento |
-| EPIC-12 | T (1→6) | `partial` (~40%) | Dados de Referência MS/LEDI |
-| EPIC-09 | 6 core · 8 Field UI | `pending` | LEDI Completo e PEC |
-| EPIC-10 | 6 API · 8 App UI | `pending` | Cidadão Plus |
+| EPIC-12 | T (1→6) | `done` (gate) | Dados de Referência MS/LEDI — stretch UFSC/DATASUS live |
+| EPIC-09 | 6 core · 8 Field UI | `done` (API/web) | LEDI/PEC HTTP + walk-in + FCC — Field UI F8 |
+| EPIC-10 | 6 API · 8 App UI | `done` (API) | Plus API (pânico/tele/meds); UI Citizen = F8 |
 | EPIC-11 | 7 | `pending` | Core IA e Produção |
 | EPIC-08 | 8 | `pending` | Campo — App Profissional |
 
@@ -102,9 +102,9 @@ flowchart TB
 
 | Story | Task | Status |
 |-------|------|--------|
-| STORY-01-01 Artefatos | TASK-01-01 Versão LEDI | `done` |
+| STORY-01-01 Artefatos | TASK-01-01 Versão LEDI **7.4.1** | `done` |
 | | TASK-01-02 Schema A–C | `done` |
-| | TASK-01-03 Catálogo campos (seed; sync auto = EPIC-12) | `partial` |
+| | TASK-01-03 Catálogo campos (`LediCatalogVendorParser` + seed) | `done` |
 | STORY-01-02 Validar/enviar | TASK-01-04 Adapters Thrift | `done` |
 | | TASK-01-05 ValidateClinicalRecord | `done` |
 | | TASK-01-06 Submit batch + Kafka | `done` |
@@ -196,28 +196,28 @@ flowchart TB
 | Story | Task | Status |
 |-------|------|--------|
 | STORY-12-01 Schema/ADR | TASK-12-01 + [ADR-0004](adr/0004-reference-data-sources.md) | `done` |
-| STORY-12-02 UFSC | TASK-12-02..03 Import + catálogo LEDI | `done` (fixture-first; stretch UFSC live) |
+| STORY-12-02 UFSC | TASK-12-02..03 Import + catálogo LEDI | `done` (`LediCatalogVendorParser` + seed; validar staging) |
 | STORY-12-03 SIGTAP/release | TASK-12-04..05 | `done` (fixture CI; stretch DATASUS) |
 | STORY-12-04 API | TASK-12-06..07 `/reference/*` + autocompletes | `done` |
 
-### Fase 6 — EPIC-09 + EPIC-10 (API) `partial`
+### Fase 6 — EPIC-09 + EPIC-10 (API) `done`
 
 #### EPIC-09 LEDI/PEC
 
 | Story | Task | Status |
 |-------|------|--------|
-| STORY-09-01 LEDI 13 fichas | TASK-09-01, 09-04, 09-05 | `partial` — adapters registry; Field UI F8 |
-| STORY-09-02 PEC/FCC | TASK-09-02, 09-03 | `partial` — `SubmitPecBatch` + shared care web |
-| STORY-09-03 Walk-in/zoonoses | TASK-09-06..08 | `partial` — walk-in + relatório + gate release |
-| STORY-09-04 Indicadores eSB | TASK-09-09 | `pending` |
+| STORY-09-01 LEDI 13 fichas | TASK-09-01, 09-04, 09-05 | `done` (adapters web/API); captura Field offline = F8 |
+| STORY-09-02 PEC/FCC | TASK-09-02, 09-03 | `done` — PEC HTTP ([ADR-0010](adr/0010-pec-integration.md)) + shared care web |
+| STORY-09-03 Walk-in/zoonoses | TASK-09-06..08 | `done` — walk-in + relatório + gate release |
+| STORY-09-04 Indicadores eSB | TASK-09-09 | `done` — recálculo FAO/FAC via `ClinicalRecordPersistedConsumer` |
 
 #### EPIC-10 Cidadão Plus (backend)
 
 | Story | Task | Status |
 |-------|------|--------|
-| STORY-10-01 Meds | TASK-10-03 | `partial` — API CRUD |
-| STORY-10-02 Pânico | TASK-10-01, 10-04 | `partial` — API create |
-| STORY-10-03 Tele | TASK-10-02, 10-05 | `partial` — API index/create |
+| STORY-10-01 Meds | TASK-10-03 | `done` — API CRUD |
+| STORY-10-02 Pânico | TASK-10-01, 10-04 | `done` — API create (UI F8) |
+| STORY-10-03 Tele | TASK-10-02, 10-05 | `done` — API index/create |
 
 ### Fase 7 — EPIC-11 IA e Produção `pending`
 
@@ -264,13 +264,12 @@ flowchart TB
 
 ## 5. Próximos passos (ordem)
 
-1. **Fase 6** — fechar EPIC-09/10 (PEC produção, eSB, polish walk-in/FCC).
-2. **Piloto prefeitura** — checklist UI F5 opcional antes de go-live.
-3. **PNI stretch** — calendários live MS + polish ondas 2b–2d.
-4. **Fase 7** — EPIC-11.
-5. **Fase 8** — mobile-shared → Citizen → Field.
+1. **Fase 7** — EPIC-11 (IA/SIAPS, `citizen_feature_snapshots`, relatórios).
+2. **Fase 8** — `mobile-shared` → Citizen (pânico/tele/meds UI) → Field (13 fichas offline).
+3. **Piloto prefeitura** — checklist UI F5/F6 em [piloto-validacao-tecnica.md](commercial/piloto-validacao-tecnica.md).
+4. **Stretch EPIC-12** — SIGTAP DATASUS live, parser UFSC (implementado; validar em staging com rede).
 
-**Concluído (jun/2026):** EPIC-12 gate (`Reference::Gate`, `bin/ci_reference_gate`, [ADR-0004](adr/0004-reference-data-sources.md)); Onda 2a PNI + definições 2b–2d em Ruby.
+**Concluído (jun/2026):** Fase 6 (PEC HTTP, walk-in, FCC, Plus API, eSB recalc); EPIC-12 gate; LEDI 7.4.1; PNI Pneumo 20 (107) idoso.
 
 ---
 

@@ -3,7 +3,7 @@
 class LediBatchReadyConsumer < ApplicationConsumer
   def consume
     messages.each do |message|
-      process_with_idempotency(message) do |payload|
+      result = process_with_idempotency(message) do |payload|
         batch_id = payload.dig("payload", "ledi_batch_id") || payload["ledi_batch_id"]
         next if batch_id.blank?
 
@@ -17,11 +17,34 @@ class LediBatchReadyConsumer < ApplicationConsumer
         end
 
         if batch.status == "ready"
-          CommandBus.dispatch(Ledi::SubmitPecBatch, batch: batch)
+          submit_pec_batch!(batch)
+          Rails.logger.info("[Kafka] ledi.batch.ready submitted batch #{batch_id}")
+        else
+          Rails.logger.info(
+            "[Kafka] ledi.batch.ready skipped batch #{batch_id} (status=#{batch.status})"
+          )
         end
-
-        Rails.logger.info("[Kafka] ledi.batch.ready processed for batch #{batch_id}")
       end
+
+      next unless result == :duplicate
+
+      event_id = JSON.parse(message.payload).fetch("event_id")
+      Rails.logger.info(
+        "[Kafka] ledi.batch.ready duplicate envelope skipped (event_id=#{event_id})"
+      )
+    rescue JSON::ParserError
+      Rails.logger.info("[Kafka] ledi.batch.ready duplicate envelope skipped")
     end
+  end
+
+  private
+
+  def submit_pec_batch!(batch)
+    CommandBus.dispatch(Ledi::SubmitPecBatch, batch: batch)
+  rescue Ledi::Errors::PecSubmissionInProgressError => e
+    Rails.logger.info(
+      "[Kafka] ledi.batch.ready PEC submission in progress for batch #{batch.id}, Karafka will retry: #{e.message}"
+    )
+    raise
   end
 end

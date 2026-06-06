@@ -2,7 +2,7 @@
   <%= link_to t("cidadaobr.appointments.back"), reception_web_appointments_path(facility_scope_params), class: "text-sm text-slate-600 underline" %>
   <h2 class="mt-2 mb-6 text-2xl font-bold"><%= t("cidadaobr.appointments.walk_in_title") %></h2>
 
-  <% if @reference_release %>
+  <% if @reference_release_loaded && @reference_release %>
     <p class="mb-4 text-sm text-slate-600">
       <%= t("cidadaobr.reference.active_release", key: @reference_release.release_key) %>
     </p>
@@ -21,6 +21,23 @@
       <%= form.label :consultation_room_id, class: "block text-sm font-medium" %>
       <%= form.collection_select :consultation_room_id, @rooms, :id, :name, { prompt: true }, class: "mt-1 w-full rounded border border-slate-300 px-3 py-2" %>
     </div>
+
+    <% reference_fields = {
+      "ciap2" => [:ciap2_code, t("cidadaobr.appointments.walk_in_ciap2")],
+      "cid10" => [:cid10_code, t("cidadaobr.appointments.walk_in_cid10")],
+      "sigtap_procedure" => [:sigtap_procedure_code, t("cidadaobr.appointments.walk_in_sigtap")]
+    } %>
+    <% walk_in_domains = (@reference_domain_keys || []).select { |key| reference_fields.key?(key) } %>
+    <% if @reference_release_loaded && walk_in_domains.any? %>
+      <fieldset class="space-y-4 rounded border border-slate-200 p-4">
+        <legend class="px-1 text-sm font-medium text-slate-700"><%= t("cidadaobr.appointments.walk_in_reference_legend") %></legend>
+        <% walk_in_domains.each do |domain_key| %>
+          <% hidden_field, label = reference_fields.fetch(domain_key) %>
+          <%= render "web/reference/domain_autocomplete_field", form: form, domain_key: domain_key, label: label, hidden_field: hidden_field %>
+        <% end %>
+      </fieldset>
+    <% end %>
+
     <%= form.submit t("cidadaobr.appointments.walk_in_submit"), class: "rounded bg-slate-800 px-4 py-2 text-sm font-semibold text-white" %>
   <% end %>
 

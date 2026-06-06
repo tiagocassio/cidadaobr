@@ -8,5 +8,6 @@ module Ledi
     class AmbiguousTeamScopeError < StandardError; end
     class MissingClinicalRecordError < StandardError; end
     class InvalidBatchStateError < StandardError; end
+    class PecSubmissionInProgressError < StandardError; end
   end
 end

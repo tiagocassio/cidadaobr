@@ -137,12 +137,14 @@ RSpec.describe Ledi::SubmitLediBatch do
   end
 
   it "keeps municipal batch numbers unique when facility and team ids are null" do
-    municipal_membership = create(:user_municipality_membership, municipality: municipality, scope: "municipality")
+    isolated_municipality = create(:municipality, ibge_code: "8887776")
+    isolated_facility = create(:health_facility, municipality: isolated_municipality, cnes: "3000001")
+    municipal_membership = create(:user_municipality_membership, municipality: isolated_municipality, scope: "municipality")
 
     import_and_validate_municipal = lambda do |cpf|
       with_tenant(municipal_membership) do
         clinical_record = Ledi::ImportTransportRecord.call(
-          payload_binary: LediFixtures.fci_binary(cnes: facility.cnes, ibge: municipality.ibge_code, cpf: cpf)
+          payload_binary: LediFixtures.fci_binary(cnes: isolated_facility.cnes, ibge: isolated_municipality.ibge_code, cpf: cpf)
         )[:clinical_record]
         Ledi::ValidateClinicalRecord.call(clinical_record_id: clinical_record.id)
       end

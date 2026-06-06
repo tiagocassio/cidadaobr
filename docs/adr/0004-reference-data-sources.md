@@ -20,14 +20,14 @@ Produção municipal exige atualização periódica (SIGTAP mensal, PNI anual, L
 
 4. **Publicação:** `Reference::Commands::PublishRelease` via `CommandBus` — checksum SHA-256, evento `reference-release-published` (platform outbox, [ADR-0008](0008-platform-scoped-outbox.md)).
 
-5. **Consumo:** API `GET /api/v1/reference/*` (JWT gestor/field); web gestão usa leitura direta ou autocompletes Stimulus (TASK-12-07). Apps Flutter (Fase 8) sincronizam por manifest/ETag.
+5. **Consumo:** API `GET /api/v1/reference/*` (JWT gestor/field); web gestão usa leitura direta ou autocompletes Stimulus (TASK-12-07). Apps Flutter (Fase 8) sincronizam por manifest/ETag. **Release ativa** (`Reference::ActiveRelease`) é global à plataforma na Fase 6; pinning por município fica para fases futuras.
 
 6. **Gate CI:** `bin/ci_reference_gate` executa cadeia import → catálogo → PNI (se vazio) → publish → validação de manifest ([`Reference::Gate`](../../lib/reference/gate.rb)).
 
 ## Consequences
 
-- Catálogo LEDI automático (parser HTML/XSD 13 fichas) permanece **stretch**; gate aceita seed estável + contagem no manifest.
-- SIGTAP real (download DATASUS) é **stretch**; competência vem de fixture até integração de rede.
+- SIGTAP real (download DATASUS) — `Reference::SigtapRemoteFetcher` com fallback fixture; ativar produção com `SIGTAP_LIVE=1` (CI/test usam fixture).
+- Catálogo LEDI automático — `Reference::LediCatalogVendorParser` lê `vendor/ledi/{version}/gen-rb/` antes do seed.
 - PNI: SOT Ruby ([`PniCalendarDefinitions`](../../lib/reference/pni_calendar_definitions.rb)); JSON export auditável não versionado (`.gitignore`).
 - EPIC-12 **bloqueia Fase 6 clínica** até gate CI + release reproduzível passarem.
 

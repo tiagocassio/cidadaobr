@@ -4,7 +4,7 @@
 **Roteiro organizado (fases × épicos × tasks):** [roteiro-organizado-fases-epicos.md](../roteiro-organizado-fases-epicos.md)  
 **EPIC-00 — volta aos trilhos:** [epic-00-remediation.md](../epic-00-remediation.md) + [ADR-0006](../adr/0006-platform-write-contract.md)
 **Decisão PO:** [roadmap-decision-fase5.md](roadmap-decision-fase5.md) — Opção A (Fase 5 antes de mobile/Fase 6)  
-**Última revisão:** jun/2026 — EPIC-12 gate fechado ([ADR-0004](../adr/0004-reference-data-sources.md)); Fase 6 MVP em curso.
+**Última revisão:** jun/2026 — LEDI **7.4.1**; EPIC-12 gate fechado; **Fase 6 done** (PEC HTTP, walk-in, FCC, Plus API).
 
 ---
 
@@ -18,20 +18,16 @@
 | **4b** | **Concluída (gate)** | 53/53 BPs; C2.E PNI 2026 ([ADR-0009](../adr/0009-pni-calendar-reference.md)) |
 | **5** | **Concluída (gate técnico)** | EPIC-06/07; RSpec/E2E; UI gestor = checklist prefeitura |
 | **12** | **Concluída (gate)** | `Reference::Gate`, `bin/ci_reference_gate`, `/reference/*` + OpenAPI |
-| **6** | **Parcial (MVP)** | PEC command, shared care web, walk-in+relatório, APIs panic/tele/meds |
+| **6** | **Concluída (gate técnico)** | PEC HTTP ([ADR-0010](../adr/0010-pec-integration.md)), walk-in, FCC, Plus API; UI Field/pânico = F8 |
 | **7–8** | Pendente | Flutter só Fase 8 |
 
 ```mermaid
 flowchart LR
-  done[Fases0_a_5_plus_E12]
-  f6[Fase6_partial]
-  pni[PNI_2b_2d]
+  done[Fases0_a_6_plus_E12]
   f7[Fase7]
   f8[Fase8]
 
-  done --> f6
-  done --> pni
-  f6 --> f7 --> f8
+  done --> f7 --> f8
 ```
 
 ---
@@ -69,25 +65,27 @@ Gate técnico fechado. **Piloto UI:** [piloto-validacao-tecnica.md](piloto-valid
 
 ## 5. Próximos passos (ordem)
 
-### Prioridade 1 — Fase 6 (EPIC-09/10)
+### Prioridade 1 — Fase 7 (EPIC-11)
 
-- PEC produção real (sair de stub controlado)
-- TASK-09-09 regras eSB/eMulti
-- Polish walk-in + FCC web
-- OpenAPI citizen-plus alinhado a contract spec
+- `citizen_feature_snapshots`, scoring de perfis, SIAPS, relatórios de produção.
 
-### Prioridade 2 — Piloto UI F5 (opcional)
+### Prioridade 2 — Fase 8 (Flutter)
 
-Checklist prefeitura — não bloqueia dev F6.
+- `cidadaobr-mobile-shared` → Citizen (pânico/tele/meds UI) → Field (fichas LEDI offline).
 
-### Prioridade 3 — PNI live MS
+### Prioridade 3 — Piloto prefeitura
 
-Competências reais + recálculo após release.
+Checklist [piloto-validacao-tecnica.md](piloto-validacao-tecnica.md) — F5/F6 em `bin/dev`.
+
+### Stretch EPIC-12 (staging)
+
+- SIGTAP DATASUS live (`Reference::SigtapRemoteFetcher`) — CI mantém fixture.
+- Parser UFSC → `ledi_field_catalogs` (`Reference::LediCatalogVendorParser`).
+- PNI Pneumo 20 (107) idoso — `PniCalendarDefinitions`.
 
 ### Depois
 
-- **Fase 7** — EPIC-11
-- **Fase 8** — Flutter
+- Credibilidade financeira (TASK-05-07 + EPIC-11 repasse oficial).
 
 ---
 

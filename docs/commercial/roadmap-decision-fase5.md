@@ -19,7 +19,7 @@
 | `phase-4-indicators` | completed |
 | `phase-4b-methodology` | completed |
 | `phase-5-field-campaigns` | **completed** (gate técnico) — suite RSpec verde; E2E HTTP; UI gestor no checklist prefeitura |
-| EPIC-12 (referência MS) | **partial** — jobs + API `/reference/*`; release versionada pendente |
+| EPIC-12 (referência MS) | **done (gate)** — `Reference::Gate`, `bin/ci_reference_gate`; stretch UFSC/DATASUS |
 
 ---
 
@@ -41,7 +41,7 @@
 - [ ] **Opção C — Paralelo:** EPIC-06/07 + TASK-05-07
 - [ ] **Opção D — Mobile first:** descartada — Flutter só Fase 8
 
-**Próximo passo:** **EPIC-12** → **Fase 6**. PNI onda 2 após EPIC-12. Piloto prefeitura: checklist UI opcional — [status-plano-2026-06.md](status-plano-2026-06.md).
+**Próximo passo:** **Fase 7** (EPIC-11 IA/SIAPS) → **Fase 8** (Flutter). Piloto: [piloto-validacao-tecnica.md](piloto-validacao-tecnica.md). — [status-plano-2026-06.md](status-plano-2026-06.md).
 
 ---
 

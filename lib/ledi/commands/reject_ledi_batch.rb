@@ -9,32 +9,42 @@ module Ledi
 
     def call
       raise ArgumentError, "reason is required" if @reason.blank?
-      return @batch if @batch.status == "rejected"
 
-      raise Ledi::Errors::InvalidBatchStateError, "Batch cannot be rejected" unless @batch.status == "ready"
+      @batch.with_lock do
+        @batch.reload
+        return @batch if @batch.status == "rejected"
 
-      previous_status = @batch.status
+        raise Ledi::Errors::InvalidBatchStateError, "Batch cannot be rejected" unless @batch.status == "ready"
 
-      write_transaction do
-        @batch.update!(status: "rejected", rejection_reason: @reason, rejected_at: Time.current)
+        previous_status = @batch.status
 
-        RecordPlatformEvent.call(
-          event_type: Cidadaobr::KafkaTopics::LEDI_BATCH_STATUSCHANGED,
-          aggregate_type: "LediBatch",
-          aggregate_id: @batch.id,
-          payload: {
-            ledi_batch_id: @batch.id,
-            batch_number: @batch.batch_number,
-            previous_status: previous_status,
-            status: @batch.status,
-            rejection_reason: @batch.rejection_reason,
-            rejected_at: @batch.rejected_at.iso8601
-          },
-          care_team_id: @batch.care_team_id
-        )
+        write_transaction do
+          @batch.update!(
+            status: "rejected",
+            rejection_reason: @reason,
+            rejected_at: Time.current,
+            pec_http_accepted_at: nil
+          )
+          @batch.transport_records.where(status: %w[validated sent]).update_all(status: "rejected", updated_at: Time.current)
+
+          RecordPlatformEvent.call(
+            event_type: Cidadaobr::KafkaTopics::LEDI_BATCH_STATUSCHANGED,
+            aggregate_type: "LediBatch",
+            aggregate_id: @batch.id,
+            payload: {
+              ledi_batch_id: @batch.id,
+              batch_number: @batch.batch_number,
+              previous_status: previous_status,
+              status: @batch.status,
+              rejection_reason: @batch.rejection_reason,
+              rejected_at: @batch.rejected_at.iso8601
+            },
+            care_team_id: @batch.care_team_id
+          )
+        end
       end
 
-      @batch
+      @batch.reload
     end
   end
 end

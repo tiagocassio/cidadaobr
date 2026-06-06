@@ -151,6 +151,7 @@ module Reference
     def elderly_entries
       [
         entry("72", "Influenza", "1", "D1", 21900, 43800, aliases: %w[influenza gripe]),
+        entry("107", "Pneumocócica 20", "1", "D1", 21900, 43800, aliases: %w[pneumo 20 pneumo20 vpc20]),
         entry("21", "Pneumocócica 23", "1", "D1", 21900, 43800, aliases: %w[pneumo 23 vpp23])
       ]
     end

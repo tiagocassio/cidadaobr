@@ -20,7 +20,7 @@ Audit: `.cursor/skills/cidadaobr-platform-write-refactor/scripts/audit-violation
 
 **CI gate:** `bin/ci_controller_writes` (job `controller_writes_gate` — bloqueia `create!/update!/save!/destroy!` em `app/controllers`).
 
-**Conformidade (jun/2026):** Ondas B–J + homogeneidade I concluídas; próximo: EPIC-12 release + piloto Fase 5 — `docs/epic-00-remediation.md`.
+**Conformidade (jun/2026):** Ondas B–J concluídas; EPIC-12 gate fechado; LEDI **7.4.1**; Fase 6 **done** (PEC HTTP [ADR-0010](docs/adr/0010-pec-integration.md), walk-in/FCC, Plus API) — `docs/epic-00-remediation.md`.
 
 ## Stack
 

@@ -32,4 +32,23 @@ RSpec.describe "Web shared care cases", type: :request do
 
     expect(response).to redirect_to(web_shared_care_case_path(shared_care_case))
   end
+
+  it "creates a shared care case scoped to the tenant" do
+    sign_in_web(user: admin_membership.user, membership: admin_membership)
+
+    expect {
+      post web_shared_care_cases_path, params: {
+        shared_care_case: {
+          citizen_id: citizen.id,
+          ciap2_code: "A01",
+          clinical_summary: "Caso FCC piloto"
+        }
+      }
+    }.to change {
+      with_tenant(admin_membership) { SharedCareCase.count }
+    }.by(1)
+
+    created = with_tenant(admin_membership) { SharedCareCase.order(:created_at).last }
+    expect(response).to redirect_to(web_shared_care_case_path(created))
+  end
 end

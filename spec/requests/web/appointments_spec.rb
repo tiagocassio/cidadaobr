@@ -323,4 +323,162 @@ RSpec.describe "Web appointments", type: :request do
       expect(response.body).to include(I18n.t("cidadaobr.scheduling.slot_unavailable.slot_full"))
     end
   end
+
+  describe "walk-in reception" do
+    let(:municipality) { create(:municipality) }
+    let(:facility) { create(:health_facility, municipality: municipality) }
+    let(:team) { create(:care_team, municipality: municipality, health_facility: facility) }
+    let(:membership) do
+      create(
+        :user_municipality_membership,
+        municipality: municipality,
+        health_facility: facility,
+        scope: "facility",
+        role_code: "facility_manager"
+      )
+    end
+    let!(:service_type) do
+      with_tenant(membership) do
+        AppointmentServiceType.create!(municipality: municipality, code: "walk_in", name: "Demanda espontânea")
+      end
+    end
+    let!(:room) do
+      with_tenant(membership) do
+        ConsultationRoom.create!(municipality: municipality, health_facility: facility, name: "Sala walk-in", room_kind: "general")
+      end
+    end
+    let!(:citizen) do
+      with_tenant(membership) do
+        create(:citizen, municipality: municipality, health_facility: facility, care_team: team)
+      end
+    end
+    let!(:reference_release) do
+      ReferenceDataRelease.create!(
+        release_key: "test-release",
+        ledi_version: Rails.application.config.ledi.fetch(:version),
+        sigtap_competence: "202602",
+        checksum: "abc123",
+        manifest_json: {
+          "domains" => [
+            { "key" => "ciap2" },
+            { "key" => "cid10" },
+            { "key" => "sigtap_procedure" }
+          ]
+        },
+        published_at: Time.current
+      )
+    end
+
+    before { sign_in_web(user: membership.user, membership: membership) }
+
+    it "shows active reference release on the walk-in form" do
+      get walk_in_web_appointments_path(health_facility_id: facility.id)
+
+      expect(response).to have_http_status(:ok)
+      expect(response.body).to include(reference_release.release_key)
+      expect(response.body).to include('data-controller="reference-domain-autocomplete"')
+      expect(response.body).to include("ciap2")
+      expect(response.body).to include("sigtap_procedure")
+    end
+
+    it "books a walk-in appointment when reference data is loaded" do
+      expect do
+        post walk_in_web_appointments_path(health_facility_id: facility.id), params: {
+          appointment: {
+            citizen_id: citizen.id,
+            appointment_service_type_id: service_type.id,
+            consultation_room_id: room.id
+          }
+        }
+      end.to change { with_tenant(membership) { Appointment.count } }.by(1)
+
+      expect(response).to redirect_to(reception_web_appointments_path)
+    end
+
+    it "blocks walk-in booking when reference release is missing" do
+      reference_release.destroy!
+
+      post walk_in_web_appointments_path(health_facility_id: facility.id), params: {
+        appointment: {
+          citizen_id: citizen.id,
+          appointment_service_type_id: service_type.id,
+          consultation_room_id: room.id
+        }
+      }
+
+      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response.body).to include(I18n.t("cidadaobr.appointments.flash.reference_release_missing"))
+    end
+
+    it "books walk-in with a valid CIAP-2 code from the active release" do
+      ReferenceDomainEntry.create!(domain_key: "ciap2", code: "A01", label: "Dor generalizada", active: true)
+
+      post walk_in_web_appointments_path(health_facility_id: facility.id), params: {
+        appointment: {
+          citizen_id: citizen.id,
+          appointment_service_type_id: service_type.id,
+          consultation_room_id: room.id,
+          ciap2_code: "A01"
+        }
+      }
+
+      appointment = with_tenant(membership) { Appointment.order(:created_at).last }
+      expect(response).to redirect_to(reception_web_appointments_path)
+      expect(appointment.ciap2_code).to eq("A01")
+    end
+
+    it "books walk-in with a valid SIGTAP code for the active release competence" do
+      ReferenceDomainEntry.create!(
+        domain_key: "sigtap_procedure",
+        code: "0301010070",
+        label: "Consulta",
+        active: true,
+        payload_json: { "competence" => "202602" }
+      )
+
+      post walk_in_web_appointments_path(health_facility_id: facility.id), params: {
+        appointment: {
+          citizen_id: citizen.id,
+          appointment_service_type_id: service_type.id,
+          consultation_room_id: room.id,
+          sigtap_procedure_code: "0301010070"
+        }
+      }
+
+      appointment = with_tenant(membership) { Appointment.order(:created_at).last }
+      expect(response).to redirect_to(reception_web_appointments_path)
+      expect(appointment.sigtap_procedure_code).to eq("0301010070")
+    end
+
+    it "books walk-in with a valid CID-10 code from the active release" do
+      ReferenceDomainEntry.create!(domain_key: "cid10", code: "A00", label: "Cólera", active: true)
+
+      post walk_in_web_appointments_path(health_facility_id: facility.id), params: {
+        appointment: {
+          citizen_id: citizen.id,
+          appointment_service_type_id: service_type.id,
+          consultation_room_id: room.id,
+          cid10_code: "A00"
+        }
+      }
+
+      appointment = with_tenant(membership) { Appointment.order(:created_at).last }
+      expect(response).to redirect_to(reception_web_appointments_path)
+      expect(appointment.cid10_code).to eq("A00")
+    end
+
+    it "rejects walk-in booking with an invalid CIAP-2 code" do
+      post walk_in_web_appointments_path(health_facility_id: facility.id), params: {
+        appointment: {
+          citizen_id: citizen.id,
+          appointment_service_type_id: service_type.id,
+          consultation_room_id: room.id,
+          ciap2_code: "INVALID"
+        }
+      }
+
+      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response.body).to include(I18n.t("cidadaobr.appointments.flash.invalid_booking_data"))
+    end
+  end
 end

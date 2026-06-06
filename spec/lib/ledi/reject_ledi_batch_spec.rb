@@ -11,7 +11,48 @@ RSpec.describe Ledi::RejectLediBatch do
     with_tenant(membership) { create(:ledi_batch, municipality: municipality, status: "ready") }
   end
 
+  it "clears pec_http_accepted_at when rejecting a ready batch" do
+    record = with_tenant(membership) do
+      TransportRecord.create!(
+        municipality: municipality,
+        ledi_batch: batch,
+        ibge_code: municipality.ibge_code,
+        cnes: "1234567",
+        serialized_uuid: SecureRandom.uuid,
+        serialized_type: "FCI",
+        ledi_version: Rails.application.config.ledi.fetch(:version),
+        status: "sent",
+        payload_binary: "\x00"
+      )
+    end
+
+    with_tenant(membership) do
+      batch.update!(pec_http_accepted_at: 1.minute.ago)
+
+      described_class.call(batch: batch, reason: "manual rollback")
+      batch.reload
+
+      expect(batch.status).to eq("rejected")
+      expect(batch.pec_http_accepted_at).to be_nil
+      expect(record.reload.status).to eq("rejected")
+    end
+  end
+
   it "marks batch as rejected with reason" do
+    record = with_tenant(membership) do
+      TransportRecord.create!(
+        municipality: municipality,
+        ledi_batch: batch,
+        ibge_code: municipality.ibge_code,
+        cnes: "1234567",
+        serialized_uuid: SecureRandom.uuid,
+        serialized_type: "FCI",
+        ledi_version: Rails.application.config.ledi.fetch(:version),
+        status: "validated",
+        payload_binary: "\x00"
+      )
+    end
+
     with_tenant(membership) do
       described_class.call(batch: batch, reason: "PEC XSD invalid")
       batch.reload
@@ -19,6 +60,7 @@ RSpec.describe Ledi::RejectLediBatch do
       expect(batch.status).to eq("rejected")
       expect(batch.rejection_reason).to eq("PEC XSD invalid")
       expect(batch.rejected_at).to be_present
+      expect(record.reload.status).to eq("rejected")
       expect(DomainEvent.where(event_type: Cidadaobr::KafkaTopics::LEDI_BATCH_STATUSCHANGED, aggregate_id: batch.id).count).to eq(1)
     end
   end

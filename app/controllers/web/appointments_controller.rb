@@ -90,6 +90,8 @@ module Web
     def walk_in
       @appointment = Appointment.new
       @reference_release = Reference::ActiveRelease.current
+      @reference_release_loaded = Reference::ActiveRelease.loaded?
+      @reference_domain_keys = Reference::ActiveRelease.manifest_domain_keys
       return if request.get?
 
       unless Reference::ActiveRelease.loaded?
@@ -107,7 +109,10 @@ module Web
         citizen_id: citizen.id,
         appointment_service_type_id: attrs.fetch(:appointment_service_type_id),
         consultation_room_id: room.id,
-        care_team_id: attrs[:care_team_id]
+        care_team_id: attrs[:care_team_id],
+        ciap2_code: attrs[:ciap2_code],
+        cid10_code: attrs[:cid10_code],
+        sigtap_procedure_code: attrs[:sigtap_procedure_code]
       )
       redirect_to reception_web_appointments_path(facility_scope_params(room.health_facility_id)),
                   notice: t("cidadaobr.appointments.flash.walk_in_booked")
@@ -299,6 +304,9 @@ module Web
           citizen_id
           appointment_service_type_id
           consultation_room_id
+          ciap2_code
+          cid10_code
+          sigtap_procedure_code
         ]
       )
       merge_optional_appointment_params(attrs)

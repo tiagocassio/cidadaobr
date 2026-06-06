@@ -31,11 +31,49 @@ RSpec.describe LediBatchReadyConsumer do
 
   it "marks ready batch as submitted and emits status_changed" do
     with_tenant(membership) do
+      TransportRecord.create!(
+        municipality: municipality,
+        ledi_batch: batch,
+        ibge_code: municipality.ibge_code,
+        cnes: "1234567",
+        serialized_uuid: SecureRandom.uuid,
+        serialized_type: "FCI",
+        ledi_version: Rails.application.config.ledi.fetch(:version),
+        status: "validated",
+        payload_binary: "\x00"
+      )
+
       consume_envelope(envelope_for(batch))
 
       batch.reload
       expect(batch.status).to eq("submitted")
       expect(DomainEvent.where(event_type: Cidadaobr::KafkaTopics::LEDI_BATCH_STATUSCHANGED, aggregate_id: batch.id).count).to eq(1)
+    end
+  end
+
+  it "logs duplicate envelope on idempotent replay" do
+    envelope = envelope_for(batch)
+    allow(Rails.logger).to receive(:info)
+
+    with_tenant(membership) do
+      TransportRecord.create!(
+        municipality: municipality,
+        ledi_batch: batch,
+        ibge_code: municipality.ibge_code,
+        cnes: "1234567",
+        serialized_uuid: SecureRandom.uuid,
+        serialized_type: "FCI",
+        ledi_version: Rails.application.config.ledi.fetch(:version),
+        status: "validated",
+        payload_binary: "\x00"
+      )
+
+      consume_envelope(envelope)
+      consume_envelope(envelope)
+
+      expect(Rails.logger).to have_received(:info).with(
+        a_string_matching(/duplicate envelope skipped \(event_id=#{envelope.fetch("event_id")}\)/)
+      )
     end
   end
 
@@ -65,6 +103,26 @@ RSpec.describe LediBatchReadyConsumer do
     end
   ensure
     ENV["LEDI_PEC_STUB_REJECT"] = original
+  end
+
+  it "re-raises PecSubmissionInProgressError so Karafka retries without marking idempotency" do
+    with_tenant(membership) do
+      allow(CommandBus).to receive(:dispatch).with(Ledi::SubmitPecBatch, batch: batch).and_raise(
+        Ledi::Errors::PecSubmissionInProgressError,
+        "PEC HTTP submission already in progress"
+      )
+
+      expect do
+        consume_envelope(envelope_for(batch))
+      end.to raise_error(Ledi::Errors::PecSubmissionInProgressError)
+
+      expect(
+        KafkaProcessedEvent.where(
+          topic: Cidadaobr::KafkaTopics::LEDI_BATCH_SUBMITTED,
+          consumer_group: KarafkaApp.config.client_id
+        ).count
+      ).to eq(0)
+    end
   end
 
   it "does not reject an already submitted batch when PEC stub is enabled" do

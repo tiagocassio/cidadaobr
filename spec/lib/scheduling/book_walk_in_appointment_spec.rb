@@ -38,4 +38,55 @@ RSpec.describe Scheduling::BookWalkInAppointment do
       expect(appointment.status).to eq("checked_in")
     end
   end
+
+  it "rejects an invalid reference code for the active release" do
+    ReferenceDataRelease.create!(
+      release_key: "walk-in-release",
+      ledi_version: Rails.application.config.ledi.fetch(:version),
+      sigtap_competence: "202602",
+      checksum: "walkin123",
+      manifest_json: { "domains" => [ { "key" => "ciap2" } ] },
+      published_at: Time.current
+    )
+
+    with_tenant(membership) do
+      expect do
+        described_class.call(
+          citizen_id: citizen.id,
+          appointment_service_type_id: service_type.id,
+          consultation_room_id: room.id,
+          ciap2_code: "INVALID"
+        )
+      end.to raise_error(ArgumentError, /invalid reference code for ciap2/)
+    end
+  end
+
+  it "rejects SIGTAP codes from a stale competence" do
+    ReferenceDataRelease.create!(
+      release_key: "walk-in-sigtap",
+      ledi_version: Rails.application.config.ledi.fetch(:version),
+      sigtap_competence: "202602",
+      checksum: "walkinsigtap",
+      manifest_json: { "domains" => [ { "key" => "sigtap_procedure" } ] },
+      published_at: Time.current
+    )
+    ReferenceDomainEntry.create!(
+      domain_key: "sigtap_procedure",
+      code: "0301010070",
+      label: "Legacy procedure",
+      active: true,
+      payload_json: { "competence" => "202601" }
+    )
+
+    with_tenant(membership) do
+      expect do
+        described_class.call(
+          citizen_id: citizen.id,
+          appointment_service_type_id: service_type.id,
+          consultation_room_id: room.id,
+          sigtap_procedure_code: "0301010070"
+        )
+      end.to raise_error(ArgumentError, /invalid reference code for sigtap_procedure/)
+    end
+  end
 end

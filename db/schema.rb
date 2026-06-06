@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_06_03_120006) do
+ActiveRecord::Schema[8.1].define(version: 2026_06_05_150001) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
@@ -54,6 +54,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_03_120006) do
     t.uuid "appointment_service_type_id", null: false
     t.uuid "care_team_id"
     t.string "channel", default: "web_reception", null: false
+    t.string "ciap2_code"
+    t.string "cid10_code"
     t.uuid "citizen_id", null: false
     t.uuid "consultation_room_id", null: false
     t.datetime "created_at", null: false
@@ -64,6 +66,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_03_120006) do
     t.uuid "municipality_id", null: false
     t.uuid "professional_id"
     t.datetime "scheduled_at", null: false
+    t.string "sigtap_procedure_code"
     t.string "status", default: "scheduled", null: false
     t.datetime "updated_at", null: false
     t.index ["health_facility_id", "status", "scheduled_at"], name: "idx_on_health_facility_id_status_scheduled_at_ef6560721a"
@@ -439,6 +442,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_03_120006) do
     t.uuid "health_facility_id"
     t.string "ledi_version", null: false
     t.uuid "municipality_id", null: false
+    t.datetime "pec_http_accepted_at"
     t.datetime "rejected_at"
     t.text "rejection_reason"
     t.string "status", default: "draft", null: false
@@ -493,6 +497,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_03_120006) do
     t.datetime "created_at", null: false
     t.string "ibge_code", null: false
     t.string "name", null: false
+    t.string "pec_api_token"
+    t.string "pec_base_url"
     t.string "state_code", limit: 2, null: false
     t.datetime "updated_at", null: false
     t.index ["ibge_code"], name: "index_municipalities_on_ibge_code", unique: true
