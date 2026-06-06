@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_06_05_150001) do
+ActiveRecord::Schema[8.1].define(version: 2026_06_05_160001) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
@@ -442,7 +442,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_05_150001) do
     t.uuid "health_facility_id"
     t.string "ledi_version", null: false
     t.uuid "municipality_id", null: false
-    t.datetime "pec_http_accepted_at"
+    t.datetime "pec_accepted_at"
     t.datetime "rejected_at"
     t.text "rejection_reason"
     t.string "status", default: "draft", null: false

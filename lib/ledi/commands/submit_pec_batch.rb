@@ -32,7 +32,7 @@ module Ledi
         recheck = @batch.with_lock do
           @batch.reload
           next @batch if @batch.status == "submitted"
-          next :complete if @batch.pec_http_accepted_at.present?
+          next :complete if @batch.pec_accepted_at.present?
           next @batch unless @batch.status == "ready"
 
           :post
@@ -43,7 +43,7 @@ module Ledi
         when :complete then :complete
         when :post
           pec_result = PecSubmissionService.call(batch: @batch)
-          persist_pec_http_accepted! if pec_result.accepted
+          persist_pec_accepted! if pec_result.accepted
           pec_result
         end
       end
@@ -73,13 +73,13 @@ module Ledi
       connection.execute("SELECT pg_advisory_unlock(hashtextextended(#{quoted}, 0))") if acquired
     end
 
-    def persist_pec_http_accepted!
+    def persist_pec_accepted!
       @batch.with_lock do
         @batch.reload
-        return if @batch.pec_http_accepted_at.present?
+        return if @batch.pec_accepted_at.present?
         return unless @batch.status == "ready"
 
-        @batch.update_column(:pec_http_accepted_at, Time.current)
+        @batch.update_column(:pec_accepted_at, Time.current)
       end
     end
 
@@ -88,7 +88,7 @@ module Ledi
         @batch.reload
         next @batch if @batch.status == "submitted"
         next @batch unless @batch.status == "ready"
-        next :complete_pec if @batch.pec_http_accepted_at.present?
+        next :complete_pec if @batch.pec_accepted_at.present?
         next :finalize_submitted if resubmit_without_http?
         next :reject_inconsistent if inconsistent_transport_state?
 
@@ -103,7 +103,7 @@ module Ledi
       return @batch if @batch.status == "submitted"
       return @batch unless @batch.status == "ready"
 
-      if @batch.pec_http_accepted_at.present?
+      if @batch.pec_accepted_at.present?
         dispatch_ready_action(:complete_pec)
         return @batch.reload
       end
@@ -120,9 +120,9 @@ module Ledi
       @batch.reload
       return @batch unless @batch.status == "ready"
 
-      unless @batch.pec_http_accepted_at.present?
+      unless @batch.pec_accepted_at.present?
         raise Ledi::Errors::InvalidBatchStateError,
-              "PEC accepted batch #{@batch.id} but pec_http_accepted_at was not persisted"
+              "PEC accepted batch #{@batch.id} but pec_accepted_at was not persisted"
       end
 
       dispatch_ready_action(:complete_pec)

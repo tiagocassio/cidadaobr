@@ -23,7 +23,7 @@ module Ledi
             status: "rejected",
             rejection_reason: @reason,
             rejected_at: Time.current,
-            pec_http_accepted_at: nil
+            pec_accepted_at: nil
           )
           @batch.transport_records.where(status: %w[validated sent]).update_all(status: "rejected", updated_at: Time.current)
 

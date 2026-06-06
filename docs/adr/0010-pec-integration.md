@@ -26,7 +26,7 @@ Produção exige envio HTTP configurável por município, idempotência por `bat
 
 7. **Versão LEDI / VersaoThrift:** o client **não** re-serializa fichas; `payload_binary` já deve conter `DadoTransporte` com `transport_version` de `config/ledi.yml` desde import/validação.
 
-8. **Idempotência:** chave = `batch_number` na URL (PEC municipal). **App:** `pg_try_advisory_lock` serializa POST HTTP por lote (falha rápida → retry do consumer); `SubmitPecBatch` usa `with_lock` no lote; retorna cedo se já `submitted`; persiste `pec_http_accepted_at` **logo após** HTTP accept (ainda no fluxo advisory, antes de `submitted`); retry completa sem re-POST; estado misto `validated`+`sent` sem flag → reject (remediação manual abaixo); accept marca `validated` e `sent` como `sent`. Com `pec_http_accepted_at` setado, `finalize_pec_http!` completa e **não** rejeita por resposta HTTP posterior — evita falso reject em crash-retry quando PEC já aceitou o lote.
+8. **Idempotência:** chave = `batch_number` na URL (PEC municipal). **App:** `pg_try_advisory_lock` serializa POST HTTP por lote (falha rápida → retry do consumer); `SubmitPecBatch` usa `with_lock` no lote; retorna cedo se já `submitted`; persiste `pec_accepted_at` **logo após** HTTP accept (ainda no fluxo advisory, antes de `submitted`); retry completa sem re-POST; estado misto `validated`+`sent` sem flag → reject (remediação manual abaixo); accept marca `validated` e `sent` como `sent`. Com `pec_accepted_at` setado, `finalize_pec_http!` completa e **não** rejeita por resposta HTTP posterior — evita falso reject em crash-retry quando PEC já aceitou o lote.
 
 9. **Transação vs row lock (`mark_batch_submitted!`):** transição para `submitted`, update de `transport_records` e `RecordPlatformEvent` ficam no **mesmo** `write_transaction` ([ADR-0006](0006-platform-write-contract.md)). O `with_lock` na row do lote pode segurar lock durante insert outbox — trade-off aceito para atomicidade AR + evento.
 
@@ -37,7 +37,7 @@ Produção exige envio HTTP configurável por município, idempotência por `bat
 - **Chaves encryption:** definir `ACTIVE_RECORD_ENCRYPTION_*` em todo ambiente que não seja `development`/`test` (inclui staging se `RAILS_ENV=production`).
 - **`PecSubmissionInProgressError`:** outro worker segura `pg_try_advisory_lock` — consumer loga e re-lança; Karafka retenta sem marcar idempotência (`KafkaProcessedEvent` não gravado).
 - **PEC accept + lote já `rejected`:** se `RejectLediBatch` venceu durante HTTP, `finalize_pec_http!` retorna sem raise; PEC pode ter o lote — remediação manual com município (cancelar/ignorar duplicata).
-- **`InvalidBatchStateError` (accept sem `pec_http_accepted_at`):** estado inconsistente pós-HTTP — inspecionar lote; corrigir flag manualmente ou reprocessar após fix; não expectativa de auto-cura em retry.
+- **`InvalidBatchStateError` (accept sem `pec_accepted_at`):** estado inconsistente pós-HTTP — inspecionar lote; corrigir flag manualmente ou reprocessar após fix; não expectativa de auto-cura em retry.
 
 ## Consequences
 

@@ -11,7 +11,7 @@ RSpec.describe Ledi::RejectLediBatch do
     with_tenant(membership) { create(:ledi_batch, municipality: municipality, status: "ready") }
   end
 
-  it "clears pec_http_accepted_at when rejecting a ready batch" do
+  it "clears pec_accepted_at when rejecting a ready batch" do
     record = with_tenant(membership) do
       TransportRecord.create!(
         municipality: municipality,
@@ -27,13 +27,13 @@ RSpec.describe Ledi::RejectLediBatch do
     end
 
     with_tenant(membership) do
-      batch.update!(pec_http_accepted_at: 1.minute.ago)
+      batch.update!(pec_accepted_at: 1.minute.ago)
 
       described_class.call(batch: batch, reason: "manual rollback")
       batch.reload
 
       expect(batch.status).to eq("rejected")
-      expect(batch.pec_http_accepted_at).to be_nil
+      expect(batch.pec_accepted_at).to be_nil
       expect(record.reload.status).to eq("rejected")
     end
   end

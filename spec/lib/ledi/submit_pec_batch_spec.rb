@@ -87,7 +87,7 @@ RSpec.describe Ledi::SubmitPecBatch do
 
   it "completes submission without re-posting when PEC already accepted over HTTP" do
     with_tenant(membership) do
-      batch.update!(pec_http_accepted_at: 1.minute.ago)
+      batch.update!(pec_accepted_at: 1.minute.ago)
 
       expect(Ledi::PecSubmissionService).not_to receive(:call)
 
@@ -98,7 +98,7 @@ RSpec.describe Ledi::SubmitPecBatch do
     end
   end
 
-  it "persists pec_http_accepted_at after PEC accepts so a retry completes without re-posting" do
+  it "persists pec_accepted_at after PEC accepts so a retry completes without re-posting" do
     stub_pec_response(accepted: true)
     complete_calls = 0
 
@@ -111,7 +111,7 @@ RSpec.describe Ledi::SubmitPecBatch do
       end
 
       expect { described_class.call(batch: batch) }.to raise_error("simulated crash")
-      expect(batch.reload.pec_http_accepted_at).to be_present
+      expect(batch.reload.pec_accepted_at).to be_present
       expect(batch.status).to eq("ready")
 
       expect(Ledi::PecSubmissionService).not_to receive(:call)
@@ -123,15 +123,15 @@ RSpec.describe Ledi::SubmitPecBatch do
     end
   end
 
-  it "raises InvalidBatchStateError when PEC accepts but pec_http_accepted_at was not persisted" do
+  it "raises InvalidBatchStateError when PEC accepts but pec_accepted_at was not persisted" do
     stub_pec_response(accepted: true)
 
     with_tenant(membership) do
-      allow_any_instance_of(described_class).to receive(:persist_pec_http_accepted!)
+      allow_any_instance_of(described_class).to receive(:persist_pec_accepted!)
 
       expect do
         described_class.call(batch: batch)
-      end.to raise_error(Ledi::Errors::InvalidBatchStateError, /pec_http_accepted_at was not persisted/)
+      end.to raise_error(Ledi::Errors::InvalidBatchStateError, /pec_accepted_at was not persisted/)
     end
   end
 
@@ -139,7 +139,7 @@ RSpec.describe Ledi::SubmitPecBatch do
     stub_pec_response(accepted: true)
 
     with_tenant(membership) do
-      allow_any_instance_of(described_class).to receive(:persist_pec_http_accepted!).and_wrap_original do |method|
+      allow_any_instance_of(described_class).to receive(:persist_pec_accepted!).and_wrap_original do |method|
         batch.update!(status: "rejected", rejection_reason: "concurrent reject")
         method.call
       end
@@ -147,7 +147,7 @@ RSpec.describe Ledi::SubmitPecBatch do
       result = described_class.call(batch: batch)
 
       expect(result.status).to eq("rejected")
-      expect(batch.reload.pec_http_accepted_at).to be_nil
+      expect(batch.reload.pec_accepted_at).to be_nil
     end
   end
 
