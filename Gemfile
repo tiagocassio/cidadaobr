@@ -26,7 +26,7 @@ gem "jbuilder"
 gem "bcrypt", "~> 3.1.7"
 
 gem "csv"
-gem "rubyzip", "~> 2.4"
+gem "rubyzip", "~> 3.3"
 gem "jwt", "~> 3.1"
 gem "karafka", "~> 2.4"
 gem "thrift", "~> 0.23"
