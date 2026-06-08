@@ -9,6 +9,8 @@ module Cidadaobr
     CLINICAL_RECORD_VALIDATED = "clinical-record-validated"
     CLINICAL_RECORD_VALIDATION_FAILED = "clinical-record-validation-failed"
     CLINICAL_RECORD_PERSISTED = "clinical-record-persisted"
+    # Publish-only (ADR-0007): snapshot persisted inline; event carries ids/metadata only.
+    CLINICAL_FACT_EXTRACTED = "clinical-fact-extracted"
 
     LEDI_BATCH_SUBMITTED = "ledi-batch-submitted"
     LEDI_BATCH_STATUSCHANGED = "ledi-batch-statuschanged"
@@ -57,6 +59,7 @@ module Cidadaobr
       CLINICAL_RECORD_VALIDATED,
       CLINICAL_RECORD_VALIDATION_FAILED,
       CLINICAL_RECORD_PERSISTED,
+      CLINICAL_FACT_EXTRACTED,
       LEDI_BATCH_SUBMITTED,
       LEDI_BATCH_STATUSCHANGED,
       APPOINTMENT_BOOKED,

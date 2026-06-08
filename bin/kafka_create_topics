@@ -20,6 +20,7 @@ TOPICS=(
   citizen-updated
   clinical-record-imported
   clinical-record-persisted
+  clinical-fact-extracted
   clinical-record-validated
   clinical-record-validation-failed
   domain-outbox

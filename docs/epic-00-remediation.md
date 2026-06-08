@@ -128,8 +128,8 @@ bundle exec rspec spec/lib/territory/ spec/requests/web/citizens_spec.rb
 
 ## Próximo passo de engenharia
 
-1. Fechar **Fase 6** — PEC produção, eSB, polish walk-in/FCC.  
-2. Piloto UI Fase 5 — checklist prefeitura (opcional).  
-3. PNI live MS + recálculo pós-release.
+1. **Fase 7** — EPIC-11: pipeline `citizen_feature_snapshots`, scoring de perfis, SIAPS.  
+2. Piloto UI F5/F6 — checklist prefeitura (opcional).  
+3. Stretch EPIC-12 — SIGTAP DATASUS live, parser UFSC em staging.
 
 Roteiro produto: [roteiro-organizado-fases-epicos.md](roteiro-organizado-fases-epicos.md).

@@ -30,7 +30,7 @@
 | **5** | Campaigns (web) | `done` | EPIC-06, EPIC-07 | Gate técnico (suite RSpec verde); UI gestor = checklist prefeitura |
 | **T** | Referência MS | `done` | **EPIC-12** | Release versionada + fixtures CI (`bin/ci_reference_gate`) |
 | **6** | LEDI/PEC + Plus API | `done` | EPIC-09, EPIC-10 (API) | PEC HTTP, walk-in, FCC, Plus API; Field/pânico UI = F8 |
-| **7** | IA + SIAPS | `pending` | EPIC-11 | Perfis, conciliação MS |
+| **7** | IA + SIAPS | `in_progress` | EPIC-11 | Perfis, conciliação MS |
 | **8** | Mobile apps | `pending` | EPIC-04 (app), EPIC-08, EPIC-10 (UI) | `mobile-shared` + Citizen + Field |
 
 ```mermaid
@@ -79,7 +79,7 @@ flowchart TB
 | EPIC-12 | T (1→6) | `done` (gate) | Dados de Referência MS/LEDI — stretch UFSC/DATASUS live |
 | EPIC-09 | 6 core · 8 Field UI | `done` (API/web) | LEDI/PEC HTTP + walk-in + FCC — Field UI F8 |
 | EPIC-10 | 6 API · 8 App UI | `done` (API) | Plus API (pânico/tele/meds); UI Citizen = F8 |
-| EPIC-11 | 7 | `pending` | Core IA e Produção |
+| EPIC-11 | 7 | `in_progress` | Core IA e Produção |
 | EPIC-08 | 8 | `pending` | Campo — App Profissional |
 
 ---
@@ -219,11 +219,13 @@ flowchart TB
 | STORY-10-02 Pânico | TASK-10-01, 10-04 | `done` — API create (UI F8) |
 | STORY-10-03 Tele | TASK-10-02, 10-05 | `done` — API index/create |
 
-### Fase 7 — EPIC-11 IA e Produção `pending`
+### Fase 7 — EPIC-11 IA e Produção `in_progress`
 
-| Story | Task |
-|-------|------|
-| STORY-11-01 Perfis IA | TASK-11-01..03 |
+| Story | Task | Status |
+|-------|------|--------|
+| STORY-11-01 Perfis IA | TASK-11-01 Pipeline `citizen_feature_snapshots` | `partial` (kickoff jun/2026) |
+| | TASK-11-02 Scoring `citizen_profiles` | `pending` |
+| | TASK-11-03 Filtro privacidade API | `pending` |
 | STORY-11-02 SIAPS | TASK-11-04 |
 | STORY-11-03 Relatórios | TASK-11-05..06 |
 

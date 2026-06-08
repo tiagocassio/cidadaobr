@@ -329,6 +329,10 @@ module Cidadaobr
         connection.execute tenant_table_citizen_access_policy_for(:citizen_indicator_gaps)
       end
 
+      if connection.table_exists?(:citizen_feature_snapshots)
+        connection.execute municipality_only_table_policies_for(:citizen_feature_snapshots)
+      end
+
       if connection.table_exists?(:team_indicator_results)
         connection.execute team_indicator_result_table_policies_for(:team_indicator_results)
       end

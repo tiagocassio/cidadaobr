@@ -8,6 +8,7 @@ class Citizen < ApplicationRecord
   has_many :household_members, dependent: :destroy
   has_many :households, through: :household_members
   has_many :encounters, dependent: :destroy
+  has_many :citizen_feature_snapshots, dependent: :nullify
 
   validates :municipality_id, presence: true
   validate :cpf_or_cns_present

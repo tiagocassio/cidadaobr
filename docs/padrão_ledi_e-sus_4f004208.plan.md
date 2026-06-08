@@ -1,6 +1,6 @@
 ---
 name: Padrão LEDI e-SUS
-overview: "CidadãoBR Saúde — APS municipal LEDI + 17 indicadores. Fases 0–5 + 4b + EPIC-12 gate concluídos; Fase 6 MVP em curso. Flutter Fase 8. RLS + Kafka + ES/CQRS."
+overview: "CidadãoBR Saúde — APS municipal LEDI + 17 indicadores. Fases 0–6 + EPIC-12 gate concluídos; Fase 7 (IA/SIAPS) em curso. Flutter Fase 8. RLS + Kafka + ES/CQRS."
 todos:
   - id: fix-ledi-version
     content: Definir versão LEDI alvo e obter Thrift/XSD oficiais
@@ -18,8 +18,8 @@ todos:
     content: "Migrations en-US: citizens, households, health_facilities, care_teams, encounters, shared_care"
     status: completed
   - id: schema-ai-features
-    content: "Tabelas en-US: citizen_feature_snapshots, citizen_profiles, profile_rules"
-    status: pending
+    content: "Tabelas en-US: citizen_feature_snapshots (v1), citizen_profiles, profile_rules"
+    status: partial
   - id: thrift-adapters
     content: Adapters Thrift→JSON por tipoDadoSerializado + validação por arquétipo
     status: completed
@@ -45,8 +45,8 @@ todos:
     content: "Fase 8 — Flutter Citizen: agenda, vacinas, meds, pânico, tele (EPIC-04 app + EPIC-10 UI)"
     status: pending
   - id: schema-citizen-portal
-    content: "en-US: citizen_accounts + citizen_immunization_records (MVP); panic/tele/meds = EPIC-10 Fase 6"
-    status: partial
+    content: "en-US: citizen_accounts + citizen_immunization_records + panic/tele/meds (EPIC-10 Fase 6)"
+    status: completed
   - id: api-citizen-v1
     content: "API /api/v1/citizen: auth, slots, appointments, immunization — MVP; OpenAPI + openapi_contract_spec; meds/panic/tele = EPIC-10 Fase 6"
     status: completed
@@ -112,7 +112,7 @@ todos:
     status: completed
   - id: phase-6-full-stack
     content: "Fase 6: EPIC-09 + EPIC-10 — LEDI/PEC, walk-in web, APIs panic/tele/meds (sem Flutter)"
-    status: pending
+    status: completed
   - id: phase-7-ai-siaps
     content: "Fase 7: EPIC-11 (TASK-11-01..06)"
     status: pending
@@ -613,35 +613,30 @@ Sprint 5 (bootstrap repos Flutter) **adiado para Fase 8**. “Celular” em EPIC
 
 ## Roteiro de continuação (S10+)
 
-**Onde estamos (2026-06-03):** Fases **0–5** + **4b** + **EPIC-12 gate** fechados. **Fase 6** MVP em curso (PEC, FCC, walk-in, APIs Plus). Piloto UI F5 = checklist prefeitura (opcional).
+**Onde estamos (2026-06-06):** Fases **0–6** + **4b** + **EPIC-12 gate** fechados. **Fase 7** (EPIC-11 IA/SIAPS) em curso — pipeline `citizen_feature_snapshots` kickoff. Piloto UI F5/F6 = checklist prefeitura (opcional).
 
-**Objetivo imediato:** fechar **Fase 6** (PEC produção, eSB); polish piloto F5 opcional; PNI live MS stretch.
+**Objetivo imediato:** **Fase 7** — `citizen_feature_snapshots`, scoring de perfis, SIAPS; piloto prefeitura opcional; stretch PNI live MS.
 
 ### Visão por fases
 
 ```mermaid
 flowchart LR
-  done[Fases0_a_5_gate]
-  ref[EPIC12_parcial]
-  f6[Fase6_EPIC09_10]
-  pni[PNI_2b_2d]
+  done[Fases0_a_6_plus_E12]
   ai[Fase7_EPIC11]
   mob[Fase8_Flutter]
+  piloto[Piloto_Prefeitura]
 
-  done --> ref
-  ref --> f6
-  done --> pni
-  ref --> pni
-  f6 --> ai
+  done --> ai
   ai --> mob
+  done --> piloto
 ```
 
 | Fase | Épicos | Gate de saída |
 |------|--------|---------------|
 | **5** | EPIC-06, EPIC-07 | Gate técnico **feito**; piloto web checklist (opcional) |
-| **1.5 transversal** | EPIC-12 | Release `reference_data_releases` + API `/reference/*` + jobs mensais |
-| **6** | EPIC-09, EPIC-10 (API) | Walk-in web, PEC produção, adapters restantes; **requer EPIC-12** |
-| **7** | EPIC-11 | IA + conciliação MS |
+| **1.5 transversal** | EPIC-12 | Release `reference_data_releases` + API `/reference/*` + jobs mensais — **feito** |
+| **6** | EPIC-09, EPIC-10 (API) | PEC HTTP, walk-in, FCC, Plus API — **feito** |
+| **7** | EPIC-11 | IA + conciliação MS — **em curso** |
 | **8** | EPIC-04 app, EPIC-08, EPIC-10 UI | `mobile-shared` + Citizen + Field |
 
 ### Trilha principal — fechar Fase 5 (prioridade)
@@ -671,18 +666,11 @@ flowchart LR
 - [x] Checklist piloto Fase 5 — [`checklist-piloto-prefeitura.md`](docs/commercial/checklist-piloto-prefeitura.md); F5-1..F6 na UI (`piloto-validacao-tecnica.md`) antes de go-live prefeitura — **fora** do gate `completed` da fase
 - [x] EPIC-06 e EPIC-07 **concluídos** no roteiro e status-plano (jun/2026)
 
-### Trilha paralela — EPIC-12 (S8–S9)
+### Trilha paralela — EPIC-12 (S8–S9) — **gate fechado**
 
-**Em `main`:** migrations grupo M, `UfscReferenceImportJob`, `LediCatalogSyncJob`, `SigtapImportJob`, `PublishReferenceReleaseJob`, `config/recurring.yml`, API `/api/v1/reference/*`.
+**Em `main`:** migrations grupo M, `UfscReferenceImportJob`, `LediCatalogSyncJob`, `SigtapImportJob`, `PublishReferenceReleaseJob`, `config/recurring.yml`, API `/api/v1/reference/*`, `bin/ci_reference_gate`.
 
-**Falta para gate EPIC-12:**
-
-| Sprint | Tasks | Entrega |
-|--------|-------|---------|
-| **S8** | TASK-12-01..03 | Fixtures CI estáveis + catálogo LEDI versionado em release |
-| **S9** | TASK-12-04..06 | Release `reference_data_releases` + Kafka + ADR-0004 |
-
-**Obrigatório antes de:** TASK-09-08 (walk-in web) e formulários clínicos com combos.
+**Stretch (staging, não bloqueia):** SIGTAP DATASUS live, parser UFSC → `ledi_field_catalogs`.
 
 ### Após Fase 5 — Fase 6 (S13–S16)
 
@@ -706,20 +694,20 @@ flowchart LR
 
 ### Alocação sugerida (time pequeno)
 
-| Pessoa | Agora (pós-F5) | Depois |
+| Pessoa | Agora (pós-F6) | Depois |
 |--------|----------------|--------|
-| **Dev A** | EPIC-12 gate (S8–S9) | Fase 6 PEC / LEDI |
-| **Dev B (opcional)** | EPIC-12 release/fixtures | EPIC-10 APIs |
-| **Solo** | EPIC-12 → S13 Fase 6 | — |
+| **Dev A** | Fase 7 EPIC-11 (snapshots + scoring) | Fase 8 mobile-shared |
+| **Dev B (opcional)** | SIAPS conciliação + relatórios | EPIC-08 Field |
+| **Solo** | Fase 7 → piloto prefeitura | Fase 8 Flutter |
 
 ### Próximo passo concreto
 
 Ver **[status-plano-2026-06.md](docs/commercial/status-plano-2026-06.md)** (documento único jun/2026).
 
-1. **EPIC-12** — release versionada + fixtures CI (desbloqueia Fase 6)
-2. **Fase 6** — EPIC-09 + EPIC-10 API
-3. **Piloto UI** Fase 5 (opcional) — checklist prefeitura
-4. **PNI Ondas 2b–2d** — faixas etárias restantes (pós EPIC-12)
+1. **Fase 7** — EPIC-11: `citizen_feature_snapshots`, scoring, SIAPS
+2. **Fase 8** — `mobile-shared` → Citizen → Field
+3. **Piloto UI** F5/F6 (opcional) — checklist prefeitura
+4. **Stretch EPIC-12** — SIGTAP DATASUS live, parser UFSC staging
 
 ---
 

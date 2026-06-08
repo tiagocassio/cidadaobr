@@ -45,6 +45,15 @@ RSpec.describe ClinicalRecordPersistedConsumer do
     expect do
       consume_envelope(envelope)
     end.to change { with_tenant(membership) { Citizen.count } }.by(1)
+      .and change { with_tenant(membership) { CitizenFeatureSnapshot.count } }.by(1)
+      .and change {
+        with_tenant(membership) do
+          DomainEvent.where(event_type: Cidadaobr::KafkaTopics::CLINICAL_FACT_EXTRACTED).count
+        end
+      }.by(1)
+
+    snapshot = with_tenant(membership) { CitizenFeatureSnapshot.last }
+    expect(snapshot.computed_at).to be_within(1.second).of(Time.zone.parse(envelope[:occurred_at]))
   end
 
   it "does not mark missing clinical records as processed" do
@@ -109,5 +118,59 @@ RSpec.describe ClinicalRecordPersistedConsumer do
 
     expect(marked_messages).to eq([ message ])
     expect(KafkaProcessedEvent.find_by(event_id: envelope["event_id"])).to be_nil
+  end
+
+  it "re-raises non-RLS database errors from feature snapshot build" do
+    clinical_record = import_fci!
+
+    with_tenant(membership) do
+      Ledi::ValidateClinicalRecord.call(clinical_record_id: clinical_record.id)
+    end
+
+    event = with_tenant(membership) do
+      DomainEvent.find_by!(event_type: Cidadaobr::KafkaTopics::CLINICAL_RECORD_PERSISTED, aggregate_id: clinical_record.id)
+    end
+    envelope = Cidadaobr::EventEnvelope.from_domain_event(event).to_h
+
+    allow(CommandBus).to receive(:dispatch).and_call_original
+    allow(CommandBus).to receive(:dispatch).with(
+      Ai::Commands::BuildCitizenFeatureSnapshot,
+      hash_including(clinical_record_id: clinical_record.id)
+    ).and_raise(
+      ActiveRecord::StatementInvalid.new("PG::UndefinedTable: ERROR: relation \"missing\" does not exist")
+    )
+
+    expect { consume_envelope(envelope) }.to raise_error(ActiveRecord::StatementInvalid)
+  end
+
+  it "skips feature snapshot on RLS violation without failing the batch" do
+    clinical_record = import_fci!
+
+    with_tenant(membership) do
+      Ledi::ValidateClinicalRecord.call(clinical_record_id: clinical_record.id)
+    end
+
+    event = with_tenant(membership) do
+      DomainEvent.find_by!(event_type: Cidadaobr::KafkaTopics::CLINICAL_RECORD_PERSISTED, aggregate_id: clinical_record.id)
+    end
+    envelope = Cidadaobr::EventEnvelope.from_domain_event(event).to_h
+
+    allow(CommandBus).to receive(:dispatch).and_call_original
+    allow(CommandBus).to receive(:dispatch).with(
+      Ai::Commands::BuildCitizenFeatureSnapshot,
+      hash_including(clinical_record_id: clinical_record.id)
+    ).and_raise(
+      ActiveRecord::StatementInvalid.new(
+        "PG::InsufficientPrivilege: ERROR: new row violates row-level security policy for table \"citizen_feature_snapshots\""
+      )
+    )
+
+    expect(Rails.logger).to receive(:error).with(/feature_snapshot\.rls_skipped/)
+    allow(ActiveSupport::Notifications).to receive(:instrument).and_call_original
+    expect(ActiveSupport::Notifications).to receive(:instrument).with(
+      "kafka.feature_snapshot.rls_skipped",
+      hash_including(clinical_record_id: clinical_record.id)
+    ).and_call_original
+    expect { consume_envelope(envelope) }.not_to raise_error
   end
 end

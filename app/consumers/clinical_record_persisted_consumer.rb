@@ -11,6 +11,7 @@ class ClinicalRecordPersistedConsumer < ApplicationConsumer
         project_clinical_record!(payload)
         # Inline recalc keeps indicator dashboard current without a separate Kafka hop.
         recalculate_indicators!(payload)
+        build_feature_snapshot!(payload, message: message)
       end
     rescue Ledi::Errors::MissingClinicalRecordError => e
       if projection_stale?(envelope, message: message)
@@ -37,6 +38,33 @@ class ClinicalRecordPersistedConsumer < ApplicationConsumer
     end
 
     Ledi::ProjectionRunner.call(clinical_record: clinical_record)
+  end
+
+  def build_feature_snapshot!(payload, message: nil)
+    clinical_record_id = payload.dig("payload", "clinical_record_id") || payload["clinical_record_id"]
+    return if clinical_record_id.blank?
+
+    computed_at = event_time_from(payload) || kafka_message_time(message) || Time.current
+    CommandBus.dispatch(
+      Ai::Commands::BuildCitizenFeatureSnapshot,
+      clinical_record_id: clinical_record_id,
+      computed_at: computed_at
+    )
+  rescue ActiveRecord::StatementInvalid => e
+    raise unless row_level_security_violation?(e)
+
+    # v1: offset still marked processed — see ADR-0007 pipeline ops (monitor + manual backfill).
+    ActiveSupport::Notifications.instrument(
+      "kafka.feature_snapshot.rls_skipped",
+      clinical_record_id: clinical_record_id,
+      error_class: e.class.name,
+      error_message: e.message
+    )
+  end
+
+  def row_level_security_violation?(error)
+    error.cause.is_a?(PG::InsufficientPrivilege) ||
+      error.message.include?("row-level security policy")
   end
 
   def recalculate_indicators!(payload)

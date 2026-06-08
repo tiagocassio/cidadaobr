@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_06_05_160001) do
+ActiveRecord::Schema[8.1].define(version: 2026_06_06_120005) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
@@ -128,6 +128,23 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_05_160001) do
     t.index ["citizen_id", "active"], name: "index_citizen_continuous_medications_on_citizen_id_and_active"
     t.index ["citizen_id"], name: "index_citizen_continuous_medications_on_citizen_id"
     t.index ["municipality_id"], name: "index_citizen_continuous_medications_on_municipality_id"
+  end
+
+  create_table "citizen_feature_snapshots", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "citizen_id"
+    t.uuid "clinical_record_id", null: false
+    t.datetime "computed_at", null: false
+    t.datetime "created_at", null: false
+    t.string "feature_schema_version", default: "v1", null: false
+    t.jsonb "features", default: {}, null: false
+    t.uuid "municipality_id", null: false
+    t.string "record_type", null: false
+    t.string "source_payload_digest"
+    t.datetime "updated_at", null: false
+    t.index ["clinical_record_id", "feature_schema_version"], name: "index_citizen_feature_snapshots_on_record_and_schema", unique: true
+    t.index ["computed_at"], name: "index_citizen_feature_snapshots_on_computed_at", using: :brin
+    t.index ["features"], name: "index_citizen_feature_snapshots_on_features", using: :gin
+    t.index ["municipality_id", "citizen_id", "computed_at"], name: "index_citizen_feature_snapshots_on_municipality_citizen_time"
   end
 
   create_table "citizen_immunization_records", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -954,6 +971,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_05_160001) do
   add_foreign_key "care_teams", "municipalities"
   add_foreign_key "citizen_continuous_medications", "citizens"
   add_foreign_key "citizen_continuous_medications", "municipalities"
+  add_foreign_key "citizen_feature_snapshots", "citizens"
+  add_foreign_key "citizen_feature_snapshots", "clinical_records"
+  add_foreign_key "citizen_feature_snapshots", "municipalities"
   add_foreign_key "citizen_indicator_gaps", "care_teams"
   add_foreign_key "citizen_indicator_gaps", "citizens"
   add_foreign_key "citizen_indicator_gaps", "municipalities"

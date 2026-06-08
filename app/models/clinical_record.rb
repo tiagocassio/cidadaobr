@@ -12,6 +12,8 @@ class ClinicalRecord < ApplicationRecord
   has_one :citizen, dependent: :nullify
   has_one :household, dependent: :nullify
   has_many :encounters, dependent: :destroy
+  # Derived feature rows; cascade delete when the source clinical record is removed.
+  has_many :citizen_feature_snapshots, dependent: :destroy
 
   validates :municipality_id, :transport_record_id, :record_type, :record_uuid, :payload_schema_version, :validation_status, presence: true
   validates :record_uuid, uniqueness: { scope: :municipality_id }

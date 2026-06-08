@@ -41,9 +41,19 @@ Publicados em `bin/kafka_create_topics` e `OutboxPublisher::TOPIC_MAPPING`, **se
 | `vaccination-campaign-*` | Gestão web já consistente via AR |
 | `immunobiological-lot-received` | Estoque local |
 | `panic-alert-triggered` | Integração emergência / Fase 8 |
+| `clinical-fact-extracted` | Scoring IA Fase 7 — ver *Pipeline v1* abaixo |
 | `teleconsultation-session-created` | Integração teleconsulta futura |
 | `continuous-medication-registered` | Projeções clínicas futuras |
 | `shared-care-case-created` / `shared-care-evolution-recorded` | FCC / integração externa futura |
+
+### Pipeline v1 — `clinical-fact-extracted`
+
+- **Persistência:** inline em `ClinicalRecordPersistedConsumer` → `BuildCitizenFeatureSnapshot` (sem consumer dedicado).
+- **Payload do evento:** ids/metadata apenas (`citizen_feature_snapshot_id`, `clinical_record_id`, `citizen_id`, …). Features vivem em `citizen_feature_snapshots.features`.
+- **RLS skip (v1):** offset Kafka ainda marcado processado; monitorar `kafka.feature_snapshot.rls_skipped`. Backfill: `CommandBus.dispatch(Ai::Commands::BuildCitizenFeatureSnapshot, clinical_record_id:)` no tenant correto.
+- **Validation skip (v1):** defensivo — `clinical.record.persisted` é pós-validação; offset também marcado.
+- **Chamada direta do command:** caller deve projetar cidadão antes (`ClinicalRecordPersistedConsumer` já chama `ProjectionRunner`).
+- **Extractor deploy:** bump `Ai::FeatureExtractor::LOGIC_VERSION` (entra no `source_payload_digest`).
 
 ### Placeholder
 
